@@ -22,25 +22,25 @@
     </include>
 
     <!-- control -->
-    <include file="$(find jackal_move)/control/launch/control.launch">
+    <!-- <include file="$(find jackal_move)/control/launch/control.launch">
         <arg name="enable_ekf" value="true" />    
         <arg name="ns" value="$(arg ns)" />        
         <arg name="joy_dev" value="$(arg joy_dev)" /> 
-    </include>
+    </include> -->
 
     <!-- navigation -->
-    <include file="$(find jackal_move)/navigation/launch/move_base.launch">
+    <!-- <include file="$(find jackal_move)/navigation/launch/move_base.launch">
         <arg name="ns" value="$(arg ns)" />
-    </include>
+    </include> -->
 
     <!-- UWB measurement -->      
-    <node pkg="jackal_range" name="UWB_read" type="UWB_read.py"
-        args="/dev/ttyACM0 115200 $(arg ns)/Tag01" /> 
+    <!-- <node pkg="jackal_range" name="UWB_read" type="UWB_read.py"
+        args="/dev/ttyACM0 115200 $(arg ns)/Tag01" />  -->
 
     <!-- PF node -->
-    <include file="$(find jackal_pf)/launch/PF_instance.launch">
+    <!-- <include file="$(find jackal_pf)/launch/PF_instance.launch">
         <arg name="ns" value="$(arg ns)" />
-    </include>
+    </include> -->
 
 
 </launch>

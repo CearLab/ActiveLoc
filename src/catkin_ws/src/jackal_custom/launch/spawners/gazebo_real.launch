@@ -12,13 +12,13 @@
   <group ns="UGV01">    
 
     <!-- ANCHORS SERVER -->
-    <include file="$(find jackal_range)/launch/anchors_real.launch" >
+    <!-- <include file="$(find jackal_range)/launch/anchors_real.launch" >
       <arg name="AX" value="" />
       <arg name="AY" value="" />
       <arg name="AZ" value="" />
       <arg name="ns" value="UGV01/" />     
       <arg name="real" value="true" />  
-    </include>
+    </include> -->
 
     <!-- spawn robot -->
     <include file="$(find jackal_custom)/launch/spawners/robot_real.launch" >
@@ -34,22 +34,22 @@
     <node pkg="tf2_ros" type="static_transform_publisher" name="MapToOdom" args="0 0 0 0 0 0 1 map UGV01/odom" />   
 
     <!-- ANCHORS SERVER -->
-    <include file="$(find jackal_range)/launch/anchors_estimate.launch" > 
+    <!-- <include file="$(find jackal_range)/launch/anchors_estimate.launch" > 
       <arg name="AX" value="" />
       <arg name="AY" value="" />
       <arg name="AZ" value="" />
       <arg name="ns" value="UGV01/" /> 
       <arg name="real" value="true" />       
-    </include>
+    </include> -->
 
     <!-- DISTANCE VISUALIZATION -->
-    <include file="$(find jackal_range)/launch/vis_line.launch" >
+    <!-- <include file="$(find jackal_range)/launch/vis_line.launch" >
       <arg name="ns" value="UGV01/" />      
-    </include>     
+    </include>      -->
     
   </group>  
 
   <param name="use_gui" value="true"/>
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find jackal_custom)/rviz/default.rviz" />
+  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find jackal_custom)/rviz/default.rviz" /> -->
   
 </launch>
