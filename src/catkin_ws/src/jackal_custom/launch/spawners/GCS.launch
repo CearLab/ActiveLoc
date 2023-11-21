@@ -1,10 +1,7 @@
 <launch>
 
-  <arg name="joystick" default="true" />
-  <arg name="joy_dev" default="/dev/input/js0" />
-
   <param name="use_gui" value="true"/>
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find jackal_custom)/rviz/default_real.rviz" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find jackal_custom)/rviz/default.rviz" />
 
   <!-- Run Websocket. -->
   <!-- <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" > 
