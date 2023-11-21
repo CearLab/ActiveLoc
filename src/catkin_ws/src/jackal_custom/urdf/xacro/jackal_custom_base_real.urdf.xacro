@@ -68,16 +68,6 @@
       </inertial>
     </link>
 
-    <gazebo reference="${prefix}_wheel_link">
-      <material>Gazebo/DarkGrey</material>
-      <selfCollide>false</selfCollide>
-      <mu1 value="1"/>
-      <mu2 value="1"/>
-      <kp value="10000000.0" />
-      <kd value="1" />
-      <fdir1 value="1 0 0"/>
-    </gazebo>
-
     <joint name="${prefix}_wheel" type="continuous">
       <parent link="$(arg ns)chassis_link"/>
       <child link="${prefix}_wheel_link" />
