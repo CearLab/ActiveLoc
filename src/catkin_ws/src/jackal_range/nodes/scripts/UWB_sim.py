@@ -82,7 +82,8 @@ class UWB:
     def pubsub(self):
         
         # get the ground truth topic and the publish topic
-        gt_topic = f'/{self.namespace}/ground_truth/state'
+        # gt_topic = f'/{self.namespace}/ground_truth/state'
+        gt_topic = f'/{self.namespace}/odometry/filtered'
         pub_topic = f'/{self.namespace}/range'
         
         # logs
