@@ -290,7 +290,7 @@
   <joint name="right_tag_joint" type="fixed">        
       <parent link="$(arg ns)chassis_link"/>
       <child link="$(arg ns)right_tag"/>
-      <origin xyz="0 0 0.184" rpy="0 0 0"/>
+      <origin xyz="0.165 -0.135 0.184" rpy="0 0 0"/>
   </joint>  
 
   <!-- Bring in simulation data for Gazebo. -->

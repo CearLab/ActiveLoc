@@ -20,7 +20,8 @@ RESAMPLE_METHOD = 'systematic'
 # namespace
 NS = sys.argv[1]
 # spin rate
-RATE = 5
+RATE = 10
+HEIGHT = 2
 # variance for the initial spread of the particles
 INITIAL_PARTICLES_VARIANCE = 4
 
@@ -236,7 +237,7 @@ class PFnode:
         # here I update the anchors from the range measurements
         for i in range(NUM_OF_BEACONS):
             initial_state[get_beacon_index(i)] = np.array([self.current_range_msg.A_POS[i*3 + 0], self.current_range_msg.A_POS[i*3 + 1]])
-            set_beacon_height(self.current_range_msg.A_POS[i*3 + 2])
+            set_beacon_height(self.current_range_msg.A_POS[i*3 + HEIGHT])
             rospy.logwarn(self.namespace + ': beacon height read: ' + str(self.current_range_msg.A_POS[i*3 + 2]))
 
             self.particles[:,get_beacon_index(i)] = initial_state[get_beacon_index(i)]
