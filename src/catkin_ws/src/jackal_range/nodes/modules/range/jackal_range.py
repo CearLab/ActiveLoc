@@ -516,6 +516,29 @@ class JackalRange:
         # start the configuration - go to cli mode
         data = '\x0D\x0D'
         self.serialWrite(myserial, data, sleepLong, print_flag)
+        
+        # reset
+        rospy.logwarn('Tag rebooting') 
+        data = 'reset\x0D'
+        self.serialWrite(myserial, data, sleepLong, print_flag)    
+        rospy.sleep(10) 
+        rospy.logwarn('Tag rebooted')
+        myserial = serial.Serial(SerialPort, BaudRate, timeout=0.5, 
+        parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE,  bytesize=serial.EIGHTBITS)  
+        # flush buffers
+        myserial.flushInput()
+        myserial.flushOutput()
+        
+        # Check if the serial port is open
+        if not myserial.is_open:
+            rospy.logfatal('Failed to open serial port!')
+            return -1
+        else:
+            rospy.logwarn('Connected to: ' + SerialPort)
+            
+        # start the configuration - go to cli mode
+        data = '\x0D\x0D'
+        self.serialWrite(myserial, data, sleepLong, print_flag)
 
         # start reading - send lec (stream of data)
         data = 'lec\x0D'
@@ -592,11 +615,12 @@ class JackalRange:
                     msgD.A_POS = A_POS
                     msgD.T_ID = TagID
                     msgD.D = [row[2] for row in tmp_tag_params]
+                    rospy.logwarn_once(f"first range msg:{msgD}")
                     pub.publish(msgD)
                 
                 
-            except Exception as e:
-                # nothing special            
+            except Exception as e:                                
+                # nothing special                   
                 rospy.logfatal(e)
             
 

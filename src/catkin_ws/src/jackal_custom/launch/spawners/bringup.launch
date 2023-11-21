@@ -8,11 +8,11 @@
   <!-- anchors params -->
   <arg name="AX" default="5" />
   <arg name="AY" default="5" />
-  <arg name="AZ" default="0.184" /> 
+  <arg name="AZ" default="2" /> 
 
   <!-- arg to select real or simulated data -->
   <arg name="real_robot" default="true" /> 
-  <arg name="real_UWB" default="false" /> 
+  <arg name="real_UWB" default="true" /> 
 
   <!-- simulation time -->
   <arg name="use_sim_time" default="false" />
@@ -66,12 +66,7 @@
       <arg name="AZ" value="$(arg AZ)" />
       <arg name="ns" value="UGV01/" />     
       <arg name="real" value="$(arg real_UWB)" />       
-    </include>
-
-    <!-- DISTANCE VISUALIZATION -->
-    <include file="$(find jackal_range)/launch/vis_line.launch" >
-      <arg name="ns" value="UGV01/" />      
-    </include>     
+    </include>    
     
   </group>
   
