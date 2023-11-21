@@ -68,12 +68,11 @@ def calculate_true_range_meas(x):
     z = np.zeros(RANGE_MEASUREMENT_SIZE)
     for i in range(NUM_OF_AGENTS):
         current_agent_position = np.zeros(3)
-        current_agent_position[0:1] = x[get_agent_index(i)]
+        current_agent_position[0:2] = x[get_agent_index(i)]
         
         for j in range(NUM_OF_BEACONS):
             current_beacon_position = np.zeros(3)
-            current_beacon_position[0:1] = x[get_beacon_index(j)]
-            print(beacon_height_)
+            current_beacon_position[0:2] = x[get_beacon_index(j)]
             current_agent_position[2] = beacon_height_
             z[i*NUM_OF_BEACONS + j] = np.linalg.norm(current_agent_position - current_beacon_position)
     return z
