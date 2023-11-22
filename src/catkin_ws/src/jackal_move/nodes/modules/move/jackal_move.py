@@ -136,7 +136,7 @@ def movebase_client(server_name,odom_name,p_goal,a_goal):
     # Print the result of executing the action
     return client.get_result()
 
-def encoder_parser(data,pub):
+def encoder_parser(data,pub,broadcaster,ns):
     
     # Extract odometry information from feedback
     odom = nav_msgs.msg.Odometry()
@@ -147,12 +147,17 @@ def encoder_parser(data,pub):
     # get data from encoders
     travel_left = data.drivers[0].measured_travel
     travel_right = data.drivers[1].measured_travel
-    width = 0.430 # [m] from datasheet
+    
+    # chassis data [m] from xacro
+    width = 0.320 
+    wheelbase = 0.262
+    track = 0.37559
+    wheel_vertical_offset = 0.0345
     
     # initial position
     x0 = 0.0
     y0 = 0.0
-    z0 = 0.0
+    z0 = wheel_vertical_offset
     
     # initial orientation
     R0 = 0.0
@@ -175,9 +180,25 @@ def encoder_parser(data,pub):
     # get quaternion
     quaternion = tft.quaternion_from_euler(R, P, Y)
     odom.pose.pose.orientation = geometry_msgs.msg.Quaternion(quaternion[0], quaternion[1], quaternion[2], quaternion[3])
-
+    
     # Publish the odometry message
     pub.publish(odom)
+    
+    # now here I want to publish the wheel tf
+    child_links_left = [ns + 'front_left_wheel', ns + 'rear_left_wheel']
+    child_links_right = [ns + 'front_right_wheel', ns + 'rear_right_wheel']
+    parent_link = ns + 'chassis_link'
+    translation_left = [np.array((wheelbase/2, track/2, wheel_vertical_offset)), np.array((wheelbase/2, -track/2, wheel_vertical_offset))]
+    translation_right = [np.array((-wheelbase/2, track/2, wheel_vertical_offset)), np.array((-wheelbase/2, -track/2, wheel_vertical_offset))]
+    rotation = tft.quaternion_from_euler(0, 0, 0)
+    
+    # Publish the transforms
+    broadcaster.sendTransform(translation_left[0], rotation,  rospy.Time.now(), child_links_left[0], parent_link) # front_left
+    broadcaster.sendTransform(translation_left[1], rotation,  rospy.Time.now(), child_links_left[1], parent_link) # rear_left
+    broadcaster.sendTransform(translation_right[0], rotation, rospy.Time.now(), child_links_right[0], parent_link) # front_right
+    broadcaster.sendTransform(translation_right[1], rotation, rospy.Time.now(), child_links_right[1], parent_link) # rear_right
+    
+    # rospy.logwarn('Encoder parsed: time '+ str(rospy.Time.now()))
     
     return 0
 

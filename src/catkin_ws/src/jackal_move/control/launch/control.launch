@@ -25,8 +25,8 @@
       <param name="world_frame"     value="$(arg ns)odom"/>
       <!-- <param name="odom0"       value="/$(arg ns)jackal_velocity_controller/odom"/>       -->
       <!-- <param name="odom1"       value="/$(arg ns)PFest"/> -->
-      <param name="odom0"       value="/$(arg ns)ground_truth/state"/>    
-      <param name="odom1"       value="/$(arg ns)ground_truth/state"/>    
+      <!-- <param name="odom0"       value="/$(arg ns)ground_truth/state"/>     -->
+      <!-- <param name="odom1"       value="/$(arg ns)ground_truth/state"/>     -->
       <param name="imu0"       value="/$(arg ns)imu/data"/>   
     </node>    
   </group>  

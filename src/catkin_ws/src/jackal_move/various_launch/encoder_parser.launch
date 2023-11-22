@@ -6,7 +6,8 @@
     <!-- parse the encoders -->      
     <node pkg="jackal_move" name="encoder_parser" type="encoder_parser.py">
         <param name="feedback_topic" type="string" value="/$(arg ns)feedback" />                    
-        <param name="publish_topic" type="string" value="/$(arg ns)hola" />     
+        <param name="publish_topic" type="string" value="/$(arg ns)hola" />
+        <param name="ns" type="string" value="/$(arg ns)" />     
     </node>
 
 </launch>
