@@ -11,7 +11,7 @@
   <arg name="AZ" default="0.184" /> 
 
   <!-- arg to select real or simulated data -->
-  <arg name="real_robot" default="false" /> 
+  <arg name="real_robot" default="true" /> 
   <arg name="real_UWB" default="false" /> 
 
   <!-- simulation time -->

@@ -25,6 +25,10 @@
         <!-- Run default base jackal HW -->
         <include file="$(find jackal_custom)/launch/descriptions/base.launch">
         </include>
+
+        <include file="$(find jackal_move)/various_launch/encoder_parser.launch"> 
+            <arg name="ns" value="$(arg ns)" />     
+        </include>
     </group>
 
     <!-- Load Jackal's description simulated -->
