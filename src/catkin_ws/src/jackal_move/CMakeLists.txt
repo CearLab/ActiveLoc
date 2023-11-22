@@ -159,6 +159,7 @@ include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} ${SDFormat_INCLUDE_DIRS}
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS    
   nodes/scripts/follower.py  
+  nodes/scripts/encoder_parser.py  
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

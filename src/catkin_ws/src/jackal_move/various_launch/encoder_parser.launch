@@ -1,0 +1,12 @@
+<launch>
+
+    <!-- Configuration of Jackal which you would like to simulate. -->
+    <arg name="ns" default="" />   
+
+    <!-- parse the encoders -->      
+    <node pkg="jackal_move" name="encoder_parser" type="encoder_parser.py">
+        <param name="feedback_topic" type="string" value="/$(arg ns)feedback" />                    
+        <param name="publish_topic" type="string" value="/$(arg ns)hola" />     
+    </node>
+
+</launch>

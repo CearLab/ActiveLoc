@@ -15,6 +15,8 @@ from move_base_msgs.msg import MoveBaseActionGoal, MoveBaseAction, MoveBaseResul
 import geometry_msgs.msg
 import nav_msgs.msg
 
+from jackal_msgs.msg import Feedback
+
 # circulant motion
 def follow(leader_topic, server_name, odom_name, p_goal, a_goal, mode):           
     
@@ -133,3 +135,70 @@ def movebase_client(server_name,odom_name,p_goal,a_goal):
 
     # Print the result of executing the action
     return client.get_result()
+
+def encoder_parser(data,pub):
+    
+    # Extract odometry information from feedback
+    odom = nav_msgs.msg.Odometry()
+    odom.header.stamp = rospy.Time.now()
+    odom.header.frame_id = 'odom'
+    odom.child_frame_id = 'base_link'
+    
+    # get data from encoders
+    travel_left = data.drivers[0].measured_travel
+    travel_right = data.drivers[1].measured_travel
+    width = 0.430 # [m] from datasheet
+    
+    # initial position
+    x0 = 0.0
+    y0 = 0.0
+    z0 = 0.0
+    
+    # initial orientation
+    R0 = 0.0
+    P0 = 0.0
+    Y0 = 0.0
+    
+    # compute current position
+    x, y, Y = update_position(x0, y0, Y0, travel_left, travel_right, width)
+    
+    # keep the z
+    z = z0
+    
+    # keep Roll and Pitch
+    R = R0
+    P = P0
+
+    # Position
+    odom.pose.pose.position = geometry_msgs.msg.Point(x, y, z)
+    
+    # get quaternion
+    quaternion = tft.quaternion_from_euler(R, P, Y)
+    odom.pose.pose.orientation = geometry_msgs.msg.Quaternion(quaternion[0], quaternion[1], quaternion[2], quaternion[3])
+
+    # Publish the odometry message
+    pub.publish(odom)
+    
+    return 0
+
+import math
+
+def update_position(x0, y0, theta0, dL, dR, L):
+    # Compute distance traveled by the center of the robot
+    dC = (dL + dR) / 2.0
+    
+    # Compute change in orientation
+    delta_theta = (dR - dL) / L
+    
+    # If delta_theta is not zero, compute the new position
+    if delta_theta != 0:
+        R = dC / delta_theta
+        x = x0 + R * (math.sin(theta0 + delta_theta) - math.sin(theta0))
+        y = y0 - R * (math.cos(theta0 + delta_theta) - math.cos(theta0))
+        theta = theta0 + delta_theta
+    else:  # If delta_theta is zero, the robot is moving straight
+        x = x0 + dC * math.cos(theta0)
+        y = y0 + dC * math.sin(theta0)
+        theta = theta0
+    
+    return x, y, theta
