@@ -42,7 +42,7 @@
 FROM cearlab/activeloc:ros-noetic-base
 ARG TARGET
 
-ARG USER_UID=1000
+ARG USER_UID=1003
 
 # Nvidia GPU architecture version (default: GeForce RTX 3000 series)
 # NOTE: You may have to configure this at build time!
@@ -157,8 +157,10 @@ RUN wget -qO- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/ins
 RUN \
     ZSH_PLUGINS=$ZSH_CUSTOM/plugins \
     && ZSH_THEMES=$ZSH_CUSTOM/themes \
-    && git clone --single-branch --branch 'master' --depth 1 https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting \
-    && git clone --single-branch --branch 'master' --depth 1 https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions \
+    && git clone --single-branch --branch 'master' --depth 1 https://github.com/zsh-users/zsh-syntax-highlighting.git \
+    ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting \
+    && git clone --single-branch --branch 'master' --depth 1 https://github.com/zsh-users/zsh-autosuggestions \
+    ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions \
     && git clone --single-branch --depth 1 https://github.com/romkatv/powerlevel10k.git $ZSH_THEMES/powerlevel10k
 COPY --chown=ros config/.zshrc ./
 COPY --chown=ros config/.aliases.sh ./

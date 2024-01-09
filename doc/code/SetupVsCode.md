@@ -11,3 +11,4 @@ This file details the main info to setup VsCode as coding IDE for the ActiveLoc 
 5) C/C++ Themes             (Microsoft)
 6) C/C++ Extension Pack     (Microsoft)
 7) Python                   (Microsoft)
+8) Docker Extension Pack    (Jun Han)

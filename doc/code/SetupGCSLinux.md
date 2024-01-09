@@ -129,11 +129,23 @@
 # Starting from the base environment, you need to run a detached container, 
 # the image will build and tag autonomously. 
 
-    $ docker compose --file src/docker/docker-compose.yml up -d ros-noetic-base
-    $ docker compose --file src/docker/docker-compose.yml up -d ros-noetic-dev
-# now you should have 2 images and 2 containers. Check with
-# $ docker images
-# $ docker ps -a
-# from now on you will use the dev container.
-# NB: if you want to instantiate a new container, just run docker compose for jackal-melodic-dev again. 
-# NB: for nvidia jackal, check the jackal-melodic-nvidia service in the docker-compose.yml
+    $ docker compose --file src/docker/docker-compose.yml up -d ros-noetic-base --remove-orphans
+    $ docker compose --file src/docker/docker-compose.yml up -d ros-noetic-dev --remove-orphans
+
+# Now you should have 2 images and 2 containers. Check with
+
+    $ docker images
+    $ docker ps -a
+
+# From now on we will use the dev container.
+
+# Remark: if you want to instantiate a new container, just run docker compose 
+# for jackal-melodic-dev again. 
+
+# Remark: for nvidia jackal, check the jackal-melodic-nvidia service in 
+# the docker-compose.yml
+
+# Remark: you can log in the container from vscode:
+#   1) check that the container is running. if not start it (docker start ID)
+#   2) In Vs Code bottom left corner, click on the green rectancle
+#   3) attach to running container --> select the container
