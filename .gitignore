@@ -1,0 +1,11 @@
+# files not to be uploaded on git
+
+# specific files
+doc/code/SetupJackal.md
+
+# directories
+
+# general files (extensions)
+*.bag
+*.log
+*.asv
