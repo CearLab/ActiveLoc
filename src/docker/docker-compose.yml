@@ -57,10 +57,8 @@ services:
       - ./config/.aliases.sh:/home/ros/.aliases.sh:rw
       - ./config/.p10k.zsh:/home/ros/.p10k.zsh:rw
       - ./config/.zshrc:/home/ros/.zshrc:rw
-      - ./config/zsh_history:/home/ros/zsh_history
       - ./config/.bashrc:/home/ros/.bashrc:rw
       - /etc/localtime:/etc/localtime:ro
-      - ./config/gazebo:/home/ros/.gazebo
       - type: bind
         source: ../
         target: /home/ros/workspace
@@ -102,10 +100,8 @@ services:
       - ./config/.aliases.sh:/home/ros/.aliases.sh:rw
       - ./config/.p10k.zsh:/home/ros/.p10k.zsh:rw
       - ./config/.zshrc:/home/ros/.zshrc:rw
-      - ./config/zsh_history:/home/ros/zsh_history
       - ./config/.bashrc:/home/ros/.bashrc:rw
       - /etc/localtime:/etc/localtime:ro
-      - ./config/gazebo:/home/ros/.gazebo
       - type: bind
         source: ../
         target: /home/ros/workspace

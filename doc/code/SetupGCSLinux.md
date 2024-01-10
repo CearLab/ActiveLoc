@@ -58,12 +58,6 @@
 
 # Now the key is loaded everytime you open a new terminal
 
-# CLONE REPOSITORY
-# Check to have git installed and a proper ssh-key working. Place yourself where 
-# you want to clone the repository
-
-    $ git clone git@github.com:CearLab/ActiveLoc.git
-
 # INSTALL DOCKER
 # We now proceed installing docker and docker-compose, which we will use for the
 # development environment. See https://docs.docker.com/engine/install/ubuntu/
@@ -111,6 +105,36 @@
 
     $ sudo systemctl enable docker.service
     $ sudo systemctl enable containerd.service
+
+# CLONE REPOSITORY
+# Check to have git installed and a proper ssh-key working. Place yourself where 
+# you want to clone the repository
+
+    $ git clone git@github.com:CearLab/ActiveLoc.git
+
+# Before building the images, we need to create a group which will be used to 
+# grant permisisons to the files in the docker container. 
+
+    $ sudo groupadd -g 1042 developers
+
+# Now add your user to the group
+
+    $ sudo usermod -aG $USER developers
+
+# Now reboot anc check if $USER is in developers
+# In the repository, place yourself where you can see the "src" folder, and
+# run the following
+
+    $ chown -R $USER:developers src
+    $ chmod -R g+rwx src
+
+# If needed, use sudo.
+# The same thing should be done for .Xauthority to be able to run graphic stuff
+
+    $ chown $USER:developers ~/.Xauthority
+    $ chmod g+rw ~/.Xauthority
+
+# If needed, use sudo.
 
 # BUILD DOCKER IMAGE FOR FOCAL (20.04) WITH ROS-NOETIC
 # Before starting, it might be usefu to get acquainted with docker and its main 

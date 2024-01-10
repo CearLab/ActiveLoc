@@ -23,13 +23,10 @@
 # -v ./config/.aliases.sh:/home/ros/.aliases.sh
 # -v ./config/.p10k.zsh:/home/ros/.p10k.zsh
 # -v ./config/.zshrc:/home/ros/.zshrc
-# -v ./config/zsh_history:/home/ros/zsh_history
 # -v ./config/.bashrc:/home/ros/.bashrc
 # -v ~/.gitconfig:/home/ros/.gitconfig
 # -v /etc/localtime:/etc/localtime:ro
 
-# For dev and nvidia targets also add:
-# -v ./config/gazebo:/home/ros/.gazebo
 
 # If your terminal emulator supports colors also add:
 # --env TERM=xterm-256color
@@ -42,7 +39,8 @@
 FROM cearlab/activeloc:ros-noetic-base
 ARG TARGET
 
-ARG USER_UID=1003
+ARG USER_UID=1005
+ARG GID=1042
 
 # Nvidia GPU architecture version (default: GeForce RTX 3000 series)
 # NOTE: You may have to configure this at build time!
@@ -125,17 +123,21 @@ RUN useradd -s /bin/bash --uid $USER_UID -m ros && \
 ENV HOME=/home/ros
 RUN chsh -s /usr/bin/zsh ros
 
+# Add developers group to share permissions
+RUN groupadd -g $GID developers
+
 # Add new user to system groups
 RUN usermod -aG adm ros && \
     usermod -aG dialout ros && \
     usermod -aG plugdev ros && \
     usermod -aG sudo ros && \
     usermod -aG tty ros && \
-    usermod -aG video ros
+    usermod -aG video ros && \
+    usermod -aG developers ros
 
 # Create workspace directory: host workspaces will be mounted here
 RUN mkdir $HOME/workspace && \
-    chown ros $HOME/workspace
+    chown ros:developers $HOME/workspace
 
 # Create shell history and SSH directory for user
 RUN mkdir $HOME/zsh_history && \
