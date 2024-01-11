@@ -164,12 +164,34 @@
 # From now on we will use the dev container.
 
 # Remark: if you want to instantiate a new container, just run docker compose 
-# for jackal-melodic-dev again. 
+# for jackal-noetic-dev again. 
 
-# Remark: for nvidia jackal, check the jackal-melodic-nvidia service in 
+# Remark: for nvidia jackal, check the jackal-noetic-nvidia service in 
 # the docker-compose.yml
 
 # Remark: you can log in the container from vscode:
 #   1) check that the container is running. if not start it (docker start ID)
 #   2) In Vs Code bottom left corner, click on the green rectancle
 #   3) attach to running container --> select the container
+
+# SETUP ROS CLEARPATH
+
+# Now that we are logged in our ros container we start installing the main ros 
+# packages that we will use for the development. We install the Clearpath 
+# packages as we will use Jackals and Huskies for the swarm
+
+# We start by updating the system and adding the clearpath repositories
+# Remark: all this shall be done IN THE DOCKER CONTAINER, not locally
+
+    $ sudo apt update
+    $ sudo apt upgrade
+    $ wget https://packages.clearpathrobotics.com/public.key -O - | sudo apt-key add -
+    $ sudo sh -c 'echo "deb https://packages.clearpathrobotics.com/stable/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/clearpath-latest.list'
+    $ sudo apt update
+
+# We start with the Jackals
+
+    $ sudo apt install ros-noetic-jackal-robot --fix-missing
+    $ sudo apt-get install ros-noetic-jackal-simulator --fix-missing
+    $ sudo apt-get install ros-noetic-jackal-desktop --fix-missing
+    $ sudo apt-get install ros-noetic-jackal-navigation --fix-missing
