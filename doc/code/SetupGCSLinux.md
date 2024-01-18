@@ -218,3 +218,40 @@
 # We set nano as the default ROS editor 
     
     $ export EDITOR='nano -w'
+
+# Now we start with the project build. First, we install some general 
+# optimization general
+
+    $ sudo apt install libopenblas-dev liblapack-dev
+
+# Now let's make and go in the setup/lib folder and start building stuff
+
+    $ mkdir setup/lib
+    $ cd setup/lib
+
+# We now install ALGLIB: general optimization (check link: 18/01/2024)
+    
+    $ wget https://www.alglib.net/translator/re/alglib-4.01.0.cpp.gpl.tgz
+    $ tar -xf alglib-4.01.0.cpp.gpl.tgz
+    $ rm alglib-4.01.0.cpp.gpl.tgz
+
+# We now install ARMADILLO: general matrix computations and optimization 
+# (check link: 30/05/2023)
+
+    $ wget https://sourceforge.net/projects/arma/files/armadillo-12.6.7.tar.xz
+    $ tar -xf armadillo-12.6.7.tar.xz
+    $ rm armadillo-12.6.7.tar.xz
+    $ cd armadillo-12.6.7
+
+# The standard installation will be placed in /usr/lib
+
+    $ cmake .
+    $ sudo make install
+
+# Check if the installation finished correctly (you should see armadillo files)
+
+    $ ls /usr/lib | grep arma 
+
+# If so, we can export the path
+
+    $ export ARMA_INCLUDE_PATH=/usr/lib && cd ..
