@@ -195,3 +195,26 @@
     $ sudo apt-get install ros-noetic-jackal-simulator --fix-missing
     $ sudo apt-get install ros-noetic-jackal-desktop --fix-missing
     $ sudo apt-get install ros-noetic-jackal-navigation --fix-missing
+
+# Then we also install the Husky
+
+    $ sudo apt install ros-noetic-husky-robot --fix-missing
+    $ sudo apt-get install ros-noetic-husky-simulator --fix-missing
+    $ sudo apt-get install ros-noetic-husky-desktop --fix-missing
+    $ sudo apt-get install ros-noetic-husky-navigation --fix-missing
+
+# We now proceed installing general python stuff, after an update (safety)
+
+    $ sudo apt update && sudo apt upgrade
+    $ sudo apt install python-pygments
+    $ sudo apt install python3-rosinstall-generator 
+    $ sudo apt install ros-noetic-rqt ros-noetic-rqt-common-plugins
+
+# Now, we have al the utils installed. Check the path
+
+    $ cd ~/workspace
+    $ echo $ROS_PACKAGE_PATH
+
+# We set nano as the default ROS editor 
+    
+    $ export EDITOR='nano -w'
