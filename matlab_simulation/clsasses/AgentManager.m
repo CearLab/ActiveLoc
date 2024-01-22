@@ -50,6 +50,18 @@ classdef AgentManager < handle
             team = Team(team_num);
             obj.TeamList{end+1} = team;
         end
-
+        function teams_list = get_all_teams(obj)
+            teams_list = obj.TeamList;
+        end
+        function agents = get_all_agent(obj)
+            teams = obj.get_all_teams();
+            n = numel(teams);
+            agents = {};
+            for i = 1:n
+                agent_list = teams{i}.get_all_agents();
+                agents = [agents,agent_list];
+            end
+            
+        end
     end
 end
