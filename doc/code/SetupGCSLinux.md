@@ -58,6 +58,26 @@
 
 # Now the key is loaded everytime you open a new terminal
 
+# Before proceeding, we create a group which will be used to 
+# grant permisisons to the files in the docker container. 
+# Thus, we proceed like this:
+
+    $ sudo groupadd -g 1042 developers
+
+# Now add your user to the group
+
+    $ sudo usermod -aG developers $USER
+
+# Now reboot anc check if $USER is in developers. If so, we run the following 
+# (with sudo if necessary):
+
+    $ chown -R $USER:developers ~/.ssh
+    $ chmod -R 700 ~/.ssh
+
+# Remark: if you're not $USER but you're member of "developers" you still can't
+# push/pull git repositories. For this reason, all the times that we need to 
+# push/pull, we will do it from local. 
+
 # INSTALL DOCKER
 # We now proceed installing docker and docker-compose, which we will use for the
 # development environment. See https://docs.docker.com/engine/install/ubuntu/
@@ -112,27 +132,18 @@
 
     $ git clone git@github.com:CearLab/ActiveLoc.git
 
-# Before building the images, we need to create a group which will be used to 
-# grant permisisons to the files in the docker container. 
-
-    $ sudo groupadd -g 1042 developers
-
-# Now add your user to the group
-
-    $ sudo usermod -aG $USER developers
-
-# Now reboot anc check if $USER is in developers
 # In the repository, place yourself where you can see the "src" folder, and
 # run the following
 
     $ chown -R $USER:developers src
-    $ chmod -R g+rwx src
+    $ chmod -R 774 src
 
-# If needed, use sudo.
+# If needed, use sudo. By doing so, also the members of "developers" can wrx the
+# files on the repository.
 # The same thing should be done for .Xauthority to be able to run graphic stuff
 
     $ chown $USER:developers ~/.Xauthority
-    $ chmod g+rw ~/.Xauthority
+    $ chmod 764 ~/.Xauthority
 
 # If needed, use sudo.
 
@@ -255,3 +266,25 @@
 # If so, we can export the path
 
     $ export ARMA_INCLUDE_PATH=/usr/lib && cd ..
+
+# We now install OPTIMLIB, a general matrix computations and optimization librry
+# (check link: 21/01/2024 - following README). We first need to pull a repo. As
+# previously explained, we can push/pull from local. So, first we chown lib to 
+# $USER, then we pull the repo. To do so, go in the local prompt (any terminal)
+# from your local PC. Navigate to "ActiveLoc/src/setup" and run the folowing:
+
+    $ chown -R $USER:developers ./lib
+    $ git clone --recurse-submodules git@github.com:kthohr/optim.git
+    $ sudo chown -R $USER:developers optim/
+
+# Now you can go back to your docker container and proceed with the installation
+
+    $ cd optim
+    $ ./configure -i "/usr/local" -l arma -p
+    $ sudo make
+    $ sudo make install
+
+# Check installation
+
+    $ ls /usr/local/lib | grep optim
+    $ cd ..
