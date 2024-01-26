@@ -16,6 +16,9 @@
 # Uncomment the following line to use case-sensitive completion.
 CASE_SENSITIVE="true"
 
+# ignore pythn warnings as default
+export PYTHONWARNINGS="ignore"     
+
 # This is where command history will be saved
 if [[ -z "$BOARD" ]]; then
   # Not in a container
@@ -153,7 +156,8 @@ matlab() {
 }
 
 # dynamic libraries
-export LD_LIBRARY_PATH=/opt/ros/melodic/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib:/usr/local/lib:/usr/lib:/usr/local/lib:/usr/lib:/usr/local/lib:/usr/lib:/usr/local/lib:/usr/lib:/usr/local/lib
+export LD_LIBRARY_PATH=/opt/ros/noetic/lib:/usr/lib:/usr/local/lib:
 
 # setup ros noetic
 source /opt/ros/noetic/setup.zsh
+
