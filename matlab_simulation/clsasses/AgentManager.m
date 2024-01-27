@@ -94,7 +94,7 @@ classdef AgentManager < handle
         end
 
         % add team to the list if there is no team. If not, get the team
-        % handle
+        % handle. Maybe the name here is not so straightforward
         function team = getTeam(obj,team_num)
 
             % if there is no team, create one with ID
@@ -107,8 +107,7 @@ classdef AgentManager < handle
             end
 
             % if teams already exist, get the handle from team ID
-            % cycle over team IDs. Maybe the name here is not so
-            % straightforward
+            % cycle over team IDs. 
             for t = 1:length(obj.TeamList)
 
                 % get the right one
@@ -160,5 +159,5 @@ classdef AgentManager < handle
         end
 
     end
-    
+
 end
