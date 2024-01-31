@@ -29,14 +29,14 @@ classdef Obstacle < handle
         end
 
         % draw on an instance of Map class
-        function draw_on_map(obj)
+        function drawOnMap(obj)
 
             % different cases: rn only polygon
             switch obj.type
 
                 % call class method
                 case 'polygon'
-                    Obstacle.add_polygon_on_map(obj.geometry)
+                    Obstacle.addPolygonOnMap(obj.geometry)
             end
 
         end
@@ -47,7 +47,7 @@ classdef Obstacle < handle
     methods(Static)
 
         % add a polygon to a Map class
-        function add_polygon_on_map(geometry)
+        function addPolygonOnMap(geometry)
 
             % get all Xs of the polygon
             x = geometry(1,:);
