@@ -55,7 +55,7 @@ classdef AgentManager < handle
     methods
 
         % create an agent using Agent class
-        function createAgent(obj, location, team_num, roll)
+        function createAgent(obj, location, team_num, role)
 
             % get team ID
             team = obj.getTeam(team_num);
@@ -64,22 +64,22 @@ classdef AgentManager < handle
             obj.agents_counter = obj.agents_counter + 1;
 
             % call constructor for Agent class
-            agent = Agent(obj.agents_counter,location,team,roll);
+            agent = Agent(obj.agents_counter,location,team,role);
 
             % check on agent role
-            if strcmp(roll,'team_mate')
+            if strcmp(role,'team_mate')
 
                 % add agent to the team (see Team class)
                 team.add_team_mate(agent)
 
-            elseif strcmp(roll,'team_leader')
+            elseif strcmp(role,'team_leader')
 
                 % set team leader (see Team class)
                 team.set_leader(agent)
             else
 
                 % raise error
-                error('roll should be team_mate or team_leader')
+                error('role should be team_mate or team_leader')
             end
         end
 

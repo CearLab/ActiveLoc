@@ -15,8 +15,8 @@ classdef Agent <handle
         % position on the plane
         location
 
-        % role?
-        roll
+        % role
+        role
 
         % team (maybe here I would return just the ID instead of all the team)
         team
@@ -27,7 +27,7 @@ classdef Agent <handle
     methods
 
         % class constructor
-        function obj = Agent(agent_number,location,team,roll)
+        function obj = Agent(agent_number,location,team,role)
 
             % arguments validatio
             arguments
@@ -35,7 +35,7 @@ classdef Agent <handle
                 agent_number
                 location
                 team
-                roll = 'team_mate'
+                role = 'team_mate'
 
             end
 
@@ -43,7 +43,7 @@ classdef Agent <handle
             obj.agent_number = agent_number;
             obj.team = team;
             obj.location = location;
-            obj.roll = roll;
+            obj.role = role;
 
         end
 
