@@ -32,7 +32,7 @@ classdef Team < handle
         end
 
         % set the leader status
-        function obj = set_leader(obj,leader)
+        function obj = setLeader(obj,leader)
 
             % assign leader agent
             obj.leader = leader;
@@ -40,7 +40,7 @@ classdef Team < handle
         end
 
         % add teammate to the team
-        function add_team_mate(obj,agent)
+        function addTeamMate(obj,agent)
 
             % append agent to the teammates array
             obj.team_mates{end +1} = agent;
@@ -48,7 +48,7 @@ classdef Team < handle
         end
 
         % get all agents of a team
-        function agents = get_all_agents(obj)
+        function agents = getAllAgents(obj)
 
             % init cell array
             agents = {};
@@ -73,7 +73,7 @@ classdef Team < handle
         end
 
         % plot team
-        function plot_team(obj)
+        function plotTeam(obj)
 
             % call external function
             col = get_color_by_number(obj.team_number);
@@ -88,21 +88,25 @@ classdef Team < handle
                 loc(end+1,:) = obj.team_mates{i}.location;
 
             end
-
-            % plot all teammates + graphic info
-            plot(loc(:,1),loc(:,2),'Color',col, ...
-                'LineStyle','none', ...
-                'Marker','o', ...
-                'MarkerSize',12,'MarkerFaceColor',col)
-
-            % get leader location
-            team_lead_loc = obj.leader.location;
-
-            % plot leader + graphic info
-            plot(team_lead_loc(:,1),team_lead_loc(:,2),'Color',col, ...
-                'LineStyle','none', ...
-                'Marker','diamond', ...
-                'MarkerSize',12,'MarkerFaceColor',col)
+            map = Map.getInstance();
+            map.setFigure();
+            if ~isempty(loc)
+                % plot all teammates + graphic info
+                plot(loc(:,1),loc(:,2),'Color',col, ...
+                    'LineStyle','none', ...
+                    'Marker','o', ...
+                    'MarkerSize',12,'MarkerFaceColor',col);
+            end
+            if ~isempty(obj.leader)
+                % get leader location
+                team_lead_loc = obj.leader.location;
+                
+                % plot leader + graphic info
+                plot(team_lead_loc(:,1),team_lead_loc(:,2),'Color',col, ...
+                    'LineStyle','none', ...
+                    'Marker','diamond', ...
+                    'MarkerSize',12,'MarkerFaceColor',col);
+            end
 
         end
 

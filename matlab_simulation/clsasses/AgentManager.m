@@ -14,7 +14,7 @@ classdef AgentManager < handle
     properties (Access = public)
 
         % list of teams
-        TeamList = {}
+        team_list = {}
 
         % counter
         agents_counter = 0
@@ -55,27 +55,27 @@ classdef AgentManager < handle
     methods
 
         % create an agent using Agent class
-        function createAgent(obj, location, team_num, role)
+        function createAgent(obj, location, team_id, role)
 
             % get team ID
-            team = obj.getTeam(team_num);
+            team = obj.getOrCreateTeam(team_id);
 
             % increase number of agents 
             obj.agents_counter = obj.agents_counter + 1;
 
             % call constructor for Agent class
-            agent = Agent(obj.agents_counter,location,team,role);
+            agent = Agent(obj.agents_counter,location,team_id,role);
 
             % check on agent role
             if strcmp(role,'team_mate')
 
                 % add agent to the team (see Team class)
-                team.add_team_mate(agent)
+                team.addTeamMate(agent)
 
             elseif strcmp(role,'team_leader')
 
                 % set team leader (see Team class)
-                team.set_leader(agent)
+                team.setLeader(agent)
             else
 
                 % raise error
@@ -84,60 +84,60 @@ classdef AgentManager < handle
         end
 
         % create a new team with ID
-        function team = add_team(obj,team_num)
+        function team = addTeam(obj,team_id)
 
             % call constructor from Team class
-            team = Team(team_num);
+            team = Team(team_id);
 
             % add item to team list
-            obj.TeamList{end+1} = team;
+            obj.team_list{end+1} = team;
         end
 
         % add team to the list if there is no team. If not, get the team
         % handle. Maybe the name here is not so straightforward
-        function team = getTeam(obj,team_num)
+        function team = getOrCreateTeam(obj,team_id)
 
             % if there is no team, create one with ID
-            if isempty(obj.TeamList)
+            if isempty(obj.team_list)
 
                 % call class method
-                team = obj.add_team(team_num);
+                team = obj.addTeam(team_id);
                 return
 
             end
 
             % if teams already exist, get the handle from team ID
             % cycle over team IDs. 
-            for t = 1:length(obj.TeamList)
+            for t = 1:length(obj.team_list)
 
                 % get the right one
-                if obj.TeamList{t}.team_number == team_num
+                if obj.team_list{t}.team_number == team_id
 
                     % return team handle
-                    team = obj.TeamList{t};
+                    team = obj.team_list{t};
                     return
                 end
 
             end
 
             % if no team matches the number, create a new team
-            team = obj.add_team(team_num);
+            team = obj.addTeam(team_id);
         end
 
         % get all teams (why this if the property is public and there is 
         % only an AgentManager?)
-        function teams_list = get_all_teams(obj)
+        function teams_list = getAllTeams(obj)
 
             % access class property
-            teams_list = obj.TeamList;
+            teams_list = obj.team_list;
 
         end
 
         % get all agents (see Team class)
-        function agents = get_all_agent(obj)
+        function agents = getAllAgent(obj)
 
             % get all teams from class method
-            teams = obj.get_all_teams();
+            teams = obj.getAllTeams();
 
             % get number of teams
             n = numel(teams);
@@ -149,7 +149,7 @@ classdef AgentManager < handle
             for i = 1:n
 
                 % for each team get all agents
-                agent_list = teams{i}.get_all_agents();
+                agent_list = teams{i}.getAllAgents();
 
                 % append agents
                 agents = [agents,agent_list];

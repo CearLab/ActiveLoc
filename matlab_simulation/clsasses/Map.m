@@ -50,7 +50,7 @@ classdef Map < handle
         end
 
         % graphic setup of the map plot
-        function set_figure()
+        function setFigure()
 
             % find if there exist a figure (specific tag,name)
             f = findobj('tag','map_fig');
@@ -69,7 +69,7 @@ classdef Map < handle
     methods
 
         % add a polygon to the environment
-        function add_polygon(obj,geo)
+        function addPolygon(obj,geo)
 
             % call the obstacle method (see Obstacle class)
             obj.obs_list{end + 1} = Obstacle('polygon',geo);
@@ -77,58 +77,58 @@ classdef Map < handle
         end
 
         % plot on figure all obstacles
-        function draw_all_obs(obj)
+        function drawAllObs(obj)
 
             % get number of ostacles
             n = numel(obj.obs_list);
 
             % call static method
-            Map.set_figure();
+            Map.setFigure();
 
             % set environment limits from class property
             xlim(obj.map_span(1,:));ylim(obj.map_span(2,:))
 
             % draw the obstacles (see Obstacle class)
             for i = 1:n
-                obj.obs_list{i}.draw_on_map()
+                obj.obs_list{i}.drawOnMap()
             end
 
         end
 
         % plot all teams of heterogeneous objects
-        function draw_all_teams(obj)
+        function drawAllTeams(obj)
 
             % get the Agent managers
             manager = AgentManager.getInstance();
 
             % get list of teams
-            team_list = manager.get_all_teams();
+            team_list = manager.getAllTeams();
 
             % get number of teams
             n = numel(team_list);
 
             % call static method
-            Map.set_figure();
+            Map.setFigure();
 
             % set environment limits from class property
             xlim(obj.map_span(1,:));ylim(obj.map_span(2,:))
 
             % draw the team (see team class)
             for i = 1:n
-               team_list{i}.plot_team();
+               team_list{i}.plotTeam();
             end
 
         end
 
         % get all the LOS pairs between teams 
         % HERE WE SHOULD ADD SENSING RANGE
-        function los_table = calc_los_map(obj)
+        function los_table = calcLosMap(obj)
 
             % get the Agent managers
             manager = AgentManager.getInstance();
 
             % get all the agents
-            agents = manager.get_all_agent();
+            agents = manager.getAllAgent();
 
             % get number of agents
             na = numel(agents);
@@ -162,13 +162,13 @@ classdef Map < handle
         end
 
         % draw LOS on the map
-        function draw_los_map(obj)
+        function drawLosMap(obj)
 
             % call static method
-            Map.set_figure();
+            Map.setFigure();
 
             % compute LOS distances
-            los_table = obj.calc_los_map();
+            los_table = obj.calcLosMap();
 
             % get number of pairs and get Ni (rows)
             n = size(los_table);

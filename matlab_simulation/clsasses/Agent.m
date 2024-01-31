@@ -19,7 +19,7 @@ classdef Agent <handle
         role
 
         % team (maybe here I would return just the ID instead of all the team)
-        team
+        team_id
 
     end
 
@@ -27,21 +27,19 @@ classdef Agent <handle
     methods
 
         % class constructor
-        function obj = Agent(agent_number,location,team,role)
+        function obj = Agent(agent_number,location,team_id,role)
 
             % arguments validatio
             arguments
-
                 agent_number
                 location
-                team
+                team_id
                 role = 'team_mate'
-
             end
 
             % assign values
             obj.agent_number = agent_number;
-            obj.team = team;
+            obj.team_id = team_id;
             obj.location = location;
             obj.role = role;
 
