@@ -466,4 +466,27 @@
     $ make clean
     $ make ViconDataStreamSDK_CPP
 
+# If you get errors like: 
+#    (e.g.) /usr/bin/ld: cannot find -lboost_test_exec_monitor-mt-d-x64
+# go to "/home/ros/workspace/setup/lib/boost_1_82_0/boost_install" and check if 
+# there is a similar lib installed
+
+    $ ll | grep test_exec 
+
+# if you find that there is a similar lib, just create a symlink with the
+# expected name. For example, if you find that there is a "libboost_test_exec_monitor.a"
+# do the following: 
+
+    $ ln -s libboost_test_exec_monitor.a libboost_test_exec_monitor-mt-d-x64.a
+
+# If you run again line 467 you should see the error disappeared. Proceed in the 
+# same way for similar errors. Other errors? Well I have no clue eheh. 
+
+# If you managed to compile ViconAPI well kudos, you should now be ready to work
+# on the project. 
+
+# Let's get to work.
+
+    $ cd ~/workspace
+
 
