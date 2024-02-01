@@ -1,9 +1,9 @@
 %% Get color by number
-% file: get_color_by_number.m
+% file: getColorByNumber.m
 % author: Ido Sherf 
 % date: 22/01/2024
 % description: hash table for colors
-function color = get_color_by_number(num)
+function color = getColorByNumber(num)
 
     % define hast table
     colors = {

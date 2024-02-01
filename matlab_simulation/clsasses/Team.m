@@ -1,11 +1,11 @@
 %% Team class
 % file: Team.m
-% author: Ido Sherf 
+% author: Ido Sherf
 % date: 22/01/2024
-% description: handle class handling the creation of a Team manager from a 
+% description: handle class handling the creation of a Team manager from a
 % set of agents on a Map.
 classdef Team < handle
-    
+
     % class properties
     properties
 
@@ -13,13 +13,18 @@ classdef Team < handle
         team_number
 
         % leader (Agent)
-        leader 
+        leader
 
         % cell array containing the teammates
         team_mates = {};
 
+        % Rigidity matrix
+        rigidity_matrix = [];
+
+
+
     end
-    
+
     % class methods
     methods
 
@@ -76,7 +81,7 @@ classdef Team < handle
         function plotTeam(obj)
 
             % call external function
-            col = get_color_by_number(obj.team_number);
+            col = getColorByNumber(obj.team_number);
 
             % init empty list of locations
             loc = [];
@@ -100,7 +105,7 @@ classdef Team < handle
             if ~isempty(obj.leader)
                 % get leader location
                 team_lead_loc = obj.leader.location;
-                
+
                 % plot leader + graphic info
                 plot(team_lead_loc(:,1),team_lead_loc(:,2),'Color',col, ...
                     'LineStyle','none', ...
@@ -110,7 +115,9 @@ classdef Team < handle
 
         end
 
+
+
     end
-    
 end
+
 
