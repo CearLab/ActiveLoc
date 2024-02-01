@@ -16,6 +16,9 @@ classdef AgentManager < handle
         % list of teams
         team_list = {}
 
+        %
+        agent_pointer_list = {}
+
         % counter
         agents_counter = 0
 
@@ -53,6 +56,11 @@ classdef AgentManager < handle
 
     % class methods
     methods
+        function reset(obj)
+            obj.team_list = {};
+            obj.agent_pointer_list = {};
+            obj.agents_counter = 0;
+        end
 
         % create an agent using Agent class
         function createAgent(obj, location, team_id, role)
@@ -65,6 +73,10 @@ classdef AgentManager < handle
 
             % call constructor for Agent class
             agent = Agent(obj.agents_counter,location,team_id,role);
+            
+            %add the agent to the agent list
+            
+            obj.agent_pointer_list{obj.agents_counter} = agent;
 
             % check on agent role
             if strcmp(role,'team_mate')
@@ -135,27 +147,8 @@ classdef AgentManager < handle
 
         % get all agents (see Team class)
         function agents = getAllAgent(obj)
-
-            % get all teams from class method
-            teams = obj.getAllTeams();
-
-            % get number of teams
-            n = numel(teams);
-
-            % init empty cell array
-            agents = {};
-
-            % cycle over the teams
-            for i = 1:n
-
-                % for each team get all agents
-                agent_list = teams{i}.getAllAgents();
-
-                % append agents
-                agents = [agents,agent_list];
-
-            end
-            
+            %return all the agents
+            agents = obj.agent_pointer_list;
         end
 
     end
