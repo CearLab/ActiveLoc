@@ -1,12 +1,16 @@
 %% test section
 clc;clear all;close all;
+
 % define map  .
 map = Map.getInstance();
 manager = AgentManager.getInstance();
+
 n = 200; % number of runs
 m = 30; % number of agents
+
 eig_list = [];
 std_list = [];
+
 for i = 1:n
     tic
     manager.reset();
