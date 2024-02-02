@@ -8,14 +8,14 @@
 clc;
 clear;
 close all;
-rng default;
+rng(2);
 
 % define map  .
 map = Map.getInstance();
 manager = AgentManager.getInstance();
 manager.reset();
 
-m = 6; % number of agents
+m = 4; % number of agents
 p = 2;
 
 % define exit condition
@@ -62,7 +62,7 @@ while ~isrigid
     pos = find(abs(e) < 1e-10);
 
     % set Dminthresh
-    Dminthresh = 1*0.25*Sensor.max_range;
+    Dminthresh = 1*0.25*max(max(map.map_span));
     if isinf(Dminthresh)
         Dminthresh = 0;
     end
@@ -120,7 +120,7 @@ V1 = Xtmp(1,:);
 DP = V1-V10;
 
 % translation
-Xtmp = Xtmp - DP;
+% Xtmp = Xtmp - DP;
 
 % init
 Xbest = reshape(Xtmp',size(Xtmp,1)*size(Xtmp,2),1);
@@ -137,6 +137,13 @@ teams = manager.getAllTeams();
 % team 1
 f1 = figure(1);
 hold on; box on; grid on; 
+set(gca,'fontsize', 20);
+
+% set map bounds
+fill([  map.map_span(1,1) map.map_span(1,1) map.map_span(1,2) map.map_span(1,2)], ...
+     [  map.map_span(2,1) map.map_span(2,2) map.map_span(2,2) map.map_span(2,1)],...
+     [  0.5 0.2 0.6], ...
+     'FaceAlpha',0.3);
 
 [los_table,~] = calcLosMap(teams{1}.team_mates);
 
@@ -152,3 +159,6 @@ xlim('auto'); ylim('auto');
 teams{2}.plotTeam(f1);
 drawLosMap(los_table,f1,2)
 xlim('auto'); ylim('auto');
+
+xlabel('X axis')
+ylabel('Y axis')

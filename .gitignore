@@ -5,6 +5,7 @@ doc/code/SetupJackal.md
 
 # directories
 src/setup/lib
+fig/
 
 # general files (extensions)
 *.bag
