@@ -32,7 +32,7 @@ for i = 1:n
     y2 = c_line(8);
 
     % plot
-    plot([x1,x2],[y1,y2],'Color',color,'LineStyle','--','LineWidth', 1);
+    plot([x1,x2],[y1,y2],'Color',color,'LineStyle',':','LineWidth', 1.5);
 end
 
 

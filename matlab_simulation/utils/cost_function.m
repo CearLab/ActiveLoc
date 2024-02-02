@@ -35,7 +35,9 @@ function J = cost_function(x,p)
     e = eig(R'*R);
     pos = find(abs(e) < 1e-10);
     e(pos) = [];
+    
     J = 1/min(e);
+    % J = max(e)/min(e);
 
     if ~isscalar(J)
         J = Inf;
