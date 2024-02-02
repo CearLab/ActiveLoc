@@ -78,13 +78,14 @@ classdef Team < handle
         end
 
         % plot team
-        function plotTeam(obj)
+        function plotTeam(obj,varargin)
 
             % call external function
             col = getColorByNumber(obj.team_number);
 
             % init empty list of locations
             loc = [];
+            ID = [];
 
             % cycle over the number of teammates
             for i = 1:numel(obj.team_mates)
@@ -92,15 +93,35 @@ classdef Team < handle
                 % get locations
                 loc(end+1,:) = obj.team_mates{i}.location;
 
+                % ID
+                ID(end+1,:) = obj.team_mates{i}.agent_number;
+
             end
             map = Map.getInstance();
-            map.setFigure();
+
+            % if no figure handle provided call map
+            if isempty(varargin)
+                map.setFigure();
+            else
+                figure(varargin{1});
+            end
+
+            % cheating
+            if min(ID) > numel(ID)
+                ID = ID - numel(ID);
+            end
+            
             if ~isempty(loc)
                 % plot all teammates + graphic info
-                plot(loc(:,1),loc(:,2),'Color',col, ...
-                    'LineStyle','none', ...
-                    'Marker','o', ...
-                    'MarkerSize',12,'MarkerFaceColor',col);
+                % plot(loc(:,1),loc(:,2),'Color',col, ...
+                %     'LineStyle','none', ...
+                %     'Marker','o', ...
+                %     'MarkerSize',12,'MarkerFaceColor',col);
+
+                text(1*loc(:,1),1*loc(:,2), ...                    
+                    cellstr(num2str(ID)), ...                    
+                    'FontSize',20, ...
+                    'Color',col);
             end
             if ~isempty(obj.leader)
                 % get leader location

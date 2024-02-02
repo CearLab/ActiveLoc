@@ -56,6 +56,8 @@ classdef AgentManager < handle
 
     % class methods
     methods
+
+        % reset lists
         function reset(obj)
             obj.team_list = {};
             obj.agent_pointer_list = {};
