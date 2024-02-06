@@ -78,10 +78,7 @@ classdef Team < handle
         end
 
         % plot team
-        function plotTeam(obj,varargin)
-
-            % call external function
-            col = getColorByNumber(obj.team_number);
+        function plotTeam(obj,varargin)            
 
             % init empty list of locations
             loc = [];
@@ -104,6 +101,13 @@ classdef Team < handle
                 map.setFigure();
             else
                 figure(varargin{1});
+
+                % call external function
+                if numel(varargin) == 2
+                    col = getColorByNumber(varargin{2});
+                else                    
+                    col = getColorByNumber(obj.team_number);
+                end 
             end
 
             % cheating

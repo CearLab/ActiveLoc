@@ -76,12 +76,20 @@ function [c, ceq] = nonlcon(x,p)
     pos = find(abs(e) < 1e-10);
     isrigid = ~(numel(pos)==3);
 
+    % circular area constraint
+    map = Map.getInstance();
+    Rmax = 1*max(map.map_span(:,2));
+    R = vecnorm(xmat,2,2);
+    InsideCircle = R - Rmax;
+
     % equality constraints
-    ceq = [ceq; isrigid];
+    % ceq = [ceq; isrigid];
     % ceq = [ceq; edgediff];
 
     % inequality constraints
     % c = [c; distconmin];
+    % c = [c; InsideCircle];
+
 
 
 
