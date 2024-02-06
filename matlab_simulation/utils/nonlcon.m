@@ -88,7 +88,7 @@ function [c, ceq] = nonlcon(x,p)
 
     % inequality constraints
     % c = [c; distconmin];
-    % c = [c; InsideCircle];
+    c = [c; InsideCircle];
 
 
 

@@ -22,6 +22,9 @@ classdef AgentManager < handle
         % counter
         agents_counter = 0
 
+        % workspace struct, use as you prefer to store stuff
+        WS = [];
+
     end
 
     % class methods (private)
@@ -62,6 +65,7 @@ classdef AgentManager < handle
             obj.team_list = {};
             obj.agent_pointer_list = {};
             obj.agents_counter = 0;
+            obj.WS = [];
         end
 
         % create an agent using Agent class
