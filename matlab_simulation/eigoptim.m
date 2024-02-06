@@ -15,7 +15,7 @@ map = Map.getInstance();
 manager = AgentManager.getInstance();
 manager.reset();
 
-m = 4; % number of agents
+m = 5; % number of agents
 p = 2;
 
 % define exit condition
@@ -94,7 +94,8 @@ options = optimoptions( 'patternsearch', ...
                         'MeshTolerance',1e-6, ...
                         'InitialMeshSize',1e2, ...
                         'UseParallel', true, ...
-                        'MaxFunctionEvaluations', Inf);
+                        'MaxFunctionEvaluations', Inf, ...
+                        'ConstraintTolerance', 1e-4);
 
 % init counter
 tic
@@ -134,6 +135,8 @@ Xbest = reshape(Xtmp',size(Xtmp,1)*size(Xtmp,2),1);
 % LOS map
 teams = manager.getAllTeams();
 
+scaleaxis = 1.2;
+
 % team 1
 f1 = figure(1);
 hold on; box on; grid on; 
@@ -143,22 +146,36 @@ set(gca,'fontsize', 20);
 fill([  map.map_span(1,1) map.map_span(1,1) map.map_span(1,2) map.map_span(1,2)], ...
      [  map.map_span(2,1) map.map_span(2,2) map.map_span(2,2) map.map_span(2,1)],...
      [  0.5 0.2 0.6], ...
-     'FaceAlpha',0.3);
+     'FaceAlpha',0.1, ...
+     'LineWidth',1.5);
+
+Pos =[  map.map_span(1,1) , ...
+        map.map_span(2,1) , ...
+        map.map_span(2,2)-map.map_span(2,1), ...
+        map.map_span(1,2)-map.map_span(1,1)];
+
+rectangle(  'Position',Pos, ...
+            'Curvature',[1 1], ...
+            'FaceColor',[0.5 0.2 0.6 0.5], ...
+            'EdgeColor','b',...
+            'LineWidth',1.5);
 
 [los_table,~] = calcLosMap(teams{1}.team_mates);
 
-teams{1}.plotTeam(f1);
-drawLosMap(los_table,f1,1)
-xlim('auto'); ylim('auto');
+teams{1}.plotTeam(f1,9);
+drawLosMap(los_table,f1,9)
+xlim(scaleaxis*map.map_span(1,:)); ylim(scaleaxis*map.map_span(2,:));
+axis equal
 
 % team 2
 % f1 = figure(2);
 % hold on; box on; grid on;
 
 [los_table,~] = calcLosMap(teams{2}.team_mates);
-teams{2}.plotTeam(f1);
+teams{2}.plotTeam(f1,2);
 drawLosMap(los_table,f1,2)
-xlim('auto'); ylim('auto');
+xlim(scaleaxis*map.map_span(1,:)); ylim(scaleaxis*map.map_span(2,:));
+axis equal
 
 xlabel('X axis')
 ylabel('Y axis')

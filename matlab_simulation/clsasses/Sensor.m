@@ -9,7 +9,7 @@ classdef Sensor < handle
         owner
     end
     properties(Constant)
-        max_range = 4;
+        max_range = Inf;
     end
 
     methods(Static)
