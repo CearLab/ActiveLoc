@@ -15,7 +15,7 @@ map = Map.getInstance();
 manager = AgentManager.getInstance();
 manager.reset();
 
-m = 5; % number of agents
+m = 4; % number of agents
 p = 2;
 
 % define exit condition
@@ -80,6 +80,11 @@ for ii = 1:m
 end
 
 %% test J0
+
+% set store options for cost function
+manager.WS.J = [];
+manager.WS.X = [];
+
 X0 = reshape(agents_pos',size(agents_pos,1)*size(agents_pos,2),1);
 J0 = cost_function(X0,p);
 
@@ -94,20 +99,20 @@ options = optimoptions( 'patternsearch', ...
                         'MeshTolerance',1e-6, ...
                         'InitialMeshSize',1e2, ...
                         'UseParallel', true, ...
-                        'MaxFunctionEvaluations', Inf, ...
+                        'MaxFunctionEvaluations', 1e4, ...
                         'ConstraintTolerance', 1e-4);
 
 % init counter
 tic
 disp('Optimizing')
-[X, J] = patternsearch(  @(x)cost_function(x,p), ...
+[X, J] = fmincon(  @(x)cost_function(x,p), ...
                     X0,     ...
                     [],     ...
                     [],     ...
                     [],     ...
                     [],     ...
-                    1*LB,   ...
-                    1*UB,   ...
+                    Inf*LB,   ...
+                    Inf*UB,   ...
                     @(x)nonlcon(x,p));
 
 topt = toc;
@@ -163,7 +168,7 @@ rectangle(  'Position',Pos, ...
 [los_table,~] = calcLosMap(teams{1}.team_mates);
 
 teams{1}.plotTeam(f1,9);
-drawLosMap(los_table,f1,9)
+drawLosMap(los_table,f1,9);
 xlim(scaleaxis*map.map_span(1,:)); ylim(scaleaxis*map.map_span(2,:));
 axis equal
 
@@ -173,7 +178,7 @@ axis equal
 
 [los_table,~] = calcLosMap(teams{2}.team_mates);
 teams{2}.plotTeam(f1,2);
-drawLosMap(los_table,f1,2)
+drawLosMap(los_table,f1,2);
 xlim(scaleaxis*map.map_span(1,:)); ylim(scaleaxis*map.map_span(2,:));
 axis equal
 

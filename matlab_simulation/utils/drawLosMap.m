@@ -3,7 +3,7 @@
 % author: Ido Sherf 
 % date: 01/02/2024
 % description: plot the los table on map
-function drawLosMap(los_table,varargin)
+function h = drawLosMap(los_table,varargin)
 
 % if no figure handle provided call map
 if isempty(varargin)
@@ -32,7 +32,7 @@ for i = 1:n
     y2 = c_line(8);
 
     % plot
-    plot([x1,x2],[y1,y2],'Color',color,'LineStyle',':','LineWidth', 1.5);
+    h{i} = plot([x1,x2],[y1,y2],'Color',color,'LineStyle',':','LineWidth', 1.5);
 end
 
 

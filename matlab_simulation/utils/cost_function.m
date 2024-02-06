@@ -43,4 +43,10 @@ function J = cost_function(x,p)
         J = Inf;
     end
 
+    % store cost function
+    manager.WS.J(end+1) = J;
+
+    % store optimized var
+    manager.WS.X(:,end+1) = x;
+
 end
