@@ -19,7 +19,7 @@ classdef Map < handle
         % map_figure = figure("Name",'map','Tag','map_fig')
 
         % region covered by the map [m]
-        map_span = [-8 8; -8 8];
+        map_span = 1*[-8 8; -8 8];
     end
 
     % methods of the class (private)
