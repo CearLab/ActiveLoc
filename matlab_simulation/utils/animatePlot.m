@@ -10,6 +10,9 @@ function animatePlot(varargin)
         p = 2;
     end
 
+    delete('SimAnimatedF2.gif')
+    delete('SimAnimatedF1.gif')
+
     % get manager
     manager = AgentManager.getInstance();
 
@@ -82,12 +85,18 @@ function animatePlot(varargin)
 
     % set figure for cost function
     f2 = figure(2);
+    subplot(2,1,1)
     hold on; box on; grid on; 
     set(gca,'fontsize', 20);
     xlabel('Iteration'); ylabel('\lambda_4');
-
     % set animatedline
-    l = animatedline('Color','b','LineWidth',1.5);
+    l1 = animatedline('Color','b','LineWidth',1.5);
+    subplot(2,1,2)
+    hold on; box on; grid on; 
+    set(gca,'fontsize', 20);
+    xlabel('Iteration'); ylabel('max(\lambda)/min(\lambda)');
+    % set animatedline
+    l2 = animatedline('Color',[0.5 0 0],'LineWidth',1.5);
 
     % set positions
     pos1 = get(f1,'Position'); % get position of Figure(1) 
@@ -122,18 +131,30 @@ function animatePlot(varargin)
         end
     
         % get agents summary tables
-        [los_table,~] = calcLosMap(agents);
+        [los_table,~] = calcLosMap(agents);        
     
         % draw los map
-        h2 = drawLosMap(los_table,f1,2);
+        h2 = drawLosMap(los_table,f1,2);        
 
-        % plot cost function
-        figure(f2)
-        addpoints(l,i,1/manager.WS.J(i));
+        figure(f2)  
+        % plot cost function              
+        addpoints(l1,i,1/manager.WS.J(i));
+        ylim('auto')
+        % plot condition number       
+        addpoints(l2,i,1/manager.WS.CN(i));
+        ylim('auto')
         
         drawnow        
-        pause(1e-1)
+        pause(1e-2)
 
+        % gif
+        exportgraphics(f1,'SimAnimatedF1.gif','Append',true);
+
+        % gif       
+        exportgraphics(f2,'SimAnimatedF2.gif','Append',true);
+        
+        
+        % clear figures
         delete(h1)
         for j=1:numel(h2)
             delete(h2{j})
