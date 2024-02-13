@@ -9,7 +9,9 @@ clc;
 clear;
 close all;
 rng(2);
-
+%% check toolbox dependencies 
+tb = ver; assert(any(strcmp('Optimization Toolbox', {tb.Name})),'Optimization Toolbox is required'); clear tb;
+%% optimize
 % define map  .
 map = Map.getInstance();
 manager = AgentManager.getInstance();
