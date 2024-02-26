@@ -3,7 +3,7 @@
 % author: Federico Oliva 
 % date: 01/02/2024
 % description: cost function constraints
-function [c, ceq] = nonlcon(x,p)
+function [c, ceq] = nonlconEnergy(x,p)
 
     c = [];
     ceq = [];
@@ -24,46 +24,27 @@ function [c, ceq] = nonlcon(x,p)
     agents0 = teams{1}.team_mates;
 
     % get agents summary tables
-    [los_table0,agents_list0] = calcLosMap(agents0);
-
-    % get incidence matrix
-    I0 = calcIncidenceMatrix(los_table0,agents_list0);
-
-    % get the agents
-    agents = teams{2}.team_mates; 
-
-    % reassign agents position
-    for i=1:numel(agents)
-        agents{i}.location = xmat(i,:);
-    end
-
-    % get agents summary tables
-    [los_table,agents_list] = calcLosMap(agents);
-
-    % get incidence matrix
-    I = calcIncidenceMatrix(los_table,agents_list);
-
-    % same G
-    edgediff = ~isequal(I,I0);
-        
+    [los_table,agents_list] = calcLosMap(agents0);
 
     % I also want to ensure a min distance between agents
     % get distances
     if ~isempty(los_table)
         D = los_table(:,5:5+p-1) - los_table(:,5+p:end);
         Dmin = min(vecnorm(D,2,2));
+        Dmax = max(vecnorm(D,2,2));
     else
         Dmin = 0;
+        Dmax = Inf;
     end
 
     % set Dminthresh
-    Dminthresh = 0.25*Sensor.max_range;
+    Dminthresh = 0.5*Sensor.max_range;
     if isinf(Dminthresh)
         Dminthresh = 0;
-    end    
+    end        
 
     % set constraint
-    distconmin = (Dminthresh - Dmin);
+    distconmin = (Dminthresh - Dmin);   
 
     % of course I want to keep rigidity
     % get rigidity matrix 
@@ -83,11 +64,10 @@ function [c, ceq] = nonlcon(x,p)
     InsideCircle = R - Rmax;
 
     % equality constraints
-    ceq = [ceq; isrigid];
-    % ceq = [ceq; edgediff];
+    ceq = [ceq; isrigid];    
 
     % inequality constraints
-    % c = [c; distconmin];
+    c = [c; distconmin];
     c = [c; InsideCircle];
 
 

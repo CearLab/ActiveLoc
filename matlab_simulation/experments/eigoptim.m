@@ -8,16 +8,19 @@
 clc;
 clear;
 close all;
-rng(2);
+rng(1);
+
 %% check toolbox dependencies 
 tb = ver; assert(any(strcmp('Optimization Toolbox', {tb.Name})),'Optimization Toolbox is required'); clear tb;
+% wow, that is cool 
+
 %% optimize
 % define map  .
 map = Map.getInstance();
 manager = AgentManager.getInstance();
 manager.reset();
 
-m = 20; % number of agents
+m = 4; % number of agents
 p = 2;
 
 % define exit condition

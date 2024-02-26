@@ -17,6 +17,7 @@ function color = getColorByNumber(num)
         [1, 1, 1],     % White          7
         [0, 1, 0],    % Green           8
         [0.5, 0, 0],    % Dark red      9
+        [0, 0.5, 0],    % Dark Green           10
         
         % Add more custom colors here if needed
     };

@@ -47,7 +47,9 @@ function J = cost_function(x,p)
     manager.WS.J(end+1) = J;
 
     % store condition number
-    manager.WS.CN(end+1) = max(e)/min(e);
+    if ~isempty(e)
+        manager.WS.CN(end+1) = max(e)/min(e);
+    end
 
     % store optimized var
     manager.WS.X(:,end+1) = x;
