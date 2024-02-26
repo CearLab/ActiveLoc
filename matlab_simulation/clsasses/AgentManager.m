@@ -88,12 +88,12 @@ classdef AgentManager < handle
             if strcmp(role,'team_mate')
 
                 % add agent to the team (see Team class)
-                team.addTeamMate(agent)
+                team.addTeamMate(agent);
 
             elseif strcmp(role,'team_leader')
 
                 % set team leader (see Team class)
-                team.setLeader(agent)
+                team.setLeader(agent);
             else
 
                 % raise error
