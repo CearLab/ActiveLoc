@@ -59,7 +59,7 @@ function [los_table,agents_list] = calcLosMap(agents,sensorName)
             end
             if meas_exist
                 % store IDs and locs
-                los_table(end+1,:) = [i,j,i_num,j_num,i_loc,j_loc,sens];
+                los_table(end+1,:) = [i,j,i_num,j_num,i_loc,j_loc,i_loc_est,j_loc_est,sens];
             end
 
         end

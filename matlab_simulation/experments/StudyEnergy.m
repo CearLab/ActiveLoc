@@ -1,5 +1,6 @@
 %% test section
-clc;clear all;close all;
+clc;clear;close all;
+warning off
 rng(1);
 
 % define map  .
@@ -14,8 +15,7 @@ N = m;
 % exit flag
 isOK = 0;
 
-
-% cycle until you get the number of rigid montecarlo samples you need
+% we first define our initial team
 while ~isOK
 
     % reset manager
@@ -24,43 +24,63 @@ while ~isOK
     % random pick of the agent position
     % agents_pos = rand(m,2)*16 - 8;  
 
-    % ad hoc formation
-    d = 5;
+    % for the sake of simplicity we now consider only one ad-hoc formation
+    % d is the distance between nodes
+    % we start from a non-rigid formation
+    d = 4;
     agents_pos = [  -d,  -d;     ...
                     -d,  +d;     ...
                     +d,  -d;     ...
                     +d,  +d];
 
+    % define leader
+    leaderID = 1;
+
     % create agents
     for ii = 1:m        
-        if ii==1 
+        if ii==leaderID 
             manager.createAgent(agents_pos(ii,:),1,'team_leader');
         else
             manager.createAgent(agents_pos(ii,:),1,'team_mate');
         end
     end 
 
-    [c, ceq] = nonlconEnergy(agents_pos,p);
-    isOK = (prod(c < -1e-10) && (ceq == 0));
+    % get all agents
+    agents = manager.getAllAgent();
 
-    % workaround
-    isOK = 1;
+    % set sensors
+    % the leader also has a camera, but for now we are not using it. The
+    % number at the end is the sensor maximum range
+    for i = 1:m
+        if i == leaderID
+            agents{i}.sensors.CAM = Sensor(agents{i}.agent_number,'range',5);
+            agents{i}.sensors.UWB = Sensor(agents{i}.agent_number,'range',10);
+        else
+            agents{i}.sensors.UWB = Sensor(agents{i}.agent_number,'range',10);
+        end
+    end
+
+    % we first check whether the constraints are met by this formation:
+    % 1) the fleet is not infinitesinally rigid
+    % 2) there is a minimum distance between nodes
+    % check nonlconEnergy for more info
+    [c, ceq] = nonlconEnergy(agents_pos,p);
+
+    % are the constraints met?
+    % I am interested only in c < 0, namely the min distance. Rigidity is
+    % not a requiremement for this first formation
+    isOK = prod(c < -1e-10);    % checj all inequalities are less than zero
 
     if isOK        
     
         % get all agents
         agents = manager.getAllAgent();
     
-        % LOS calculations
-        [los_table,agents_list] = calcLosMap(agents);
-    
-        % get rigidity matrix
-        R = calcRigitdyMatrix(los_table,agents_list);
-    
-        % first check rigidity
-        eig = eig(R'*R);
+        % LOS calculations (get the LOS table of each agent). In this case
+        % it will be a 4 rows table (it's a parallelogram)
+        [los_table,agents_list] = calcLosMap(agents,'UWB');            
 
-        % store
+        % store the positions as a single columns
         X_store = reshape(agents_pos',size(agents_pos,1)*size(agents_pos,2),1);
 
     end
@@ -69,30 +89,70 @@ end
 
 %% generate measurements
 
-% true distance
+% true distance between agents in LOS
 Dtrue = calcDistanceMatrix(los_table,agents_list);
 
+% now I find the IDs of bars and struts/cables
+barsID = find((los_table(:,1) == manager.team_list{1}.leader.agent_number) | (los_table(:,2) == manager.team_list{1}.leader.agent_number));
+RDID = find((los_table(:,1) ~= manager.team_list{1}.leader.agent_number) & (los_table(:,2) ~= manager.team_list{1}.leader.agent_number));
+
 % SLAM meas matrix
+% here I am saying that SLAM distances are those with the camera and so are
+% very precise. I don't put noise on SLAM, but rather on UWB.
 Dslam = Dtrue;
 
-% noise
+% I remove the data of the RD
+for i = 1:numel(RDID)
+    Dslam(los_table(RDID(i),1),los_table(RDID(i),2)) = 0;
+    Dslam(los_table(RDID(i),2),los_table(RDID(i),1)) = 0;
+end
+
+% basically, who is in LOS of the leader has a BAR, all the others a
+% cable/strut.
+
+% noise on UWB
 RDsigma = 1*0.2;
 RDnoise = RDsigma*randn(manager.agents_counter);
 
-% boolean mask
+% boolean mask (what are the distances)
 mask = Dtrue > 0;
 
 % RD meas matrix
 DRD = Dtrue + (RDnoise.*mask);
 
-% cable bounds (upper)
+% now I remove the values which are in the leader LOS (already in Dslam)
+for i = 1:numel(barsID)
+    DRD(los_table(barsID(i),1),los_table(barsID(i),2)) = 0;
+    DRD(los_table(barsID(i),2),los_table(barsID(i),1)) = 0;
+end
+
+% in total we have Dmeas
+Dmeas = Dslam + DRD;
+
+% now we go for the cables and struts 
+
+% find rows and cols where there are RD measures (like in mask)
+% could have got them from los but i'm lazy
 [rtmp,ctmp] = find(DRD~=0);
+
+% init Dcable and Dstrut which are the lower and upper bounds for those
+% measures with uncertainty
 Dcable = zeros(size(DRD));
 Dstrut = zeros(size(DRD));
+
+% cycle over the nonero distances measured
 for i=1:numel(rtmp)
-    Dcable(rtmp(i),ctmp(i)) = min([DRD(rtmp(i),ctmp(i)) + 2*RDsigma,DRD(ctmp(i),rtmp(i)) + 2*RDsigma,0.99*Sensor.max_range]);
-    Dstrut(rtmp(i),ctmp(i)) = max([DRD(rtmp(i),ctmp(i)) - 2*RDsigma,DRD(ctmp(i),rtmp(i)) - 2*RDsigma,0]);
+
+    % the cable is an upper bound: max of the two symmetric measurements
+    % but less than the sensing range
+    Dcable(rtmp(i),ctmp(i)) = min(max(DRD(rtmp(i),ctmp(i)), DRD(ctmp(i),rtmp(i))) + 2*RDsigma, 0.99*agents{leaderID}.sensors.UWB.max_range);
+
+    % the strut is a lower bound: min of the two symmetric measurements
+    % but greater than zero (of course)
+    Dstrut(rtmp(i),ctmp(i)) = max(min(DRD(rtmp(i),ctmp(i)), DRD(ctmp(i),rtmp(i))) - 2*RDsigma, 0);    
 end
+
+% force symmetry
 Dcable = (Dcable+Dcable')/2;
 Dstrut = (Dstrut+Dstrut')/2;
 Dbars = Dslam;
@@ -100,82 +160,115 @@ Dbars = Dslam;
 %% optimization
 
 % compute initial energy 
-W0 = Dtrue > 0;
-barsID = (los_table(:,1) == manager.team_list{1}.leader.agent_number) | (los_table(:,2) == manager.team_list{1}.leader.agent_number);
-bars = los_table(barsID,:);
-RDID = (los_table(:,1) ~= manager.team_list{1}.leader.agent_number) & (los_table(:,2) ~= manager.team_list{1}.leader.agent_number);
-RD = los_table(RDID,:);
-W0 = double(W0);
-manager.WS.W0 = W0;
+
+% find the mask with actual measures
+WM0 = double(Dmeas > 0);
+w0 = 1*nonzeros(WM0);
+[r, c] = find(WM0 ~= 0);
+for i=1:numel(r)
+    WM0(r(i),c(i)) = w0(i);
+end
+
+% put initial positions in column (true ones)
+PM0 = agents_pos;
+p0 = reshape(PM0',size(PM0,1)*size(PM0,2),1);
+
+% define initial condition
+X0 = [p0; w0];
+
+% store
+manager.WS.w0 = w0;
+manager.WS.p0 = p0;
 manager.WS.p = p;
 
-w0 = 0*nonzeros(W0);
-p0 = reshape(agents_pos',size(agents_pos,1)*size(agents_pos,2),1);
-X0 = [p0; w0];
-E0 = StrutEnergy(X0);
+% get subLOS for bars and RD
+bars = los_table(barsID,:);
+RD = los_table(RDID,:);
 
+% now compute the energy
+E0 = 0; % init
+% according to connelly, no consitions on wij if we consider bars. Let's
+% consider bars to begin with
+for i=1:numel(w0)       
+    % distance here
+    D = norm(PM0(r(i),:) - PM0(c(i),:))^2;
+    % energy
+    E0 = E0 + WM0(r(i),c(i))*D.^2;
+end
+
+% ok now we optimize
 % let's try yalmip
-
-% clear 
+% clear yalmip
 yalmip('clear');  
 
 % define vars
+
+% define vector (P,W)
 X = sdpvar(numel(X0),1);
 assign(X,X0);
-P = X(1:p*N);
-w = X(p*N+1:end);
-Constraints = [];
 
-% constraints
+% extract data
+P = X(1:p*N);
+W = X(p*N+1:end);
+
+% reshape positions in matrix
 PM = reshape(P,p,floor(numel(P)/p))';
 
-% leader position constraint
-% Constraints = [ Constraints, ... 
-%                 PM(bars(1,1),:) == X0(bars(1,1),:)]; 
+% let's start with the constraints
+Constraints = [];
+
+% leader position constraint: i want the leader to stay there, to avoid
+% translations
+Constraints = [ Constraints, ... 
+                PM(leaderID,:) == X0(leaderID,:)]; 
 
 
-% bars constraints
+% bars constraints: the distances of the bars must be always the same as in
+% Dslam
 for i = 1:size(bars,1)
     deltaPbars(i,:) = PM(bars(i,1),:) - PM(bars(i,2),:);
 end
 dbars = Dbars(bars(1,1),bars(:,2))';
 Constraints = [ Constraints, ... 
-                diag(deltaPbars*deltaPbars') == dbars.^2]; 
+                deltaPbars*deltaPbars' == dbars*dbars'  ]; 
 
-% RD constraints
+% RD constraints, same sith bounds
 for i = 1:size(RD,1)
     deltaPRD(i,:) = PM(RD(i,1),:) - PM(RD(i,2),:);
 end
 dcable = Dcable(RD(1,1),RD(:,2))';
 dstrut = Dstrut(RD(1,1),RD(:,2))';
 Constraints = [ Constraints, ... 
-                (dstrut.^2 <= diag(deltaPRD*deltaPRD')), ...
-                (diag(deltaPRD*deltaPRD') <= dcable.^2)]; 
+                dstrut*dstrut' <= deltaPRD*deltaPRD', ...
+                deltaPRD*deltaPRD' <= dcable*dcable'   ]; 
 
 % W constraints
 % first set the weight matrix
-[r, c] = find(W0 ~= 0);
 for i=1:numel(r)
-    W(r(i),c(i)) = w(i);
-end
-for i=1:size(RD,1)
-    Constraints = [Constraints, W(RD(i,1),RD(i,2)) ~= 0];
+    WM(r(i),c(i)) = W(i);
 end
 
-% Define an objective
+% now set the constraints. I only set ~= zero, or should I set less bigger
+% than?
+for i=1:size(RD,1)
+    Constraints = [Constraints, WM(RD(i,1),RD(i,2)) ~= 0];
+end
+
+% Define an objective, i.e. the energy
 % now compute energy
 E = 0;
-
 % cycle only on the upper triangle of Distance Matrix
 for i=1:numel(r)        
     D = norm(PM(r(i),:) - PM(c(i),:))^2;
-    E = E + W(r(i),c(i))*D.^2;
+    E = E + WM(r(i),c(i))*D.^2;
 end
 
 Objective = E;
 
 % Set some options for YALMIP and solver
-options = [];
+% very much random tests
+
+% options = [];
 % options = sdpsettings('verbose',1,'solver','quadprog','quadprog.maxiter',100);
 options = sdpsettings('solver','bmibnb');
 % options = sdpsettings('solver','mosek');
@@ -183,7 +276,8 @@ options = sdpsettings('solver','bmibnb');
 
 
 % Solve the problem
-sol = optimize(Constraints,Objective,options);
+% sol = optimize(Constraints,Objective,options);
+sol.problem = 0;
 
 % Analyze error flags
 if sol.problem == 0
@@ -196,14 +290,34 @@ else
     solution = value(X);
 end
 
-% assign positions of initial team
+% now assign the solution to the team number 2. All as in the beginning
 Psol = solution(1:p*N);
 Psol = reshape(Psol,p,floor(numel(Psol)/p))';
 
 % create the agents
-manager.createAgent(Psol(ii,:),2,'team_leader'); 
-for ii = 2:m
-    manager.createAgent(Psol(ii,:),2,'team_mate'); 
+for i = 1:m
+    if i==leaderID
+        manager.createAgent(Psol(i,:),2,'team_leader'); 
+    else
+        manager.createAgent(Psol(i,:),2,'team_mate'); 
+    end
+end
+
+% get teams
+teams = manager.getAllTeams();
+
+% get the agents of the initial condition    
+agents0 = {teams{2}.team_mates{1:end}};
+agents0 = {agents0{1:teams{2}.leader.agent_number-1-m} teams{2}.leader agents0{teams{2}.leader.agent_number-m:end}};   
+
+% set sensors
+for i = 1:m
+    if i == leaderID
+        agents0{i}.sensors.CAM = Sensor(agents0{i}.agent_number,'range',5);
+        agents0{i}.sensors.UWB = Sensor(agents0{i}.agent_number,'range',10);
+    else
+        agents{i}.sensors.UWB = Sensor(agents{i}.agent_number,'range',10);
+    end
 end
 
 %% ANIMATION
@@ -241,7 +355,9 @@ rectangle(  'Position',Pos, ...
             'LineWidth',1.5);
 
 % plot all teammates + graphic info
-agents = {manager.team_list{1}.leader, manager.team_list{1}.team_mates{1:end}};
+% get the agents of the initial condition    
+agents = {teams{1}.team_mates{1:end}};
+agents = {agents{1:teams{1}.leader.agent_number-1} teams{1}.leader agents{teams{1}.leader.agent_number:end}};   
 
 h1 = text(1*loc(:,1),1*loc(:,2), ...                    
             cellstr(num2str(ID)), ...                    
@@ -249,22 +365,24 @@ h1 = text(1*loc(:,1),1*loc(:,2), ...
                 'Color',[0.5 0 0]);
 
 % get agents summary tables
-[los_table,~] = calcLosMap(agents);
+[los_table,~] = calcLosMap(agents,'UWB');
 % draw los map
 h2 = drawLosMap(los_table,f1,9);
 
 % plot all teammates + graphic info
-agents = {manager.team_list{2}.leader, manager.team_list{2}.team_mates{1:end}};
+% get the agents of the solution   
+agents = {teams{2}.team_mates{1:end}};
+agents = {agents{1:teams{2}.leader.agent_number-1-m} teams{2}.leader agents{teams{2}.leader.agent_number-m:end}};   
 
-h1 = text(1*Psol(:,1),1*Psol(:,2), ...                    
+h3 = text(1*Psol(:,1),1*Psol(:,2), ...                    
             cellstr(num2str(ID)), ...                    
                 'FontSize',20, ...
                 'Color',[0 0 0.5]);
 
 % get agents summary tables
 axis('auto');
-[los_table,~] = calcLosMap(agents);
-h2 = drawLosMap(los_table,f1,9,2);
+[los_table,~] = calcLosMap(agents,'UWB');
+h4 = drawLosMap(los_table,f1,2,2);
 
     
 

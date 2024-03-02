@@ -27,7 +27,7 @@ function R = calcRigitdyMatrix(los_table,agents_list)
     
         % get diff pos
         p1 = e(5:5+p-1);
-        p2 = e(5+p:5+2*p-1);
+        p2 = e(5+p:5+2*p-1);        
     
         % terms
         p1p2 = p1-p2;

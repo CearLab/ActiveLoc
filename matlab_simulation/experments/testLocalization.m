@@ -44,6 +44,10 @@ agents_pos = [  -1.3276   -1.6517;  ...     -1.3276   -1.6517;  ...
 % number of agents
 m = size(agents_pos,1);
 
+% dimension
+p = size(agents_pos,2);
+manager.WS.p = p;
+
 % create agents of team 1
 % random pick of the agent position
 % agents_pos = rand(m,2)*16 - 8;   
@@ -84,11 +88,18 @@ if 1
     % init
     notLocalized = 1;
 
+    % init iter
+    iter = 0;
+    MaxIter = 100;
+
     % plot
     f1 = plotFleet(f1,gifFile,flag,delay,1,agents_pos);
     
     % localization policy
-    while notLocalized
+    while (notLocalized) || (iter < MaxIter)
+
+        % iter increment
+        iter = iter + 1;
     
         % two steps of localization
         for i = 1:m                
@@ -96,16 +107,45 @@ if 1
             % localize
             agent = agents{i};
             agent.get_neighbors;
-            agent.getPos;
-            agent.movePolicy;
+            agent.getPos;  
 
             % plot                
             f1 = plotFleet(f1,gifFile,flag,delay,5,agents_pos);
 
-        end                            
+            % try to move
+            try
+                agent.movePolicy;     
+            catch ME
+                ME 
+            end
+
+            % update and localize
+            agent.get_neighbors;
+            agent.getPos;
+
+            % if I moved myself, all other people should know and update
+            % their position
+            if agent.moved 
+
+                for j = 1:m                             
+                    if ~isempty(find(agent.neigh.ID(:,1) == j))
     
-        % plot
-        f1 = plotFleet(f1,gifFile,flag,delay,1,agents_pos);
+                        % stuff
+                        agenttmp = agents{j};  
+                        agenttmp.get_neighbors;                
+                        agenttmp.getPos;
+                            
+                    end
+                end               
+
+                % plot                
+                f1 = plotFleet(f1,gifFile,flag,delay,5,agents_pos);
+
+            end
+
+        end                     
+
+        
     
         % check all network localization
         loc = zeros(1,m);
@@ -116,7 +156,9 @@ if 1
     
         % if all localized exit otherwise not
         if (prod(loc) == 1)
-            notLocalized = 0;
+
+            notLocalized = 0;                  
+
         end
     
     end
