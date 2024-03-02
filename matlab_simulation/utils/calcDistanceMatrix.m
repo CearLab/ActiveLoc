@@ -9,6 +9,8 @@ function A = calcDistanceMatrix(los_table,agents_list)
     % get number of agents
     n = length(agents_list); % A is a |V|*|V| matrix
 
+    p = 2;
+
     % init matrix
     A = zeros(n);
 
@@ -18,12 +20,13 @@ function A = calcDistanceMatrix(los_table,agents_list)
         % get ids
         e = los_table(ie,:);
         v1 = e(1);
-        v2 = e(2);
-        
-        s = Sensor(v1);
+        v2 = e(2);              
 
         % get distances
-        A(v1,v2) = s.getRangeMeas(v2);
+        delta = e(5:5+p-1)-e(5+p:5+2*p-1);
+
+        % store 
+        A(v1,v2) = norm(delta);
         A(v2,v1) = A(v1,v2);
     end
 

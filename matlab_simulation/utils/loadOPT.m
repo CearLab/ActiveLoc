@@ -1,3 +1,5 @@
+%% load optimizers
+
 %% load Yalmip
 addpath(genpath('/home/fedeoli/Programs/YALMIP-master/'));
 
