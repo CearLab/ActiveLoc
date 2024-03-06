@@ -9,7 +9,11 @@ function h = drawLosMap(los_table,varargin)
     if isempty(varargin)
         Map.setFigure();
     else
-        figure(varargin{1});
+        try
+            figure(varargin{1});
+        catch            
+            axes(varargin{1});
+        end
         if numel(varargin) >=2 && ~isempty(varargin{2})
             color = getColorByNumber(varargin{2});
         end            

@@ -100,7 +100,11 @@ classdef Team < handle
             if isempty(varargin)
                 map.setFigure();
             else
-                figure(varargin{1});
+                try
+                    figure(varargin{1});
+                catch                    
+                    axes(varargin{1});
+                end
 
                 % call external function
                 if numel(varargin) == 2
@@ -111,8 +115,13 @@ classdef Team < handle
             end
 
             % cheating
+            if ~isempty(obj.leader)
+                tmp = 1;
+            else
+                tmp = 0;
+            end
             if min(ID) > numel(ID)
-                ID = ID - numel(ID);
+                ID = ID - numel(ID)-tmp;
             end
             
             if ~isempty(loc)

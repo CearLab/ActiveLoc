@@ -14,19 +14,25 @@ function J = cost_function(x,p)
     % get the manager
     manager = AgentManager.getInstance();
 
-    % get teams
-    teams = manager.getAllTeams();
+    % get number of agents
+    m = manager.WS.m;
 
-    % get the agents
-    agents = teams{2}.team_mates;
+    % get the team you just created
+    team = manager.team_list{1};    
+    
+    % get all agents from the team 
+    agents = {team.team_mates{1:end}};    
+    % insert leader in right position
+    agents = {agents{1:team.leader.agent_number-1} team.leader agents{team.leader.agent_number:end}};
+
 
     % reassign agents position
-    for i=1:numel(agents)
+    for i=1:m
         agents{i}.location = xmat(i,:);
     end
 
     % get agents summary tables
-    [los_table,agents_list] = calcLosMap(agents);
+    [los_table,agents_list] = calcLosMap(agents,'UWB');
 
     % get rigidity matrix 
     R = calcRigitdyMatrix(los_table,agents_list);
@@ -37,7 +43,7 @@ function J = cost_function(x,p)
     e(pos) = [];
     
     J = 1/min(e);
-    % J = max(e)/min(e);
+    % J = min(e)/max(e);
 
     if ~isscalar(J)
         J = Inf;

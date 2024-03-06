@@ -503,6 +503,19 @@ classdef Agent < handle
             x0 = obj.location_est;
             obj.neigh.x0 = x0;
 
+            % first, if I have no neighbors, I randomly choose a direction
+            if isempty(obj.neigh.ID) && (obj.agent_number ~= team.leader.agent_number)
+
+                % move
+                dstep = -0.5*[1 1] + [1 1].*rand(1,2);
+                obj.move(obj.location + dstep);
+
+                % get neighjbors
+                obj.get_neighbors;
+
+                return; 
+            end
+
             % bounds (if loc_est = nan, just ignore bounds)
             % if it is not localized, no bounds, because they are defined
             % by the solvability of the localization problem. They are a
@@ -546,8 +559,18 @@ classdef Agent < handle
 
             % if no neighbor is localized:
             % just stay there
-            if isempty(IDloc)
-                return;  
+            if isempty(IDloc) && (obj.agent_number ~= team.leader.agent_number)
+
+                % find exploration step
+                dstep = obj.dgrad_search(IDloc);
+
+                % move
+                obj.move(obj.location + dstep);
+
+                % get neighjbors
+                obj.get_neighbors;
+
+                return; 
             end
 
             % if you have someone localized, we can work on something.            
@@ -570,7 +593,7 @@ classdef Agent < handle
                 dstep = obj.dgrad_search(IDloc);
 
                 % move
-                        obj.move(obj.location + dstep);
+                obj.move(obj.location + dstep);
 
                 % get neighjbors
                 obj.get_neighbors;
@@ -656,7 +679,7 @@ classdef Agent < handle
         end     
 
         % distance gradient research
-        function dstep = dgrad_search(obj,DistLoc)            
+        function dstep = dgrad_search(obj,DistLoc)                  
 
             % define 4 movements
             steps = 0.5*[   0 +1;     ...
@@ -671,8 +694,14 @@ classdef Agent < handle
             % find UWB distances
             UWBpos = find(obj.neigh.Dmeas(:,2)==1);             
             D0 = obj.neigh.Dmeas(UWBpos,1);
-            D0metric = mean(D0(DistLoc));
             N0 = obj.neigh.ID(UWBpos);
+
+            % handle no localized neighbors
+            if isempty(DistLoc)
+                DistLoc = 1:numel(UWBpos);
+            end
+            D0metric = mean(D0(DistLoc));
+            
 
             % cycle over 4 steps
             for i=1:4          
@@ -695,7 +724,7 @@ classdef Agent < handle
                 if numel(UWBneigh) > numel(N0)
                     % ok nothing happens yay
                 end
-
+                
                 currentIdPos = [];
                 lostNeigh = zeros(1,numel(DistLoc));
                 for j=1:numel(DistLoc)
