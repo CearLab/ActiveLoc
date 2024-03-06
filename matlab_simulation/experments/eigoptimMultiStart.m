@@ -20,32 +20,50 @@ map = Map.getInstance();
 manager = AgentManager.getInstance();
 manager.reset();
 
-m = 8; % number of agents
+m = 7; % number of agents
 p = 2;
 
 % define range for RD sensors
 UWBrange = 8;
+sigmarand = 10;
 
 % define exit condition
 isrigid = 0;
+feasiblefound = 0;
+feasibleimproved = 0;
 
 % leader
 leaderID = 1;
 
 % init
 iter = 0;
+iteropt = 0;
+targetfeasible = 100;
+targetimproved = 5;
+Jold = Inf;
 
 % start counter
 tic
 disp('Find initial condition')
-while ~isrigid %&& iter < 1
+while (feasibleimproved<targetimproved) && (feasiblefound<targetfeasible) %&& iter < 1
 
     % iter
     iter = iter + 1;
 
-    % define initial condition
-    agents_pos = randn(m,p)*10;  % random pick of the agent position    
+    % disp
+    clc
+    disp(['Feasible improved ', num2str(feasibleimproved)]);
+    disp(['Feasible found ', num2str(feasiblefound)]);
+    disp(['X0 attempt ', num2str(iter)]);
 
+    % define initial condition
+    agents_pos = zeros(m,p);
+    for i=1:p
+        a = 0.9*map.map_span(i,1);
+        b = 0.9*map.map_span(i,2);
+        agents_pos(:,i) = a + (b-a).*rand(m,1);  % random pick of the agent position    
+    end
+    
     % translate everything to have the leader in the origin
     dP = agents_pos(leaderID,:);
     agents_pos = agents_pos - dP;
@@ -69,7 +87,7 @@ while ~isrigid %&& iter < 1
     % get the team you just created
     team = manager.team_list{1};
 
-    % get all agents from the team 
+    % get all agents from the tea6m 
     agents = {team.team_mates{1:end}};
     agents = {agents{1:team.leader.agent_number-1} team.leader agents{team.leader.agent_number:end}};
 
@@ -106,94 +124,116 @@ while ~isrigid %&& iter < 1
 
     % exit condition
     if (numel(pos) < 4) && (Dmin > Dminthresh)
-        isrigid = 1;            
+        isrigid = 1;   
+    else
+        isrigid = 0;
+    end
+
+    % now run optimization
+    if isrigid
+        
+        % update
+        iteropt = iteropt + 1;
+
+        % disp
+        disp(['optimization attempt ', num2str(iteropt)]);
+
+        % init manager
+        manager.WS.p = p;
+        manager.WS.m = m;
+        
+        % copy initial condition as second team: this will be the one we optimize on
+        for i = 1:m
+            if i==leaderID
+                manager.createAgent(agents_pos(i,:),2,'team_leader'); %create the leader
+            else
+                manager.createAgent(agents_pos(i,:),2,'team_mate'); %create the followers
+            end
+        end
+        
+        % get the team you just created
+        team = manager.team_list{2};
+        
+        % get all agents from the team 
+        agents = {team.team_mates{1:end}};
+        agents = {agents{1:team.leader.agent_number-1-m} team.leader agents{team.leader.agent_number-m:end}};
+        
+        % set sensors
+        for i = 1:m        
+            agents{i}.sensors.UWB = Sensor(agents{i}.agent_number,'range',UWBrange);        
+        end
+
+        % test J0
+
+        % set store options for cost function
+        manager.WS.J = [];
+        manager.WS.X = [];
+        manager.WS.CN = [];
+        
+        X0 = reshape(agents_pos',size(agents_pos,1)*size(agents_pos,2),1);
+        J0 = cost_function(X0,p);
+
+        % define lower bounds
+        LB = repmat(map.map_span(:,1),m,1);
+        
+        % define upper bounds
+        UB = repmat(map.map_span(:,2),m,1);
+        
+        % optimization - patternseacrh
+        options = optimoptions( 'patternsearch', ...
+                                'MeshTolerance',1e-10, ...
+                                'InitialMeshSize',1e2, ...
+                                'UseParallel', false, ...
+                                'MaxFunctionEvaluations', 1e10, ...
+                                'ConstraintTolerance', 1e-4, ...
+                                'StepTolerance', 1e-10, ...
+                                'Cache', 'On', ...
+                                'MaxTime', 300, ...
+                                'Algorithm','classic');
+        
+        % optimization - fmincon
+        % options = optimoptions( 'fmincon', ...
+        %                         'Algorithm','interior-point', ...
+        %                         'MaxFunctionEvaluations',1e5, ...
+        %                         'MaxIterations',1e3, ...
+        %                         'OptimalityTolerance',1e-10, ...
+        %                         'StepTolerance', 1e-10, ...
+        %                         'FunctionTolerance',1e-10);
+        
+        % optimization - fmincon
+        % options = optimset( 'Display','off', ...
+        %                     'TolX', 1e-10, ...
+        %                     'TolFun', 1e-10, ...
+        %                     'MaxFunEvals', 1e10, ...
+        %                     'MaxIter', 1e3);
+        
+        % init counter
+        tic
+        disp('Optimizing')
+        [Xtmp, J, EXITFLAG] = patternsearch(                     ...
+                            @(x)cost_function(x,p), ...
+                            X0,                     ...
+                            [],                     ...
+                            [],                     ...
+                            [],                     ...
+                            [],                     ...
+                            1*LB,                   ...
+                            1*UB,                   ...
+                            @(x)nonlcon(x,p), ...
+                            options);
+
+        if EXITFLAG ~= -2
+            feasiblefound = feasiblefound + 1;
+            if J < Jold
+                feasibleimproved = feasibleimproved + 1;
+                Jold = J;
+                X = Xtmp;
+            end        
+        end
+
     end
     
 end
-tfindinit = toc;
-
-% init manager
-manager.WS.p = p;
-manager.WS.m = m;
-
-% copy initial condition as second team: this will be the one we optimize on
-for i = 1:m
-    if i==leaderID
-        manager.createAgent(agents_pos(i,:),2,'team_leader'); %create the leader
-    else
-        manager.createAgent(agents_pos(i,:),2,'team_mate'); %create the followers
-    end
-end
-
-% get the team you just created
-team = manager.team_list{2};
-
-% get all agents from the team 
-agents = {team.team_mates{1:end}};
-agents = {agents{1:team.leader.agent_number-1-m} team.leader agents{team.leader.agent_number-m:end}};
-
-% set sensors
-for i = 1:m        
-    agents{i}.sensors.UWB = Sensor(agents{i}.agent_number,'range',UWBrange);        
-end
-
-%% test J0
-
-% set store options for cost function
-manager.WS.J = [];
-manager.WS.X = [];
-manager.WS.CN = [];
-
-X0 = reshape(agents_pos',size(agents_pos,1)*size(agents_pos,2),1);
-J0 = cost_function(X0,p);
-
-% define lower bounds
-LB = repmat(map.map_span(:,1),m,1);
-
-% define upper bounds
-UB = repmat(map.map_span(:,2),m,1);
-
-% optimization - patternseacrh
-options = optimoptions( 'patternsearch', ...
-                        'MeshTolerance',1e-10, ...
-                        'InitialMeshSize',1e2, ...
-                        'UseParallel', false, ...
-                        'MaxFunctionEvaluations', 1e10, ...
-                        'ConstraintTolerance', 1e-4, ...
-                        'StepTolerance', 1e-10, ...
-                        'Algorithm','nups');
-
-% optimization - fmincon
-% options = optimoptions( 'fmincon', ...
-%                         'Algorithm','interior-point', ...
-%                         'MaxFunctionEvaluations',1e5, ...
-%                         'MaxIterations',1e3, ...
-%                         'OptimalityTolerance',1e-10, ...
-%                         'StepTolerance', 1e-10, ...
-%                         'FunctionTolerance',1e-10);
-
-% optimization - fmincon
-% options = optimset( 'Display','off', ...
-%                     'TolX', 1e-10, ...
-%                     'TolFun', 1e-10, ...
-%                     'MaxFunEvals', 1e10, ...
-%                     'MaxIter', 1e3);
-
-% init counter
-tic
-disp('Optimizing')
-[X, J, EXITFLAG] = patternsearch(                     ...
-                    @(x)cost_function(x,p), ...
-                    X0,                     ...
-                    [],                     ...
-                    [],                     ...
-                    [],                     ...
-                    [],                     ...
-                    1*LB,                   ...
-                    1*UB,                   ...
-                    @(x)nonlcon(x,p), ...
-                    options);
-
 topt = toc;
 
 % rotation and translation (nodes 1-2)
@@ -213,9 +253,7 @@ DP = V1-V10;
 Xbest = reshape(Xtmp',size(Xtmp,1)*size(Xtmp,2),1);
 
 [c, ceq] = nonlcon(Xbest,p);
-
-               
-
+              
 %% plot section
 
 warning('off','all')
