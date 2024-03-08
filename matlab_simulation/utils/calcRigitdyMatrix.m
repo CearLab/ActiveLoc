@@ -14,6 +14,11 @@ function R = calcRigitdyMatrix(los_table,agents_list)
     
     % init
     R = zeros(n,m);
+
+    % if less than 3 agents no rigid
+    if n < 3        
+        return;
+    end
     
     % cycle over edges
     for  ie = 1:n
@@ -22,8 +27,8 @@ function R = calcRigitdyMatrix(los_table,agents_list)
         e = los_table(ie,:);
     
         % get indices
-        v1 = e(1);
-        v2 = e(2);
+        v1 = e(3);
+        v2 = e(4);
     
         % get diff pos
         p1 = e(5:5+p-1);

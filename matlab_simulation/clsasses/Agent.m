@@ -71,7 +71,7 @@ classdef Agent < handle
         end
 
         % get the neighborhood
-        function obj = get_neighbors(obj)
+        function obj = getNeighbors(obj)
 
             % get manager
             manager = AgentManager.getInstance();
@@ -185,8 +185,9 @@ classdef Agent < handle
 
             else         
 
-                % if you have the team leader in your neighbors you are
-                % localized
+                % if you have the team leader in your CAM neighbors you are
+                % localized (do not remove, because if you are in the CAM
+                % but you have <3 IDloc, you set yourself as not localized)
                 if find(obj.neigh.ID(:,1)==IDleader) & find(obj.neigh.ID(:,2)==2)
                     % here I know directly the position (should do with the bearing and stuff but for now...)
                     obj.location_est = obj.location;
@@ -214,7 +215,7 @@ classdef Agent < handle
                 % trilateration                                              
 
                 % get agent list only of those localized
-                agents_list = [obj.neigh.ID(IDloc,1), obj.neigh.P(IDloc,:)]; 
+                agents_list = [obj.neigh.ID(IDloc,1), obj.neigh.Pest(IDloc,:)]; 
                 agents_list(end+1,:) = [obj.agent_number obj.location_est 0];
 
                 % get LOS tab only for localized nodes and itself
@@ -337,6 +338,7 @@ classdef Agent < handle
 
             % init
             isRedundant = 0;
+            fail = 0;
             improveList = [];
 
             % cycle over edges
@@ -349,13 +351,15 @@ classdef Agent < handle
 
                 % if not rigid, we're alrready done
                 if ~isRigid
-                    improveList = [improveList, i];
-                    return
+                    fail = 1;
+                    improveList(end+1,1) = i;                   
                 end
             end
 
             % huray it's redundant
-            isRedundant = 1;
+            if ~fail
+                isRedundant = 1;
+            end
 
         end
 
@@ -364,6 +368,7 @@ classdef Agent < handle
 
             % kconn flag
             kconn = 0;
+            fail = 0;
             improveList = [];
 
             % if it does not have at least 2 vertices return
@@ -388,7 +393,9 @@ classdef Agent < handle
                 n = size(A,1);
 
                 % pairs
-                pairs = nchoosek(1:n,k);
+                pairs = nchoosek(1:n,k-1);
+
+                improveList = [];
 
                 % cycle and check
                 for i=1:size(pairs,1)
@@ -407,14 +414,16 @@ classdef Agent < handle
                     % if you find a non-connected submesh then you drop the
                     % search
                     if (~isConn)
-                        improveList = agents_list(tmpPair,1);
-                        return;
+                        fail = 1;
+                        improveList(end+1:end+numel(agents_list(tmpPair,1))) = agents_list(tmpPair,1);
                     end
 
                 end
 
                 % set the flag
-                kconn = 1;
+                if ~fail 
+                    kconn = 1;
+                end
             end
 
         end
@@ -427,24 +436,18 @@ classdef Agent < handle
                 isConn = 1;
                 return;
             end
-
-            % remove empty rows (no connections)
-            row = [];
-            for i=1:size(A,1)
-                if (sum(A(i,:) == 1) == 0)
-                    row = [row i];
-                end
-            end
-
-            % remove useless rows
-            A(row,:) = [];
-            A(:,row) = [];
-
+            
             % get number nodes
-            n = size(A,1);
+            n = size(A,1);            
 
             % if A^(n-1) has no zero elements than is connected
-            isConn = (nnz(A^(n-1)) ~= 0);
+            Apow = A^(n-1);
+            Azeros = find(Apow == 0);
+            if isempty(Azeros)
+                isConn = 1;
+            else
+                isConn = 0;
+            end
 
             % out
             Aout = A;
@@ -511,7 +514,7 @@ classdef Agent < handle
                 obj.move(obj.location + dstep);
 
                 % get neighjbors
-                obj.get_neighbors;
+                obj.getNeighbors;
 
                 return; 
             end
@@ -568,7 +571,7 @@ classdef Agent < handle
                 obj.move(obj.location + dstep);
 
                 % get neighjbors
-                obj.get_neighbors;
+                obj.getNeighbors;
 
                 return; 
             end
@@ -596,7 +599,7 @@ classdef Agent < handle
                 obj.move(obj.location + dstep);
 
                 % get neighjbors
-                obj.get_neighbors;
+                obj.getNeighbors;
 
                 return;                    
 
@@ -708,7 +711,7 @@ classdef Agent < handle
 
                 % move 
                 obj.move(obj.location + steps(i,:));                
-                obj.get_neighbors;                     
+                obj.getNeighbors;                     
 
                 % find UWB distances
                 UWBpos = find(obj.neigh.Dmeas(:,2)==1); 
@@ -762,15 +765,16 @@ classdef Agent < handle
             end
 
             % restore initial neighbors
-            obj.get_neighbors;
+            obj.getNeighbors;
 
             % find the best movement and go there (FF)
-            [minD, pos] = min(Dsteps);
-            if minD < D0metric
-                dstep = steps(pos,:);
-            else
+            if sum(isinf(Dsteps)) == numel(Dsteps)
                 dstep = [0 0];
+            else
+                [minD, pos] = min(Dsteps);            
+                dstep = steps(pos,:);            
             end
+            
 
         end
 
