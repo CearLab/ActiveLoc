@@ -30,19 +30,18 @@ manager = AgentManager.getInstance();
 manager.reset();
 
 % define pos
-% agents_pos = [  -1.3276   -1.6517;  ...     -1.3276   -1.6517;  ...
-%                  3.5252    0.6211;  ...     +3.5252    0.6211;   ...
-%                 -7.9982   -1.2929;  ...     -7.9982   -1.2929;  ...
-%                 -3.1627    2.9635;  ...     -3.1627    2.9635;  ...
-%                 -5.6519   -4.7288;  ...     -5.6519   -4.7288;  ...
-%                 -1.5226    7.8000;  ...     -6.5226    6.0499;  ...
-%                 -5.0198   -7.5618;  ...     -5.0198   -7.5618;  ...       
-%                 -0.4710    0.7275   ];
+agents_pos = [  -1.3276   -1.6517;  ...     -1.3276   -1.6517;  ...
+                 3.5252    0.6211;  ...     +3.5252    0.6211;   ...
+                -7.9982   -1.2929;  ...     -7.9982   -1.2929;  ...
+                -3.1627    2.9635;  ...     -3.1627    2.9635;  ...
+                -5.6519   -4.7288;  ...     -5.6519   -4.7288;  ...
+                -1.5226    7.8000;  ...     -6.5226    6.0499;  ...
+                -5.0198   -7.5618;  ...     -5.0198   -7.5618;  ...       
+                -0.4710    0.7275   ];
 
 % create agents of team 1
-% random pick of the agent position
-agents_pos = rand(20,2)*30;   
-
+% define initial condition
+agents_pos = zeros(15,2);
 % number of agents
 m = size(agents_pos,1);
 
@@ -50,12 +49,23 @@ m = size(agents_pos,1);
 p = size(agents_pos,2);
 manager.WS.p = p;
 
+% define leader
+leaderID = 3;
+
+% random 
+for i=1:p
+    a = 0.9*map.map_span(i,1);
+    b = 0.9*map.map_span(i,2);
+    agents_pos(:,i) = a + (b-a).*rand(m,1);  % random pick of the agent position    
+end
+
+% translate everything to have the leader in the origin
+dP = agents_pos(leaderID,:);
+agents_pos = agents_pos - dP;
+
 % sensor setup
 CAMrange = 3;
 UWBrange = 8;
-
-% define leader
-leaderID = 7;
 
 % translate everything to have the leader in the origin
 dP = agents_pos(leaderID,:);
@@ -99,55 +109,33 @@ if 1
     MaxIter = 100;
 
     % plot
-    f1 = plotFleet(f1,gifFile,flag,delay,1,agents_pos);
+    f1 = plotFleet(f1,gifFile,flag,delay,1,agents_pos); 
     
     % localization policy
     while (notLocalized) && (iter < MaxIter)
 
         % iter increment
         iter = iter + 1;
+
+        clc
+        disp(['iteration: ', num2str(iter)]);
+
+        % sequence        
+        seq = randperm(m);
     
         % two steps of localization
         for i = 1:m                
     
             % localize
-            agent = agents{i};
-            agent.get_neighbors;
+            agent = agents{seq(i)};
+            agent.getNeighbors;
             agent.getPos;  
 
             % plot                
             f1 = plotFleet(f1,gifFile,flag,delay,5,agents_pos);
 
-            % try to move
-            try
-                agent.movePolicy;     
-            catch ME
-                ME 
-            end
-
-            % update and localize
-            agent.get_neighbors;
-            agent.getPos;
-
-            % if I moved myself, all other people should know and update
-            % their position
-            % if agent.moved 
-            % 
-            %     for j = 1:m                             
-            %         if ~isempty(find(agent.neigh.ID(:,1) == j))
-            % 
-            %             % stuff
-            %             agenttmp = agents{j};  
-            %             agenttmp.get_neighbors;                
-            %             agenttmp.getPos;
-            % 
-            %         end
-            %     end               
-            % 
-            %     % plot                
-            %     f1 = plotFleet(f1,gifFile,flag,delay,5,agents_pos);
-            % 
-            % end
+            % try to move            
+            agent.movePolicy;                             
 
         end                     
 

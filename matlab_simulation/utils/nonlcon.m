@@ -65,7 +65,7 @@ function [c, ceq] = nonlcon(x,p)
     end
 
     % set Dminthresh
-    Dminthresh = 0.25*team.leader.sensors.UWB.max_range;
+    Dminthresh = manager.WS.Dminthresh;
     if isinf(Dminthresh)
         Dminthresh = 0;
     end    
@@ -81,8 +81,12 @@ function [c, ceq] = nonlcon(x,p)
     e = eig(R'*R);
 
     % get # nnz elements
-    pos = find(abs(e) < 1e-10);
-    isrigid = 1-(numel(pos)==3);
+    pos = find(abs(e) < manager.WS.eigThresh);
+    isrigid = ~(numel(pos)==3);
+
+    A = calcAdjacencyMatrix(los_table,agents_list);
+    [allConn, A] = agents{1}.checkConnectivity(A);
+    isConn = ~allConn;
 
     % circular area constraint
     map = Map.getInstance();
@@ -92,6 +96,7 @@ function [c, ceq] = nonlcon(x,p)
 
     % equality constraints
     ceq = [ceq; isrigid];
+    ceq = [ceq; isConn];
     % ceq = [ceq; edgediff];
 
     % inequality constraints
