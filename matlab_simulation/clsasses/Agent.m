@@ -560,8 +560,7 @@ classdef Agent < handle
                 end
             end
 
-            % if no neighbor is localized:
-            % just stay there
+            % if no neighbor is localized:            
             if isempty(IDloc) && (obj.agent_number ~= team.leader.agent_number)
 
                 % find exploration step

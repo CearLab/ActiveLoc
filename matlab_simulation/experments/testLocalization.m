@@ -41,7 +41,7 @@ agents_pos = [  -1.3276   -1.6517;  ...     -1.3276   -1.6517;  ...
 
 % create agents of team 1
 % define initial condition
-agents_pos = zeros(15,2);
+% agents_pos = zeros(15,2);
 % number of agents
 m = size(agents_pos,1);
 
@@ -52,12 +52,12 @@ manager.WS.p = p;
 % define leader
 leaderID = 3;
 
-% random 
-for i=1:p
-    a = 0.9*map.map_span(i,1);
-    b = 0.9*map.map_span(i,2);
-    agents_pos(:,i) = a + (b-a).*rand(m,1);  % random pick of the agent position    
-end
+% % random 
+% for i=1:p
+%     a = 0.9*map.map_span(i,1);
+%     b = 0.9*map.map_span(i,2);
+%     agents_pos(:,i) = a + (b-a).*rand(m,1);  % random pick of the agent position    
+% end
 
 % translate everything to have the leader in the origin
 dP = agents_pos(leaderID,:);
