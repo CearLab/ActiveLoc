@@ -34,7 +34,7 @@ function J = cost_function(x,p)
     [los_table,agents_list] = calcLosMap(agentsOpt,'UWB');
 
     % get rigidity matrix 
-    R = calcRigitdyMatrix(los_table,agents_list);
+    R = calcRigitdyMatrix(los_table,agents_list);    
 
     % J rigidity   
     e = eig(R'*R);    
@@ -42,14 +42,11 @@ function J = cost_function(x,p)
     isrigid = (numel(pos)==3);              
     e(pos) = [];
     JR = -min(e);
-    % JR = 1/(1 + min(e));    
-    % JR = min(e)/max(e);
+    % JR = 1/(min(e));        
 
     % is connected
     % A = calcAdjacencyMatrix(los_table,agents_list);
-    % [allConn, A] = agentsOpt{1}.checkConnectivity(A);
-
-           
+    % [allConn, A] = agentsOpt{1}.checkConnectivity(A);           
 
     % get agents_pos
     % agents_pos = agents_list(:,2:3);
@@ -57,34 +54,111 @@ function J = cost_function(x,p)
     % sigmacost = sigma*sigma';
     % JS = 1/(1+sigmacost);
     if ~isempty(los_table)
-        JS = 0;
-        N = size(los_table,1);  
 
-        % spreadiness term
-        tmp = los_table(:,5:5+p-1) - los_table(:,5+p:5+2*p-1);
-        JS = JS + sum(tmp(:,1).^2.*tmp(:,2).^2);    
-        JS = -JS/N^6;
+        % init
+        JS = 0;        
 
-        % symmetry term        
+        % init                                
+        SXYtmp = 0;
+        S2tmp = 0;
+        S2T1 = 0;
+        S2T2 = 0;        
+
+        % cycle over all the agents
+        for a=1:m
+
+            % init possible deltas
+            LOCb = [];
+            POSb = [];
+
+            % get position of single agent
+            LOCa = agents_list(a,2:3);
+
+            % now inner cycle
+            % I'm not removing a~=b because the diff is zero anyways
+            for b=1:m
+                
+                % now cycle over the LOS tab                
+
+                % find if the link does exist
+                flagA = los_table(:,3:4) == [a b];
+                flagB = los_table(:,3:4) == [b a];
+                posA = find(flagA(:,1).*flagA(:,2) == 1);
+                posB = find(flagB(:,1).*flagB(:,2) == 1);      
+                flag = min([posA posB]); 
+
+                % assign
+                if ~isempty(flag)
+                    LOCb(b,:) = LOCa - agents_list(b,2:3);   
+                    POSb(b,:) = agents_list(b,2:3);
+                end                                
+                
+            end
+
+            if ~isempty(LOCb)
+
+                % mean in the neighbors                       
+                NNeighs = nnz(LOCb(:,1))+1;                
+                muNeighs = sum(POSb)/NNeighs;                
+
+                % difference in neihcbors
+                DIFFb = sum(LOCb);
+
+                % compute terms
+                S2T1 = S2T1 + muNeighs.*(muNeighs - LOCa);                                            
+                S2T2 = S2T2 + LOCa.*DIFFb/NNeighs;    
+
+                % compute covariance
+                S2tmp = S2tmp + (LOCa - muNeighs).^2;  
+                SXYtmp = SXYtmp + prod(LOCa - muNeighs);                                   
+
+            end
+                        
+        end        
+
+        % variances terms        
+        % S2 = (S2T1 + S2T2)/m;
+        S2 = S2tmp/m;
+        SX2 = S2(1);
+        SY2 = S2(2);
+        
+        % symmetry term                   
+        SXY = SXYtmp/m;        
+
+        % correlation
+        rho2 = SXY^2/(SX2*SY2);
+
+        % just for fun
+        Rover = R'*R;
+        tr = trace(Rover);
+
+        % set objectives
+        JSA = 1/tr;
+        JSB = rho2;        
+
+        a = 0;
+        Ta = manager.WS.Ta;
+        Tb = manager.WS.Tb;
+        JS = (a*Ta*JSA + (1-a)*Tb*JSB);  
+
+        JS = JSB;
+
+        % store
+        manager.WS.JSA = JSA;
+        manager.WS.JSB = JSB;
     else
         JS = 0;
-    end
-    
+    end        
 
-    % penalty on Dmin
-    % if ~isempty(los_table)
-    %     D = los_table(:,5:5+p-1) - los_table(:,5+p:5+2*p-1);
-    %     Dmin = min(vecnorm(D,2,2));
-    % else
-    %     Dmin = 0;
-    % end
-    % JD = 1/(1+Dmin);
-    JD = 0;
+    % Jtest
+    Rover = R'*R;
+    tr = trace(Rover);
+    JT = -tr;
     
 
     % normalize
     % minterm = min(JD,JR);    
-    J = 1*JR + 0*JD + 0*JS;
+    J = 1*JR + 0*JS + 0*JT;
 
     if isempty(J)
         J = Inf;
