@@ -106,13 +106,13 @@ if 1
 
     % init iter
     iter = 0;
-    MaxIter = 100;
+    MaxIter = 200;
 
     % plot
     f1 = plotFleet(f1,gifFile,flag,delay,1,agents_pos); 
     
     % localization policy
-    while (notLocalized) && (iter < MaxIter)
+    while (iter < MaxIter) %&& (notLocalized)
 
         % iter increment
         iter = iter + 1;
@@ -132,12 +132,18 @@ if 1
             agent.getPos;  
 
             % plot                
-            f1 = plotFleet(f1,gifFile,flag,delay,5,agents_pos);
+            % f1 = plotFleet(f1,gifFile,flag,delay,5,agents_pos);
 
             % try to move            
-            agent.movePolicy;                             
+            agent.movePolicy;
+            agent.getPos;
 
-        end                     
+        end
+
+        % plot                
+        if mod(iter,10) == 1
+            f1 = plotFleet(f1,gifFile,flag,delay,5,agents_pos);
+        end
 
         
     
