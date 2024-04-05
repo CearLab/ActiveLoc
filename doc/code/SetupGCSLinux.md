@@ -482,8 +482,21 @@
 # If you managed to compile ViconAPI well kudos, you should now be ready to work
 # on the project. 
 
-# Let's get to work.
+# Let's get to work. Now we create a ros workspace
 
     $ cd ~/workspace
+    $ mkdir -p ~/catkin_ws/src
+    $ cd catkin_ws
+    $ catkin_make
+    $ source devel/setup.zsh
+    $ rospack profile
+    $ cd ..
+    $ sudo chown -R ros:developers ./catkin_ws
+    $ sudo chmod -R 774 ./catkin_ws
+
+# Now we add a ros submodule for the UWB messages
+# GO TO LOCAL PROMPT
+
+    $ git submodule add https://github.com/valentinbarral/rosmsgs src/gtec/rosmsgs
 
 
