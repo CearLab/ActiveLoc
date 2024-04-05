@@ -105,7 +105,9 @@ classdef Agent < handle
             Neigh = [NeighUWB; NeighCAM];
             obj.neigh.NUWB = size(NeighUWB,1);
             obj.neigh.NCAM = size(NeighCAM,1);
-            
+
+            % proceed only if neigbors are present
+            if ~isempty(Neigh)
             % before everything, get distance measures
             for i=1:size(NeighUWB,1)
 
@@ -135,16 +137,29 @@ classdef Agent < handle
 
             % now get the others from newton combination of neigbors ID
             pairsID = unique([obj.neigh.ID(:,1); sel_ID]);
-            pairs = nchoosek(pairsID,2);
 
-            % cycle over pairs
-            for i=1:size(pairs,1)
+            % define pairs            
+            pairs = nchoosek(pairsID,2);            
+            % cycle over pairs            
+            for i=1:size(pairs,1)                        
                 rowTmp = find( (los_table(:,3) == pairs(i,1)) & (los_table(:,4) == pairs(i,2)) );
                 pos = [pos; rowTmp];
-            end
+            end   
 
             % get LOS
-            obj.neigh.LOStab = los_table(unique(pos),:);            
+            obj.neigh.LOStab = los_table(unique(pos),:);
+
+            else
+
+                % al empty
+                obj.neigh.ID = [];
+                obj.neigh.D = [];
+                obj.neigh.P = [];
+                obj.neigh.Dmeas = [];
+                obj.neigh.Pest = [];
+                obj.neigh.LOStab = [];
+
+            end
 
         end        
 
@@ -243,7 +258,7 @@ classdef Agent < handle
                 improveListCon(find(improveListCon == obj.agent_number)) = [];
 
                 % find the lines in losTAB with the subnet we are removing                                  
-                if ~isempty(improveListCon)                           
+                if ~isempty(improveListCon)                       
 
                     % cycle over the candidate agents
                     for j=1:numel(improveListCon)
@@ -267,24 +282,28 @@ classdef Agent < handle
                         agentsrm = improveListCon(j);
     
                         % remove improved agents in lostab and agents_list
-                        losTABcopy(improveList,:) = [];                        
-                        tmp = find(agents_listcopy(:,1) == agentsrm);
-                        agents_listcopy(tmp,:) = [];                        
-    
-                        % again redundancy, it should be by default, check
-                        [isRedundant, ~] = checkRedundantRigidity(obj,losTABcopy,agents_listcopy);
-                        [kconn, ~] = checkKconnectivity(obj,losTABcopy,agents_listcopy,3);
+                        losTABcopy(improveList,:) = [];    
 
-                        if (kconn && isRedundant)                            
-                            for k=1:numel(IDloc)
-                                if isempty(find(agents_listcopy(:,1) == obj.neigh.ID(IDloc(k),1)))
-                                    IDloc(k) = -1;
+                        % if something remains we can try removing
+                        if ~isempty(losTABcopy)
+                            tmp = find(agents_listcopy(:,1) == agentsrm);
+                            agents_listcopy(tmp,:) = [];                        
+        
+                            % again redundancy, it should be by default, check
+                            [isRedundant, ~] = checkRedundantRigidity(losTABcopy,agents_listcopy);                            
+                            [kconn, ~] = checkKconnectivity(losTABcopy,agents_listcopy,3);
+    
+                            if (kconn && isRedundant)                            
+                                for k=1:numel(IDloc)
+                                    if isempty(find(agents_listcopy(:,1) == obj.neigh.ID(IDloc(k),1)))
+                                        IDloc(k) = -1;
+                                    end
                                 end
-                            end
-                            pos = find(IDloc==-1);
-                            IDloc(pos) = [];
-                            break
-                        end                            
+                                pos = find(IDloc==-1);
+                                IDloc(pos) = [];
+                                break
+                            end                            
+                        end
 
                     end
 
@@ -357,11 +376,13 @@ classdef Agent < handle
             x0 = obj.location_est;
             obj.neigh.x0 = x0;
 
+            epsilon = manager.WS.epsilon;
+
             % first, if I have no neighbors, I randomly choose a direction
             if isempty(obj.neigh.ID) && (obj.agent_number ~= team.leader.agent_number)
 
                 % move
-                dstep = -0.5*[1 1] + [1 1].*rand(1,2);
+                dstep = -epsilon*[1 1] + 2*epsilon*[1 1].*rand(1,2);
                 obj.move(obj.location + dstep);
 
                 % get neighjbors
@@ -455,13 +476,13 @@ classdef Agent < handle
                     % If we get here, it means that there is something to optimize.
                     % Proceed with the optimization. We do it the same way as the
                     % dgrad search. 
-                    rstep = drigid_search(obj,IDloc);
+                    % rstep = drigid_search(obj,IDloc);
         
                     % move
-                    obj.move(obj.location + rstep);
+                    % obj.move(obj.location + rstep);
         
                     % get neighjbors
-                    obj.getNeighbors;
+                    % obj.getNeighbors;
 
                 end
 
@@ -470,13 +491,16 @@ classdef Agent < handle
         end     
 
         % distance gradient research
-        function dstep = dgrad_search(obj,IDloc)                  
+        function dstep = dgrad_search(obj,IDloc)    
+
+            manager = AgentManager.getInstance();
 
             % define 4 movements
-            steps = 0.5*[   0 +1;     ...
-                            0 -1;    ...
-                            +1 0;     ...
-                            -1 0    ];
+            epsilon = manager.WS.epsilon;
+            steps = epsilon*[   0 +1;     ...
+                                0 -1;    ...
+                                +1 0;     ...
+                                -1 0    ];
 
             % distances storage
             Dsteps = zeros(1,4);
@@ -489,7 +513,7 @@ classdef Agent < handle
 
             % handle no localized neighbors
             if isempty(IDloc)
-                IDloc = N0;            
+                IDloc = N0; 
             end
             D0metric = mean(D0);
             
@@ -499,37 +523,48 @@ classdef Agent < handle
 
                 % move 
                 obj.move(obj.location + steps(i,:));                
-                obj.getNeighbors;                     
+                obj.getNeighbors;     
 
-                % find UWB distances
-                UWBpos = find(obj.neigh.Dmeas(:,2)==1); 
+                if ~isempty(obj.neigh.ID)
 
-                % get minimum distance
-                Dmin = min(obj.neigh.Dmeas(UWBpos,1));
+                    % find UWB distances
+                    UWBpos = find(obj.neigh.Dmeas(:,2)==1); 
+    
+                    % get minimum distance
+                    Dmin = min(obj.neigh.Dmeas(UWBpos,1));
+    
+                    % I need to check that no neighbors have been lost, at most
+                    % gained.
+                    UWBneigh = obj.neigh.ID(UWBpos);
+                    
+                    % you need to check if you lost ANY neighbor, not just
+                    % localized ones. 
+                    currentIdPos = [];
+                    lostNeigh = zeros(1,numel(N0));
+                    for j=1:numel(N0)
+                        tmpPos = find(UWBneigh == N0(j));
+                        if isempty(tmpPos)
+                            lostNeigh(j) = 1;
+                        else
+                            lostNeigh(j) = 0;
+                            try
+                                locPos = find(UWBneigh == IDloc(j));
+                                if ~isempty(locPos)
+                                    currentIdPos = [currentIdPos locPos];
+                                end
+                            catch
+                                % ok, the length of neighbors loc is less
+                                % than all N0
+                            end
+                        end
+                    end   
 
-                % I need to check that no neighbors have been lost, at most
-                % gained.
-                UWBneigh = obj.neigh.ID(UWBpos);
-
-                % just to check what happens when i increase the neighbors
-                if numel(UWBneigh) > numel(N0)
-                    % ok nothing happens yay
+                else
+                    lostNeigh = 1;
                 end
-                
-                currentIdPos = [];
-                lostNeigh = zeros(1,numel(IDloc));
-                for j=1:numel(IDloc)
-                    tmpPos = find(UWBneigh == IDloc(j));
-                    if isempty(tmpPos)
-                        lostNeigh(j) = 1;
-                    else
-                        lostNeigh(j) = 0;
-                        currentIdPos = [currentIdPos tmpPos];
-                    end
-                end                
-
+    
                 % thresh for distance
-                DminThresh = 2;
+                DminThresh = manager.WS.DminThresh;
 
                 % check conditions
                 if (nnz(lostNeigh)) || (sum(Dmin < DminThresh))
@@ -548,7 +583,8 @@ classdef Agent < handle
                 end
 
                 % move back
-                obj.move(obj.location - steps(i,:));                
+                obj.move(obj.location - steps(i,:));
+               
 
             end
 
@@ -556,8 +592,49 @@ classdef Agent < handle
             obj.getNeighbors;
 
             % find the best movement and go there (FF)
-            if sum(isinf(Dsteps)) == numel(Dsteps)
-                dstep = [0 0];
+            if sum(isinf(Dsteps)) == numel(Dsteps)                       
+
+                % you need to check if you lost ANY neighbor, not just
+                % localized ones. 
+                currentIdPos = [];
+                lostNeigh = ones(1,numel(N0));                
+
+                while sum(lostNeigh) ~= 0                    
+
+                    % move
+                    dstep = -epsilon*[1 1] + 2*epsilon*[1 1].*rand(1,2);
+                    obj.move(obj.location + dstep);
+                    obj.getNeighbors;
+
+                    if ~isempty(obj.neigh.ID)
+
+                        % find UWB distances
+                        UWBpos = find(obj.neigh.Dmeas(:,2)==1); 
+        
+                        % get minimum distance
+                        Dmin = min(obj.neigh.Dmeas(UWBpos,1));
+        
+                        % I need to check that no neighbors have been lost, at most
+                        % gained.
+                        UWBneigh = obj.neigh.ID(UWBpos);
+                        for j=1:numel(N0)
+                            tmpPos = find(UWBneigh == N0(j));
+                            if isempty(tmpPos)
+                                lostNeigh(j) = 1;
+                            else
+                                lostNeigh(j) = 0;
+                                currentIdPos = [currentIdPos tmpPos];
+                            end
+                        end
+                    else
+                        lostNeigh = 1;
+                    end
+
+                    if sum(lostNeigh) ~= 0
+                        obj.move(obj.location - dstep);
+                        obj.getNeighbors;
+                    end
+                end
             else
                 [minD, pos] = min(Dsteps);            
                 dstep = steps(pos,:);            
@@ -570,10 +647,11 @@ classdef Agent < handle
         function dstep = drigid_search(obj,IDloc)                  
 
             % define 4 movements
-            steps = 0.5*[   0 +1;     ...
-                            0 -1;    ...
-                            +1 0;     ...
-                            -1 0    ];
+            epsilon = manager.WS.epsilon;
+            steps = epsilon*[   0 +1;     ...
+                                0 -1;    ...
+                                +1 0;     ...
+                                -1 0    ];
 
             % get initial set of distances
             % find UWB and CAM distances
