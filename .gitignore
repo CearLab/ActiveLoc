@@ -5,6 +5,8 @@ doc/code/SetupJackal.md
 
 # directories
 src/setup/lib
+src/setup/optim
+src/setup/CERES-SOLVER
 fig/
 res/
 Zelazo2024/
