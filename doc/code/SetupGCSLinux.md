@@ -311,11 +311,13 @@
     $ sudo chown -R $USER:developers CERES/
     $ cd CERES/ceres-bin
 
-# Now we build the library, so we need to be back in the docker container. 
+# Now we build the library, 
+# BACK TO THE DOCKER CONTAINER
 
+    $ cd CERES/ceres-bin
     $ sudo cmake -DBUILD_SHARED_LIBS='ON' ../ceres-solver-2.2.0
     $ sudo make
-    $ sudo make install 
+    $ sudo make install
     
 # These last commands might be very slow, check the RAM consumption because it 
 # could be an issue. 
@@ -381,11 +383,12 @@
 # and download the .zip (link checked on 24/01/2024). Then move the .zip in the 
 # docker container, specifically in "workspace/setup/lib". 
 
-# Now, go on a local PC terminal and do the following (FILENAME is the name
+# Now, GO ON THE DOCKER TERMINAL
+# and do the following (FILENAME is the name
 # of what you downloaded)
 
     $ unzip FILENAME.zip
-    $ mv FILENAME.zip ~/Downloads/
+    $ sudo rm FILENAME.zip
     $ mkdir ViconAPI
     $ mv EXTRAXTDIRNAME ViconAPI/F1
     $ cd ViconAPI/F1/Release/Linux64
@@ -406,10 +409,7 @@
     $ mv FILENAME-thirdparty.7z Thirdparty/
     $ cd Thirdparty
     $ 7z x FILENAME-thirdparty.7z
-    $ cd ..
-
-    $ cd ../../../../
-    $ sudo chown -R $USER:developers ViconAPI
+    $ cd ..    
 
 # Now, all the APIs are already present in these directories. However, they 
 # could have been compiled on some linux distro with different glibc version
@@ -439,31 +439,26 @@
 
 # As you can see in the INCLUDES, we are using libboost1.82 as glibc version. 
 
-# First we download it. Go to your local prompt in setup/lib and run
+# First we download it. 
+# GO TO DOCKER PROMPT in setup/lib and run
 
     $ wget https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.tar.gz
     $ tar -xf boost_1_82_0.tar.gz
-    $ mv boost_1_82_0.tar.gz ~/Downloads
-    $ sudo chown -R $USER:developers boost_1_82_0
+    $ rm boost_1_82_0.tar.gz
 
 # so we first install it (in the docker, this is important. if you change 
 # glibc version on your local you could regret it...)
 
     $ cd ~/workspace/setup/lib/boost_1_82_0
-    $ sudo mkdir boost_install
-    $ sudo ./bootstrap.sh --prefix=/home/ros/workspace/setup/lib/boost_1_82_0/boost_install
-    $ sudo ./b2
-    $ sudo ./b2 install
-    $ sudo chown -R ros:developers ./boost_install
-    $ sudo chown -R ros:developers b2
-    $ sudo chown -R ros:developers bin.v2
-    $ sudo chown -R ros:developers project-config.jam
-    $ sudo chown -R ros:developers stage
+    $ mkdir boost_install
+    $ ./bootstrap.sh --prefix=/home/ros/workspace/setup/lib/boost_1_82_0/boost_install
+    $ ./b2
+    $ ./b2 install
+    $ cd ..
+    $ sudo chown -R ros:developers ./boost_1_82_0    
 
 # Now we can build ViconAPI. Still in the docker container
-
-    $ cd /home/ros/workspace/setup/lib/
-    $ sudo chown -R ros:developers ViconAPI
+    
     $ cd /home/ros/workspace/setup/lib/ViconAPI/F1/Release/Linux64/Source
     $ make clean
     $ make ViconDataStreamSDK_CPP
@@ -473,7 +468,7 @@
 # go to "/home/ros/workspace/setup/lib/boost_1_82_0/boost_install" and check if 
 # there is a similar lib installed
 
-    $ ll | grep test_exec 
+    $ ll lib | grep test_exec
 
 # if you find that there is a similar lib, just create a symlink with the
 # expected name. For example, if you find that there is a "libboost_test_exec_monitor.a"
@@ -481,7 +476,7 @@
 
     $ ln -s libboost_test_exec_monitor.a libboost_test_exec_monitor-mt-d-x64.a
 
-# If you run again line 467 you should see the error disappeared. Proceed in the 
+# If you run again line 464 you should see the error disappeared. Proceed in the 
 # same way for similar errors. Other errors? Well I have no clue eheh. 
 
 # If you managed to compile ViconAPI well kudos, you should now be ready to work
