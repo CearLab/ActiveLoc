@@ -499,4 +499,9 @@
 
     $ git submodule add https://github.com/valentinbarral/rosmsgs src/gtec/rosmsgs
 
+# Now rename the following files
+
+    $ mv catkin_ws/src/jackal_custom/package.xml catkin_ws/src/jackal_custom/package.xml.old
+    $ mv catkin_ws/src/UWB_driver/package.xml catkin_ws/src/ackal_op/package.xml.old
+
 
