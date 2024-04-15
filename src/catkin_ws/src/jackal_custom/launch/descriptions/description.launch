@@ -1,6 +1,5 @@
 <launch>
   <arg name="config" default="base" />
-  <arg name="rear_id" default="0" />
   <arg name="right_id" default="1" />
   <arg name="left_id" default="2" />
 
@@ -9,11 +8,14 @@
   <param name="robot_description"
          command="$(find jackal_description)/scripts/$(arg env_runner)
                     $(find jackal_custom)/urdf/configs/$(arg config)
-                    $(find xacro)/xacro $(find jackal_custom)/urdf/custom_jackal.urdf.xacro 
-                    rear_id:=$(arg rear_id) right_id:=$(arg right_id) left_id:=$(arg left_id) --inorder" />
-                    
+                    $(find xacro)/xacro $(find jackal_custom)/urdf/xacro/jackal_custom.urdf.xacro 
+                    right_id:=$(arg right_id) left_id:=$(arg left_id) --inorder" />
+
+  <!-- state publisher -->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
     <param name="publish_frequency" value="10"/>
     <param name="use_tf_static" value="false"/>
   </node>
+  
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
 </launch>
