@@ -1,3 +1,7 @@
+<!--
+  Launch file for the base jackal configuration
+  !!! DO NOT TOUCH IF NOT AWARE !!!
+-->
 <launch>
   <arg name="jackal_port" default="/dev/jackal" />
 

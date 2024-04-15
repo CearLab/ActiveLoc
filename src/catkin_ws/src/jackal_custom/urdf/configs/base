@@ -1,3 +1,5 @@
 # The base Jackal configuration has no accessories at all,
 # so nothing need be specified here; the defaults as given
 # in the URDF suffice to define this config.
+JACKAL_FRONT_ACCESSORY_FENDER=0
+JACKAL_REAR_ACCESSORY_FENDER=0

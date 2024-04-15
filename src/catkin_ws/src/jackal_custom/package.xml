@@ -7,7 +7,7 @@
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="lvofrc95@outlook.it">fedeoli</maintainer>
+  <maintainer email="federico.oliva.it@gmail.com">fedeoli</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
@@ -63,9 +63,9 @@
 
 
   
-  <build_depend>gtec_msgs</build_depend>
+  <!-- <build_depend>gtec_msgs</build_depend> -->
   <!-- <run_depend>gtec_msgs</run_depend> -->
-  <exec_depend>gtec_msgs</exec_depend>
+  <!-- <exec_depend>gtec_msgs</exec_depend> -->
 
 
   <!-- The export tag contains other, unspecified, tags -->
