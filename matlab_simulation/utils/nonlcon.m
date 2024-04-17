@@ -47,21 +47,18 @@ function [c, ceq] = nonlcon(x,p)
     end
 
     % get agents summary tables
-    [los_table,agents_list] = calcLosMap(agents,'UWB');
-
-    % get incidence matrix
-    I = calcIncidenceMatrix(los_table,agents_list);
-
-    % same G
-    edgediff = ~isequal(I,I0);        
+    [los_table,agents_list] = calcLosMap(agents,'UWB');    
+    
 
     % I also want to ensure a min distance between agents
     % get distances
     if ~isempty(los_table)
         D = los_table(:,5:5+p-1) - los_table(:,5+p:5+2*p-1);
         Dmin = min(vecnorm(D,2,2));
+        Dmax = max(vecnorm(D,2,2));
     else
         Dmin = 0;
+        Dmax = 0;
     end
 
     % set Dminthresh
@@ -70,8 +67,15 @@ function [c, ceq] = nonlcon(x,p)
         Dminthresh = 0;
     end    
 
+    % set Dmaxthresh
+    Dmaxthresh = manager.WS.Dmaxthresh;
+    if isinf(Dmaxthresh)
+        Dmaxthresh = 1e2;
+    end
+
     % set constraint
     distconmin = (Dminthresh - Dmin);
+    distconmax = (Dmax - Dmaxthresh);
 
     % of course I want to keep rigidity
     % get rigidity matrix 
@@ -94,13 +98,96 @@ function [c, ceq] = nonlcon(x,p)
     R = vecnorm(xmat,2,2);
     InsideCircle = R - Rmax;
 
+    %%% symmetry    
+    rho2min = 0.5;
+    if ~isempty(los_table)
+
+        % init
+        JS = 0;        
+
+        % init                                
+        SXYtmp = 0;
+        S2tmp = 0;
+        S2T1 = 0;
+        S2T2 = 0;        
+
+        % cycle over all the agents
+        for a=1:m
+
+            % init possible deltas
+            LOCb = [];
+            POSb = [];
+
+            % get position of single agent
+            LOCa = agents_list(a,2:3);
+
+            % now inner cycle
+            % I'm not removing a~=b because the diff is zero anyways
+            for b=1:m
+                
+                % now cycle over the LOS tab                
+
+                % find if the link does exist
+                flagA = los_table(:,3:4) == [a b];
+                flagB = los_table(:,3:4) == [b a];
+                posA = find(flagA(:,1).*flagA(:,2) == 1);
+                posB = find(flagB(:,1).*flagB(:,2) == 1);      
+                flag = min([posA posB]); 
+
+                % assign
+                if ~isempty(flag)
+                    LOCb(b,:) = LOCa - agents_list(b,2:3);   
+                    POSb(b,:) = agents_list(b,2:3);
+                end                                
+                
+            end
+
+            if ~isempty(LOCb)
+
+                % mean in the neighbors                       
+                NNeighs = nnz(LOCb(:,1))+1;                
+                muNeighs = sum(POSb)/NNeighs;                
+
+                % difference in neihcbors
+                DIFFb = sum(LOCb);
+
+                % compute terms
+                S2T1 = S2T1 + muNeighs.*(muNeighs - LOCa);                                            
+                S2T2 = S2T2 + LOCa.*DIFFb/NNeighs;    
+
+                % compute covariance
+                S2tmp = S2tmp + (LOCa - muNeighs).^2;  
+                SXYtmp = SXYtmp + prod(LOCa - muNeighs);                                   
+
+            end
+                        
+        end        
+
+        % variances terms        
+        % S2 = (S2T1 + S2T2)/m;
+        S2 = S2tmp/m;
+        SX2 = S2(1);
+        SY2 = S2(2);
+        
+        % symmetry term                   
+        SXY = SXYtmp/m;        
+
+        % correlation
+        rho2 = SXY^2/(SX2*SY2);        
+    else
+        JS = 0;
+        rho2 = rho2min;
+    end  
+    rho2conmin = (rho2min - rho2);
+
     % equality constraints
     ceq = [ceq; isrigid];
-    ceq = [ceq; isConn];
-    % ceq = [ceq; edgediff];
+    ceq = [ceq; isConn];    
 
     % inequality constraints
     c = [c; distconmin];
+    c = [c; distconmax];
+    % c = [c; rho2conmin];
     % c = [c; InsideCircle];
 
 

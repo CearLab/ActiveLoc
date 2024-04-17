@@ -8,6 +8,7 @@
 clc;
 clear;
 close all;
+warning off
 rng(1);
 
 %% check toolbox dependencies 
@@ -24,9 +25,11 @@ m = 5; % number of agents
 p = 2;
 
 % define range for RD sensors
-UWBrange = 10;
+UWBrange = 8;
 sigmarand = 10;
-Dminthresh = 0*0.5*UWBrange;
+% Dminthresh = 0*0.5*UWBrange;
+Dminthresh = 3;
+Dmaxthresh = 8;
 
 % define exit condition
 isrigid = 0;
@@ -41,7 +44,7 @@ iter = 0;
 iteropt = 0;
 optattempt = 0;
 maxattempt = 1000;
-targetfeasible = 100;
+targetfeasible = 20;
 targetimproved = 10;
 Jold = Inf;
 
@@ -56,7 +59,8 @@ while (optattempt<maxattempt) && (feasibleimproved<targetimproved) && (feasiblef
     % disp
     clc
     disp(['Feasible improved ', num2str(feasibleimproved)]);
-    disp(['Feasible found ', num2str(feasiblefound)]);
+    disp(['Feasible found ', num2str(feasiblefound)]);    
+    disp(['optimization attempt ', num2str(iteropt)]);   
     disp(['X0 attempt ', num2str(iter)]);
 
     % reset manager
@@ -65,6 +69,9 @@ while (optattempt<maxattempt) && (feasibleimproved<targetimproved) && (feasiblef
     manager.WS.p = p;
     manager.WS.m = m;
     manager.WS.Dminthresh = Dminthresh;
+    manager.WS.Dmaxthresh = Dmaxthresh;
+    manager.WS.Ta = 1;
+    manager.WS.Tb = 1;
 
     % define initial condition
     agents_pos = zeros(m,p);
@@ -131,7 +138,7 @@ while (optattempt<maxattempt) && (feasibleimproved<targetimproved) && (feasiblef
 
     % DminThresh
     DminThresh = manager.WS.Dminthresh;
-    DmaxThresh = 2*agents{1}.sensors.UWB.max_range;
+    DmaxThresh = manager.WS.Dmaxthresh;
 
     A = calcAdjacencyMatrix(los_table,agents_list);
     [allConn, A] = agents{1}.checkConnectivity(A);
@@ -141,10 +148,7 @@ while (optattempt<maxattempt) && (feasibleimproved<targetimproved) && (feasiblef
         
         % update
         iteropt = iteropt + 1;
-        optattempt = iteropt;
-
-        % disp
-        disp(['optimization attempt ', num2str(iteropt)]);        
+        optattempt = iteropt;            
 
         % copy initial condition as second team: this will be the one we optimize on
         for i = 1:m
@@ -166,9 +170,17 @@ while (optattempt<maxattempt) && (feasibleimproved<targetimproved) && (feasiblef
         for i = 1:m        
             agentsInit{i}.sensors.UWB = Sensor(agentsInit{i}.agent_number,'range',UWBrange);        
         end        
+
+        manager.WS.Ta = 1;
+        manager.WS.Tb = 1;
         
         X0 = reshape(agents_pos',size(agents_pos,1)*size(agents_pos,2),1);
         J0 = cost_function(X0,p);
+
+        % compute normalization
+        Tmax = manager.WS.JSA + manager.WS.JSB;
+        manager.WS.Ta = Tmax/manager.WS.JSA;
+        manager.WS.Tb = Tmax/manager.WS.JSB;
 
         % define lower bounds
         LB = repmat(map.map_span(:,1),m,1);
@@ -182,19 +194,20 @@ while (optattempt<maxattempt) && (feasibleimproved<targetimproved) && (feasiblef
                                 'InitialMeshSize',1e2, ...
                                 'UseParallel', false, ...
                                 'MaxFunctionEvaluations', 1e10, ...
-                                'ConstraintTolerance', 1e-1, ...
+                                'ConstraintTolerance', 1e-10, ...
                                 'StepTolerance', 1e-10, ...
                                 'Cache', 'On', ...
-                                'MaxTime', 30, ...
+                                'MaxTime', 60, ...
                                 'Algorithm','classic');       
-        
+
         % optimization - fmincon
-        % options = optimset( 'Display','off', ...
-        %                     'Algorithm','interior-point', ...                                                        
-        %                     'TolX', 1e-10, ...
-        %                     'TolFun', 1e-10, ...
-        %                     'MaxFunEvals', 1e10, ...
-        %                     'MaxIter', 1e3);
+        % options = optimoptions( 'fmincon', ...
+        %                         'StepTolerance', 1e-10, ...
+        %                         'FunctionTolerance', 1e-10, ...
+        %                         'MaxFunctionEvaluations', 1e10, ...
+        %                         'ConstraintTolerance', 1e-3, ...
+        %                         'StepTolerance', 1e-10, ...                                
+        %                         'Algorithm','interior-point');                    
         
         % init counter
         tic
@@ -206,8 +219,8 @@ while (optattempt<maxattempt) && (feasibleimproved<targetimproved) && (feasiblef
                             [],                     ...
                             [],                     ...
                             [],                     ...
-                            Inf*LB,                   ...
-                            Inf*UB,                   ...
+                            1*LB,                   ...
+                            1*UB,                   ...
                             @(x)nonlcon(x,p), ...
                             options);
 
@@ -228,17 +241,18 @@ while (optattempt<maxattempt) && (feasibleimproved<targetimproved) && (feasiblef
 
                 % store stuff  
                 J0old = J0;   
-                X0old = X0;                             
-                [los_table0_old,agents_list0_old] = calcLosMap(agentsInit,'UWB');    
-                R0_old = calcRigitdyMatrix(los_table0_old,agents_list0_old);
-                e0_old = eig(R0_old'*R0_old);                
-
+                X0old = X0;
+                X0oldMat = reshape(X0old,p,floor(numel(X0old)/p))';
+                dP = X0oldMat(leaderID,:);
+                X0oldMat = X0oldMat - dP;
+                
                 Jold = J;   
-                Xold = Xtmp;   
-                [los_table_old,agents_list_old] = calcLosMap(agentsOpt,'UWB');    
-                R_old = calcRigitdyMatrix(los_table_old,agents_list_old);
-                e_old = eig(R_old'*R_old);                
-            end        
+                Xold = Xtmp;  
+                XoldMat = reshape(Xold,p,floor(numel(Xold)/p))';
+                dP = XoldMat(leaderID,:);
+                XoldMat = XoldMat - dP;
+
+            end          
         end
 
     end
@@ -247,41 +261,11 @@ end
 topt = toc;
 
 %% reshape agents positions
-% set initial condition
-X0tmp = reshape(X0old,p,floor(numel(X0old)/p))';
-tmp = X0tmp(leaderID,:);
-X0tmp = X0tmp - tmp;
 
-% set optimized condition
-Xtmp = reshape(Xold,p,floor(numel(Xold)/p))';
-tmp = Xtmp(leaderID,:);
-Xtmp = Xtmp - tmp;
+% save cost function
+manager = AgentManager.getInstance();
+Jold = cost_function(Xold,p);
 
-% reset everything and recreate teams
-% reset manager
-manager.reset();
-manager.WS.eigThresh = 1e-5;
-manager.WS.p = p;
-manager.WS.m = m;           
-manager.WS.Dminthresh = Dminthresh;
-
-% assign positions of optimized team
-for i = 1:m
-    if i==leaderID
-        manager.createAgent(Xtmp(i,:),1,'team_leader'); %create the leader        
-    else        
-        manager.createAgent(Xtmp(i,:),1,'team_mate'); %create the followers
-    end        
-end
-
-% assign position for init team
-for i = 1:m
-    if i==leaderID        
-        manager.createAgent(X0tmp(i,:),2,'team_leader'); %create the leader
-    else
-        manager.createAgent(X0tmp(i,:),2,'team_mate'); %create the followers        
-    end        
-end
 
 % get the team you just created
 teamOpt = manager.team_list{1};
@@ -295,12 +279,21 @@ agentsOpt = {agentsOpt{1:teamOpt.leader.agent_number-1} teamOpt.leader agentsOpt
 agentsInit = {teamInit.team_mates{1:end}};
 agentsInit = {agentsInit{1:teamInit.leader.agent_number-1-m} teamInit.leader agentsInit{teamInit.leader.agent_number-m:end}};
 
-
-% set sensors
-for i = 1:m        
+% set locations and sensors
+for i = 1:m     
+    agentsOpt{i}.location = XoldMat(i,:);
+    agentsInit{i}.location = X0oldMat(i,:);
     agentsOpt{i}.sensors.UWB = Sensor(agentsOpt{i}.agent_number,'range',UWBrange);        
     agentsInit{i}.sensors.UWB = Sensor(agentsInit{i}.agent_number,'range',UWBrange);        
-end     
+end
+
+[los_table0_old,agents_list0_old] = calcLosMap(agentsInit,'UWB');
+R0_old = calcRigitdyMatrix(los_table0_old,agents_list0_old);
+e0_old = eig(R0_old'*R0_old);                
+
+[los_table_old,agents_list_old] = calcLosMap(agentsOpt,'UWB'); 
+R_old = calcRigitdyMatrix(los_table_old,agents_list_old);
+e_old = eig(R_old'*R_old);                     
 
               
 %% plot section
@@ -316,11 +309,8 @@ scaleaxis = 1.2;
 f1 = figure(1);
 hold on; box on; grid on; 
 set(gca,'fontsize', 20);
-
-% set subplots
-s1 = subplot(1,2,1);
-hold on; box on; grid on; 
-set(gca,'fontsize', 20);
+xlabel('X axis')
+ylabel('Y axis')
 
 % set map bounds
 fill([  map.map_span(1,1) map.map_span(1,1) map.map_span(1,2) map.map_span(1,2)], ...
@@ -329,9 +319,12 @@ fill([  map.map_span(1,1) map.map_span(1,1) map.map_span(1,2) map.map_span(1,2)]
      'FaceAlpha',0.1, ...
      'LineWidth',1.5);
 
-s2 = subplot(1,2,2);
+% set map bounds
+f2 = figure(2);
 hold on; box on; grid on; 
 set(gca,'fontsize', 20);
+xlabel('X axis')
+ylabel('Y axis')
 
 % set map bounds
 fill([  map.map_span(1,1) map.map_span(1,1) map.map_span(1,2) map.map_span(1,2)], ...
@@ -340,22 +333,24 @@ fill([  map.map_span(1,1) map.map_span(1,1) map.map_span(1,2) map.map_span(1,2)]
      'FaceAlpha',0.1, ...
      'LineWidth',1.5);
 
-teamInit.plotTeam(s1,9);
-drawLosMap(los_table0_old,s1,9);
+teamInit.plotTeam(f1,9);
+drawLosMap(los_table0_old,f1,9);
 xlim(scaleaxis*map.map_span(1,:)); ylim(scaleaxis*map.map_span(2,:));
 axis equal
 
 % team 2 - optimized
-teamOpt.plotTeam(s2,2);
-drawLosMap(los_table_old,s2,2);
+teamOpt.plotTeam(f2,2);
+drawLosMap(los_table_old,f2,2);
 xlim(scaleaxis*map.map_span(1,:)); ylim(scaleaxis*map.map_span(2,:));
 axis equal
-
-xlabel('X axis')
-ylabel('Y axis')
 
 warning('on','all')
 
 %% silly
-load('handel.mat')
-sound(y,Fs);
+% load('handel.mat')
+% [y, Fs] = audioread('lesson_complete.mp3');
+% samples=[1,length(y)-(5*Fs)];%replace 20 with the number of seconds you need to cut
+% [y,Fs] = audioread('lesson_complete.mp3');
+% audiowrite('duolingo.wav',y,Fs);
+% [y,Fs] = audioread('duolingo.wav');
+% sound(y);
