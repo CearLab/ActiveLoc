@@ -234,10 +234,10 @@ classdef Agent < handle
                 obj.neigh.LOC.agents_list = agents_list;
 
                 % init redundancy
-                [isRedundant, improveListRed] = checkRedundantRigidity(obj,losTAB,agents_list);
+                [isRedundant, improveListRed] = checkRedundantRigidity(losTAB,agents_list);
 
                 % init connectivity                
-                [kconn, improveListCon] = checkKconnectivity(obj,losTAB,agents_list,3);
+                [kconn, improveListCon] = checkKconnectivity(losTAB,agents_list,3);
 
                 % remove itself
                 improveListCon(find(improveListCon == obj.agent_number)) = [];
@@ -305,162 +305,13 @@ classdef Agent < handle
 
         end
 
-        % check if the neighborhood mesh is rigid
-        function [isRigid, e] = isRigid(obj,losTAB,agents_list)
-
-            % init
-            isRigid = 0;
-
-            % safety
-            if isempty(losTAB)
-                return;
-            end
-            
-            % get rigidity matrix
-            R = calcRigitdyMatrix(losTAB ,agents_list);
-
-            % get nonzero eigs
-            e = eig(R'*R);
-        
-            % get # nnz elements
-            pos = find(abs(e) < 1e-10);
-
-            e(pos) = [];
-            isRigid = (numel(pos)==3);
-
-        end
-
-        % check redundant rigidity
-        function [isRedundant, improveList] = checkRedundantRigidity(obj,losTAB,agents_list)
-        
-            % remove one edge at a time and check rigidity
-            Nedges = size(losTAB,1);
-
-            % init
-            isRedundant = 0;
-            fail = 0;
-            improveList = [];
-
-            % cycle over edges
-            for i=1:Nedges
-
-                % get LOS and check rigidity
-                losTMP = losTAB;
-                losTMP(i,:) = [];                
-                isRigid = obj.isRigid(losTMP,agents_list);
-
-                % if not rigid, we're alrready done
-                if ~isRigid
-                    fail = 1;
-                    improveList(end+1,1) = i;                   
-                end
-            end
-
-            % huray it's redundant
-            if ~fail
-                isRedundant = 1;
-            end
-
-        end
-
-        % check if the neighborhood is 3-connected
-        function [kconn, improveList] = checkKconnectivity(obj,losTAB,agents_list,k)
-
-            % kconn flag
-            kconn = 0;
-            fail = 0;
-            improveList = [];
-
-            % if it does not have at least 2 vertices return
-            if size(agents_list,1) < k
-                return;
-            end
-
-            % start from the full neighbourhood graph. if its connected
-            % then proceed, otherwise it's not k-connected for sure
-
-            % call util
-            A = calcAdjacencyMatrix(losTAB,agents_list);
-            [allConn, A] = obj.checkConnectivity(A);
-
-            if ~allConn
-                return;
-            else
-                % now, we proceed by removing one k-tuple of vertices at a
-                % time and check again connectivity
-
-                % number of agents
-                n = size(A,1);
-
-                % pairs
-                pairs = nchoosek(1:n,k-1);
-
-                improveList = [];
-
-                % cycle and check
-                for i=1:size(pairs,1)
-                    
-                    % init
-                    tmp = A;
-
-                    % remove vertices
-                    %removed one
-                    tmpPair = pairs(i,:);
-                    tmp(pairs(i,:),:) = [];
-                    tmp(:,pairs(i,:)) = [];
-
-                    isConn = obj.checkConnectivity(tmp);
-
-                    % if you find a non-connected submesh then you drop the
-                    % search
-                    if (~isConn)
-                        fail = 1;
-                        improveList(end+1:end+numel(agents_list(tmpPair,1))) = agents_list(tmpPair,1);
-                    end
-
-                end
-
-                % set the flag
-                if ~fail 
-                    kconn = 1;
-                end
-            end
-
-        end
-
-        % find submesh globally rigid
-        function [isConn, Aout] = checkConnectivity(obj,A)
-
-            % if scalar exit
-            if isscalar(A)
-                isConn = 1;
-                return;
-            end
-            
-            % get number nodes
-            n = size(A,1);            
-
-            % if A^(n-1) has no zero elements than is connected
-            Apow = A^(n-1);
-            Azeros = find(Apow == 0);
-            if isempty(Azeros)
-                isConn = 1;
-            else
-                isConn = 0;
-            end
-
-            % out
-            Aout = A;
-
-        end
-        
-
         % trilaterate from pos and dist
         function obj = trilaterate(obj,D,P)
 
             % This is quite strange, check 
+            options = optimoptions('fminunc','Display','off');
             x0 = mean(P,1);
-            Xhat = fminunc(@(x)obj.cost_function_trilateration(x,D,P),x0);
+            Xhat = fminunc(@(x)cost_function_trilateration(x,D,P),x0,options);
             obj.location_est = Xhat;
 
         end
@@ -517,51 +368,25 @@ classdef Agent < handle
                 obj.getNeighbors;
 
                 return; 
-            end
-
-            % bounds (if loc_est = nan, just ignore bounds)
-            % if it is not localized, no bounds, because they are defined
-            % by the solvability of the localization problem. They are a
-            % sort of passive bounds. 
-            if obj.localized == 0
-                LB = [];
-                UB = [];
-            else
-
-                % if you are localized you can actually choose where to go,
-                % without loosing your localization. So, we define a set of
-                % active constraints, with the goal not to make you loose
-                % your estimate.
-
-                % First case: check if you have the leader within 
-                % CAM distance. 
-                pos = find((obj.neigh.ID(:,1) == team.leader.agent_number) & (obj.neigh.ID(:,2) == 2) );
-
-                % if so, you don't want to lose CAM LOS with the leader,
-                % beacuse you're directly localized. So, the upper bound
-                % remains the estimated location
-                if ~isempty(pos)
-                    LB = obj.location_est - 0.5*team.leader.sensors.CAM.max_range;
-                    UB = obj.location_est + 0.5*team.leader.sensors.CAM.max_range;
-                % if not, the same bounds are applied but with UWB ranges
-                else
-                    LB = obj.location_est - 0.8*obj.sensors.UWB.max_range;
-                    UB = obj.location_est + 0.8*obj.sensors.UWB.max_range;
-                end
-                
-            end 
+            end            
 
             % now we proceed checking your neighborhood characteristics:
             % first, check if neighbors are localized
             IDloc = [];
             for i=1:size(obj.neigh.ID,1)
                 if agents{obj.neigh.ID(i)}.localized
-                    IDloc = [IDloc, i];                    
+                    IDloc = [IDloc, agents{obj.neigh.ID(i)}.agent_number];                    
                 end
             end
 
-            % if no neighbor is localized:
-            % just stay there
+            % if no neighbor is localized:           
+            % I need to check the gradient of the distances and move
+            % towards it. To do so I fo back and forth on the 4
+            % cardinal points around my own position (I do this in FF),
+            % so there is no need to know my location. Each time I
+            % check the mean of my distances, which I measure again,
+            % and in the end I decide where to move. Here we have
+            % drift, but for small distances it's ok.
             if isempty(IDloc) && (obj.agent_number ~= team.leader.agent_number)
 
                 % find exploration step
@@ -583,13 +408,8 @@ classdef Agent < handle
             %       2: localized
 
             % what happens when I am not localized:
-            % I need to check the gradient of the distances and move
-            % towards it. To do so I fo back and forth on the 4
-            % cardinal points around my own position (I do this in FF),
-            % so there is no need to know my location. Each time I
-            % check the mean of my distances, which I measure again,
-            % and in the end I decide where to move. Here we have
-            % drift, but for small distances it's ok.
+            % I do the same as in dgrad_search, but only with the distances
+            % from localized neighors.
             if obj.localized == 0                     
 
                 % find exploration step
@@ -613,18 +433,15 @@ classdef Agent < handle
                 end
                 
                 % I try to maximize rigidity, but I need at least 2
-                % neighbors to compute rigidity
-
+                % neighbors to compute rigidity                
                 if numel(IDloc) < 3
 
                     % CASE 1
 
-                    % If I don't have 2 localized neighbors, just move away
-                    % from those that I have. In future this could be 
-                    % maximizing coverage
+                    % I don't have, just stay still for the moment
 
                     % this will be passed to the optimization
-                    CASE = 1;
+                    return;
 
                 else
 
@@ -634,55 +451,26 @@ classdef Agent < handle
                     % If I have at least 3 localized neighbors, I can maximize 
                     % rigidity
 
-                    % this will be passed to the optimization
-                    CASE = 2;
+
+                    % If we get here, it means that there is something to optimize.
+                    % Proceed with the optimization. We do it the same way as the
+                    % dgrad search. 
+                    rstep = drigid_search(obj,IDloc);
+        
+                    % move
+                    obj.move(obj.location + rstep);
+        
+                    % get neighjbors
+                    obj.getNeighbors;
 
                 end
 
-            end
-            
-            % If we get here, it measn that there is something to optimize.
-            % Proceed with the optimization.                       
-
-            % optimization settings 
-            options = optimoptions('fmincon','Display','iter','Algorithm','sqp');
-
-
-            [pdes, J] = fmincon(                     ...
-                                @(x)obj.cost_function_policy(x,CASE,IDloc), ...
-                                x0,                     ...
-                                [],                     ...
-                                [],                     ...
-                                [],                     ...
-                                [],                     ...
-                                LB,                     ...
-                                UB,                     ...
-                                [],                     ...
-                                options);              
-
-            % if they tell to stay where we first where, do so
-            if (sum(pdes ~= x0) == 0) || isnan(sum(pdes))
-                return
-            else                                
-
-                % control
-                % distance from estimated position
-                dist = pdes - obj.location;
-
-                % proportional
-                k = 0.1;
-
-                posstep = obj.location + k*dist;  
-
-                % move
-                obj.move(posstep);
-
-            end
+            end           
 
         end     
 
         % distance gradient research
-        function dstep = dgrad_search(obj,DistLoc)                  
+        function dstep = dgrad_search(obj,IDloc)                  
 
             % define 4 movements
             steps = 0.5*[   0 +1;     ...
@@ -700,10 +488,10 @@ classdef Agent < handle
             N0 = obj.neigh.ID(UWBpos);
 
             % handle no localized neighbors
-            if isempty(DistLoc)
-                DistLoc = 1:numel(UWBpos);
+            if isempty(IDloc)
+                IDloc = N0;            
             end
-            D0metric = mean(D0(DistLoc));
+            D0metric = mean(D0);
             
 
             % cycle over 4 steps
@@ -729,9 +517,9 @@ classdef Agent < handle
                 end
                 
                 currentIdPos = [];
-                lostNeigh = zeros(1,numel(DistLoc));
-                for j=1:numel(DistLoc)
-                    tmpPos = find(UWBneigh == N0(DistLoc(j)));
+                lostNeigh = zeros(1,numel(IDloc));
+                for j=1:numel(IDloc)
+                    tmpPos = find(UWBneigh == IDloc(j));
                     if isempty(tmpPos)
                         lostNeigh(j) = 1;
                     else
@@ -778,114 +566,140 @@ classdef Agent < handle
 
         end
 
-        % cost function for trilateration
-        function J = cost_function_trilateration(obj,X,D,P)            
+        % distance gradient research
+        function dstep = drigid_search(obj,IDloc)                  
 
-            % n meas
-            nmeas = numel(D);
+            % define 4 movements
+            steps = 0.5*[   0 +1;     ...
+                            0 -1;    ...
+                            +1 0;     ...
+                            -1 0    ];
 
-            % get cost function
-            Pdiff = P - X;
+            % get initial set of distances
+            % find UWB and CAM distances
+            UWBCAMpos = find(obj.neigh.Dmeas(:,2) > 0);                         
+            N0 = unique(obj.neigh.ID(UWBCAMpos));
 
-            % init
-            J = 0;
+            % find IDpos
+            IDpos = zeros(size(IDloc));            
+            for i=1:numel(IDloc)
+                IDpos(i) = find(obj.neigh.ID(:,1) == IDloc(i),1);
+            end
 
-            % build diff
-            for i=1:nmeas
-                J = J + (Pdiff(i,:)*Pdiff(i,:)' - D(i)^2)^2;
-            end            
+            % now get LOStab UWB of only DistLoc (no nan in estpos)
+            LOStmp = obj.neigh.LOStab( find( ~isnan(obj.neigh.LOStab(:,9)) & ~isnan(obj.neigh.LOStab(:,11)) & obj.neigh.LOStab(:,end) == 1), :);
+            LOStmpMeA = obj.neigh.LOStab( find( isnan(obj.neigh.LOStab(:,9)) & obj.neigh.LOStab(:,3) == obj.agent_number & ~isnan(obj.neigh.LOStab(:,11)) ), :);
+            LOStmpMeB = obj.neigh.LOStab( find( isnan(obj.neigh.LOStab(:,11)) & obj.neigh.LOStab(:,4) == obj.agent_number & ~isnan(obj.neigh.LOStab(:,9)) ), :);
+            LOS = [LOStmp; LOStmpMeA; LOStmpMeB];
+            agentList_tmp = [IDloc', obj.neigh.Pest(IDpos,1:2);];
+            agentList_tmp(end+1,:) = [obj.agent_number, obj.location_est];
 
-        end
+            % get rigidity matrix 
+            R0 = calcRigitdyMatrix(LOS,agentList_tmp);
+            R0over = R0'*R0;
+            e0 = eig(R0over);    
+            pos = find(abs(e0) < 1e-5);    
+            isrigid0 = (numel(pos)==3);              
+            e0(pos) = [];
+            JR0 = min(e0);   
 
-        % cost function
-        function J = cost_function_policy(obj,x,CASE,IDloc)
+            % thresh for distance
+            DminThresh = 2;
+            
 
-            % get manager and team
-            manager = AgentManager.getInstance();                       
+            % cycle over 4 steps
+            for i=1:4          
 
-            % get plane or space info
-            p = manager.WS.p;
+                % move 
+                obj.move(obj.location + steps(i,:));                
+                obj.getNeighbors;    
 
-            % CASE 1
-            % I have neighbors but less than two of them are localized. 
-            % I just move away from them.
-            if CASE == 1
+                % find UWB distances
+                UWBCAMpos = find(obj.neigh.Dmeas(:,2) > 0); 
 
-                % stay here
-                J = 0;
-                return;
+                % get minimum distance
+                Dmin = min(obj.neigh.Dmeas(UWBCAMpos,1));
 
-                % get agent list only of those localized
-                agents_list = [obj.neigh.ID(IDloc,1), obj.neigh.Pest(IDloc,:)]; 
-    
-                % define pdes as the barycenter of them
-                G = mean(agents_list(find(agents_list(:,end) == 1),2:3),1);                    
-    
-                % compute your distance from the barycenter
-                delta = G - x;
-                dbar = norm(delta);
-    
-                % compute bearing from initial condition                    
-                currbear = atan2(delta(2),delta(1));                    
-                bear = abs(currbear - pi*sign(currbear));
-    
-                % maximize this distance
-                J = 0/dbar + 1*bear;
+                % I need to check that no neighbors have been lost, at most
+                % gained.
+                UWBneigh = unique(obj.neigh.ID(UWBCAMpos));
 
-            % CASE 2
-            % I have at least three neighbors localized. 
-            % I want to move to maximize rigidity.
-            elseif CASE == 2
+                % same but only with localized neighbors
+                % UWBneigh = [];
+                % for a=1:size(obj.neigh.ID,1)
+                %     if ~isnan(obj.neigh.Pest(a,2))
+                %         UWBneigh = [UWBneigh, obj.neigh.ID(a)];
+                %     end
+                % end
 
-                % stay here
-                J =0;
-                return;
-
-                % get agent list only of those localized
-                agents_list = [obj.neigh.ID(IDloc,1), obj.neigh.Pest(IDloc,:)]; 
-                agents_list(end+1,:) = [obj.agent_number x 0];
-        
-                % get LOS tab only for localized nodes and itself
-                losTmp = obj.neigh.LOStab(find(obj.neigh.LOStab(:,end) == 1), :);
-                rowLocStart = [];
-                rowLocEnd = [];
-                for j=1:size(agents_list,1)
-                    rowLocStart = [rowLocStart; find(losTmp(:,3) == agents_list(j,1))]; 
-                    rowLocEnd = [rowLocEnd; find(losTmp(:,4) == agents_list(j,1))];
-                end
-                rowLoc = intersect(rowLocStart,rowLocEnd);
-                losTAB = losTmp(rowLoc,:);  
-
-                % replace the estimated location with the actual x
-                for i=1:size(losTAB,1)
-                    % if agent is the first in the row pair
-                    if losTAB(i,3) == obj.agent_number
-                        losTAB(i,5:5+p-1) = x;
-                        losTAB(i,5+2*p:5+3*p-1) = x;
-                    end
-                    % if agent is the second in the row pair
-                    if losTAB(i,4) == obj.agent_number
-                        losTAB(i,5+p:5+2*p-1) = x;
-                        losTAB(i,5+3*p:5+4*p-1) = x;
-                    end
+                % just to check what happens when i increase the neighbors
+                if numel(UWBneigh) > numel(N0)
+                    % ok nothing happens yay                    
                 end
                 
-                % check theorem
-                [kconn, improveListConn] = checkKconnectivity(obj,losTAB,agents_list,3);
-                [isRedundant, improveListRed] = checkRedundantRigidity(obj,losTAB,agents_list);                
-                    
-                % if rigid, get lambda4 and maximize
-                if kconn && isRedundant         
-                    [isRigid, e] = obj.isRigid(losTAB,agents_list);
-                    J = 1/min(e);                                    
-                % if not globally rigid not good
-                else                        
-                    J = 1e5;                                        
-                end                
+                currentIdPos = [];
+                lostNeigh = zeros(1,numel(IDloc));
+                for j=1:numel(IDloc)                       
+                    tmpPos = find(UWBneigh == IDloc(j));
+                    if isempty(tmpPos)
+                        lostNeigh(j) = 1;
+                    else
+                        lostNeigh(j) = 0;
+                        currentIdPos = [currentIdPos tmpPos];
+                    end
+                end                                
 
-            end                                                  
+                % check conditions
+                if (sum(Dmin < DminThresh)) || (nnz(lostNeigh)) 
 
-        end
+                    % I've lost a neighbor, no good
+                    isrigid(i) = 0;
+                    JR(i) = nan;
+
+                else
+
+                    % now get LOStab UWB of only DistLoc (no nan in estpos)
+                    LOStmp = obj.neigh.LOStab( find( ~isnan(obj.neigh.LOStab(:,9)) & ~isnan(obj.neigh.LOStab(:,11)) & obj.neigh.LOStab(:,end) == 1), :);
+                    LOStmpMeA = obj.neigh.LOStab( find( isnan(obj.neigh.LOStab(:,9)) & obj.neigh.LOStab(:,3) == obj.agent_number & ~isnan(obj.neigh.LOStab(:,11)) ), :);
+                    LOStmpMeB = obj.neigh.LOStab( find( isnan(obj.neigh.LOStab(:,11)) & obj.neigh.LOStab(:,4) == obj.agent_number & ~isnan(obj.neigh.LOStab(:,9)) ), :);
+                    LOS = [LOStmp; LOStmpMeA; LOStmpMeB];
+                    agentList_tmp = [IDloc', obj.neigh.Pest(IDpos,1:2);];
+                    agentList_tmp(end+1,:) = [obj.agent_number, obj.location_est];
+    
+                    % get rigidity matrix 
+                    R0 = calcRigitdyMatrix(LOS,agentList_tmp);
+                    R0over = R0'*R0;
+                    e = eig(R0over);    
+                    pos = find(abs(e) < 1e-5);    
+                    isrigid(i) = (numel(pos)==3);              
+                    e(pos) = [];
+
+                    if isrigid(i)
+                        JR(i) = min(e);
+                    else
+                        JR(i) = nan;
+                    end
+
+                end
+
+                % move back
+                obj.move(obj.location - steps(i,:));                
+
+            end
+
+            % restore initial neighbors
+            obj.getNeighbors;
+
+            % find the best movement and go there (FF)
+            if sum(isrigid) == 0 || sum(isnan(JR)) == numel(JR);
+                dstep = [0 0];
+            else
+                [minJR, pos] = max(JR);            
+                dstep = steps(pos,:);            
+            end
+            
+
+        end         
 
     end
 
