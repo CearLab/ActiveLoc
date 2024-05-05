@@ -7,6 +7,8 @@ doc/code/SetupJackal.md
 src/setup/lib
 src/setup/optim
 src/setup/CERES-SOLVER
+src/catkin_workspace/devel
+src/catkin_workspace/build
 fig/
 res/
 Zelazo2024/
