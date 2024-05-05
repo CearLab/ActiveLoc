@@ -1,0 +1,57 @@
+<launch>
+
+  <!-- general -->
+  <arg name="use_sim_time" default="true" />
+  <arg name="gui" default="true" />  
+  <arg name="headless" default="false" />
+  <arg name="world_name" default="$(find jackal_custom)/worlds/scenario1.world" />
+  <!-- <arg name="world_name" default="$(find jackal_gazebo)/worlds/jackal_race.world" /> -->    
+
+
+  <!-- Launch Gazebo with the specified world -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="debug" value="0" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="use_sim_time" value="$(arg use_sim_time)" />
+    <arg name="headless" value="$(arg headless)" />
+    <arg name="world_name" value="$(arg world_name)" />    
+  </include>
+
+  <!-- BEGIN ROBOT 1 -->
+  <group ns="UGV01">    
+    <include file="$(find jackal_custom)/launch/spawners/robot.launch" >
+      <arg name="init_pose" value="-x 2 -y 1 -z 0 -R 0 -P 0 -Y 0" />
+      <arg name="robot_name"  value="Jack01" />
+      <arg name="joystick" value="true" />
+      <arg name="joy_dev" value="/dev/input/js0" />
+      <arg name="enable_ekf" value="true" /> 
+      <arg name="ns" value="UGV01/" />      
+    </include> 
+    <node pkg="tf2_ros" type="static_transform_publisher" name="World01" args="2 1 0 0 0 0 1 world UGV01/odom" />   
+  </group>
+
+  <!-- BEGIN ROBOT 2 -->
+  <group ns="UGV02">    
+    <include file="$(find jackal_custom)/launch/spawners/robot.launch" >
+      <arg name="init_pose" value="-x 2 -y -1 -z 0 -R 0 -P 0 -Y 0" />
+      <arg name="robot_name"  value="Jack02" />
+      <arg name="joystick" value="true" />
+      <arg name="joy_dev" value="/dev/input/js0" />
+      <arg name="enable_ekf" value="true" /> 
+      <arg name="ns" value="UGV02/" />      
+    </include>    
+    <node pkg="tf2_ros" type="static_transform_publisher" name="World02" args="2 -1 0 0 0 0 1 world UGV02/odom" />   
+  </group>
+
+  <!-- Run Websocket. -->
+  <!-- <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" > 
+     <arg name="port" value="9090"/>
+  </include> -->  
+
+  <!-- Tf2 publisher -->
+  <!-- <node name="tf2_web_republisher" pkg="tf2_web_republisher" type="tf2_web_republisher" /> -->
+
+  <param name="use_gui" value="true"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find jackal_custom)/rviz/default.rviz" />
+   
+</launch>

@@ -16,7 +16,7 @@ function E = StrutEnergy(X)
     % reshape agents positions
     xmat = reshape(P,p,floor(numel(P)/p))';    
 
-    W = manager.WS.W0;
+    W = manager.WS.WM0;
     [r, c] = find(W ~= 0);
     for i=1:numel(r)
         W(r(i),c(i)) = w(i);
