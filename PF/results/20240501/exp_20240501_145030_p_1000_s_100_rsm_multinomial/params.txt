@@ -1,0 +1,9 @@
+n_particles: 1000
+n_steps: 100
+resample_method: multinomial
+note: 
+beacons_pos: 2.5
+sigma_transition: 0.5
+sigma_measurement: 0.1
+stepsize: 1
+timestamp: 20240501_145030
