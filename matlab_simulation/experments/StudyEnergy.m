@@ -15,6 +15,10 @@ N = m;
 % exit flag
 isOK = 0;
 
+% ranges
+UWBRange = 20;
+CAMRange = 5;
+
 % we first define our initial team
 while ~isOK
 
@@ -53,37 +57,26 @@ while ~isOK
     % number at the end is the sensor maximum range
     for i = 1:m
         if i == leaderID
-            agents{i}.sensors.CAM = Sensor(agents{i}.agent_number,'range',5);
-            agents{i}.sensors.UWB = Sensor(agents{i}.agent_number,'range',10);
+            agents{i}.sensors.CAM = Sensor(agents{i}.agent_number,'range',CAMRange);
+            agents{i}.sensors.UWB = Sensor(agents{i}.agent_number,'range',UWBRange);
         else
-            agents{i}.sensors.UWB = Sensor(agents{i}.agent_number,'range',10);
+            agents{i}.sensors.UWB = Sensor(agents{i}.agent_number,'range',UWBRange);
         end
     end
-
-    % we first check whether the constraints are met by this formation:
-    % 1) the fleet is not infinitesinally rigid
-    % 2) there is a minimum distance between nodes
-    % check nonlconEnergy for more info
-    [c, ceq] = nonlconEnergy(agents_pos,p);
-
-    % are the constraints met?
-    % I am interested only in c < 0, namely the min distance. Rigidity is
-    % not a requiremement for this first formation
-    isOK = prod(c < -1e-10);    % checj all inequalities are less than zero
-
-    if isOK        
+       
     
-        % get all agents
-        agents = manager.getAllAgent();
-    
-        % LOS calculations (get the LOS table of each agent). In this case
-        % it will be a 4 rows table (it's a parallelogram)
-        [los_table,agents_list] = calcLosMap(agents,'UWB');            
+    % get all agents
+    agents = manager.getAllAgent();
 
-        % store the positions as a single columns
-        X_store = reshape(agents_pos',size(agents_pos,1)*size(agents_pos,2),1);
+    % LOS calculations (get the LOS table of each agent). In this case
+    % it will be a 4 rows table (it's a parallelogram)
+    [los_table,agents_list] = calcLosMap(agents,'UWB');            
 
-    end
+    % store the positions as a single columns
+    X_store = reshape(agents_pos',size(agents_pos,1)*size(agents_pos,2),1);
+
+    % isOK
+    isOK = 1;
 
 end
 
@@ -156,6 +149,9 @@ end
 Dcable = (Dcable+Dcable')/2;
 Dstrut = (Dstrut+Dstrut')/2;
 Dbars = Dslam;
+manager.WS.Dbars = Dbars;
+manager.WS.Dcable = Dcable;
+manager.WS.Dstrut = Dstrut;
 
 %% optimization
 
@@ -178,6 +174,7 @@ X0 = [p0; w0];
 
 % store
 manager.WS.w0 = w0;
+manager.WS.WM0 = WM0;
 manager.WS.p0 = p0;
 manager.WS.p = p;
 
@@ -185,10 +182,14 @@ manager.WS.p = p;
 bars = los_table(barsID,:);
 RD = los_table(RDID,:);
 
+% manager
+manager.WS.bars = bars;
+manager.WS.RD = RD;
+
 % now compute the energy
 E0 = 0; % init
-% according to connelly, no consitions on wij if we consider bars. Let's
-% consider bars to begin with
+% according to connelly, no conditions on wij if we consider bars. Let's
+% consider cables to begin with
 for i=1:numel(w0)       
     % distance here
     D = norm(PM0(r(i),:) - PM0(c(i),:))^2;
@@ -196,7 +197,24 @@ for i=1:numel(w0)
     E0 = E0 + WM0(r(i),c(i))*D.^2;
 end
 
+%%
 % ok now we optimize
+
+if 1
+opt = optimoptions('fmincon','Algorithm','interior-point','ConstraintTolerance',1e-10,MaxIterations=500,MaxFunctionEvaluations=Inf);
+solution = fmincon(@StrutEnergy, ...
+                  X0, ...
+                  [], ...
+                  [], ...
+                  [], ...
+                  [], ...
+                  [], ...
+                  [], ...
+                  @(x)nonlconEnergy(x,p), ...
+                  opt);
+
+else
+
 % let's try yalmip
 % clear yalmip
 yalmip('clear');  
@@ -221,7 +239,6 @@ Constraints = [];
 % translations
 Constraints = [ Constraints, ... 
                 PM(leaderID,:) == X0(leaderID,:)]; 
-
 
 % bars constraints: the distances of the bars must be always the same as in
 % Dslam
@@ -276,8 +293,8 @@ options = sdpsettings('solver','bmibnb');
 
 
 % Solve the problem
-% sol = optimize(Constraints,Objective,options);
-sol.problem = 0;
+sol = optimize(Constraints,Objective,options);
+% sol.problem = 0;
 
 % Analyze error flags
 if sol.problem == 0
@@ -290,7 +307,9 @@ else
     solution = value(X);
 end
 
-% now assign the solution to the team number 2. All as in the beginning
+end
+
+%% now assign the solution to the team number 2. All as in the beginning
 Psol = solution(1:p*N);
 Psol = reshape(Psol,p,floor(numel(Psol)/p))';
 
@@ -313,10 +332,10 @@ agents0 = {agents0{1:teams{2}.leader.agent_number-1-m} teams{2}.leader agents0{t
 % set sensors
 for i = 1:m
     if i == leaderID
-        agents0{i}.sensors.CAM = Sensor(agents0{i}.agent_number,'range',5);
-        agents0{i}.sensors.UWB = Sensor(agents0{i}.agent_number,'range',10);
+        agents0{i}.sensors.CAM = Sensor(agents0{i}.agent_number,'range',CAMRange);
+        agents0{i}.sensors.UWB = Sensor(agents0{i}.agent_number,'range',UWBRange);
     else
-        agents{i}.sensors.UWB = Sensor(agents{i}.agent_number,'range',10);
+        agents{i}.sensors.UWB = Sensor(agents{i}.agent_number,'range',UWBRange);
     end
 end
 
