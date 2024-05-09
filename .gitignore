@@ -5,8 +5,14 @@ doc/code/SetupJackal.md
 
 # directories
 src/setup/lib
+src/setup/optim
+src/setup/CERES
+src/catkin_workspace/devel
+src/catkin_workspace/build
+src/.vscode
 fig/
 res/
+Zelazo2024/
 
 # general files (extensions)
 *.bag

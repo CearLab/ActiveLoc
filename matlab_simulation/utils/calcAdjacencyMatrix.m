@@ -5,7 +5,9 @@
 % description: calculate the adjacency matrix for given los table 
 function A = calcAdjacencyMatrix(los_table,agents_list)
 
-    n = length(agents_list); % A is a |V|*|V| matrix
+    IDpres = agents_list(:,1);
+    maxID = max(IDpres);
+    n = maxID; % A is a |V|*|V| matrix
     A = zeros(n);    
     
     for ie = 1:size(los_table,1)
@@ -18,9 +20,7 @@ function A = calcAdjacencyMatrix(los_table,agents_list)
         
     end
 
-    % we need to remove the useless columns    
-    IDpres = agents_list(:,1);
-    maxID = max(IDpres);
+    % we need to remove the useless columns        
     IDtot = 1:maxID;
 
     % now remove all IDs that are not in the mesh
@@ -35,6 +35,6 @@ function A = calcAdjacencyMatrix(los_table,agents_list)
     A(:,cols) = [];    
     A(cols,:) = [];
 
-    A = A + eye(n);
+    A = A + eye(numel(IDpres));
 end
 

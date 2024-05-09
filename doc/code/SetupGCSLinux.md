@@ -141,6 +141,7 @@
 # If needed, use sudo. By doing so, also the members of "developers" can wrx the
 # files on the repository.
 # The same thing should be done for .Xauthority to be able to run graphic stuff
+# If you don't find .Xauthority, look for it and create a symlink in ~
 
     $ chown $USER:developers ~/.Xauthority
     $ chmod 764 ~/.Xauthority
@@ -218,7 +219,7 @@
 
     $ sudo apt update && sudo apt upgrade
     $ sudo apt install python-pygments
-    $ sudo apt install python3-rosinstall-generator 
+    $ sudo apt install python3-rosinstall-generator
     $ sudo apt install ros-noetic-rqt ros-noetic-rqt-common-plugins
 
 # Now, we have al the utils installed. Check the path
@@ -240,14 +241,14 @@
     $ mkdir setup/lib
     $ cd setup/lib
 
-# We now install ALGLIB: general optimization (check link: 18/01/2024)
+# We now install ALGLIB: general optimization (check link: 05/04/2024)
     
     $ wget https://www.alglib.net/translator/re/alglib-4.01.0.cpp.gpl.tgz
     $ tar -xf alglib-4.01.0.cpp.gpl.tgz
     $ rm alglib-4.01.0.cpp.gpl.tgz
 
 # We now install ARMADILLO: general matrix computations and optimization 
-# (check link: 30/05/2023)
+# (check link: 05/04/2024)
 
     $ wget https://sourceforge.net/projects/arma/files/armadillo-12.6.7.tar.xz
     $ tar -xf armadillo-12.6.7.tar.xz
@@ -261,7 +262,7 @@
 
 # Check if the installation finished correctly (you should see armadillo files)
 
-    $ ls /usr/lib | grep arma 
+    $ ls /usr/lib | grep arma
 
 # If so, we can export the path
 
@@ -273,7 +274,7 @@
 # $USER, then we pull the repo. To do so, go in the local prompt (any terminal)
 # from your local PC. Navigate to "ActiveLoc/src/setup" and run the folowing:
 
-    $ chown -R $USER:developers ./lib
+    $ sudo chown -R $USER:developers ./lib
     $ git clone --recurse-submodules git@github.com:kthohr/optim.git
     $ sudo chown -R $USER:developers optim/
 
@@ -298,7 +299,8 @@
     $ sudo apt-get install libeigen3-dev
     $ sudo apt-get install libsuitesparse-dev
 
-# Now we need to download and install stuff, please go back to your local prompt
+# Now we need to download and install stuff, 
+# please GO BACK TO LOCAL PROMPT
 
     $ wget http://ceres-solver.org/ceres-solver-2.2.0.tar.gz
     $ tar -xf ceres-solver-2.2.0.tar.gz
