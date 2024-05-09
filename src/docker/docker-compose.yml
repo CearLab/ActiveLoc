@@ -20,7 +20,7 @@ services:
       network: host
       dockerfile: Dockerfile.noetic.x86.base
     image: cearlab/activeloc:ros-noetic-base
-    container_name: cearlab/activeloc:ros-noetic-base
+    container_name: ros-noetic-base
     tty: true
     working_dir: /home/ros/workspace
     command:
@@ -31,7 +31,7 @@ services:
       ]
 
   # dev setup - noetic - default
-  ros-noetic-dev:
+  ros-noetic-dev-activeloc:
     build:
       context: .
       network: host
@@ -39,6 +39,7 @@ services:
       args:
         TARGET: dev
     image: cearlab/activeloc:ros-noetic-dev
+    container_name: activeloc-dev
     network_mode: "host"
     environment:
       TERM: xterm-256color
@@ -81,6 +82,7 @@ services:
       args:
         TARGET: nvidia
     image: cearlab/activeloc:ros-noetic-dev-nvidia
+    container_name: aciveloc-nvidia
     runtime: nvidia
     environment:
       TERM: xterm-256color
