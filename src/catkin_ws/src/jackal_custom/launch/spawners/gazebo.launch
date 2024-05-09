@@ -45,7 +45,7 @@
 
   <!-- Run Websocket. -->
   <!-- <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" > 
-     <arg name="port" value="9090"/>
+    <arg name="port" value="9090"/>
   </include> -->  
 
   <!-- Tf2 publisher -->
@@ -53,5 +53,5 @@
 
   <param name="use_gui" value="true"/>
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find jackal_custom)/rviz/default.rviz" />
-   
+  
 </launch>
