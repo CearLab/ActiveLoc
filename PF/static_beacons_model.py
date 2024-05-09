@@ -1,5 +1,5 @@
 # model template
-from ParticleFilter import sample_normal_model, normal_model_p, particle_filter, single_step_particle_filter
+from ParticleFilter import sample_normal_model, normal_model_pdf, particle_filter, single_step_particle_filter
 import numpy as np
 
 __all__ = ['agent_transition_model_template', 'becon_transition_model_template', 'agent_measurement_model_template', 'measurement_likelihood_template', 'generate_agent_data']
@@ -22,7 +22,7 @@ def agent_measurement_model_template(x, beacons, sigma):
     return z
 
 def measurement_likelihood_template(z, x, beacons, cov):
-    return normal_model_p(z, np.linalg.norm(x - beacons, axis=1), cov)
+    return normal_model_pdf(z, np.linalg.norm(x - beacons, axis=1), cov)
 
 def generate_agent_data(n_steps, stepsize, x0, agent_measurement_model, agent_transition_model):
     u_agent = (np.random.rand(n_steps, 2) - 0.5)*stepsize

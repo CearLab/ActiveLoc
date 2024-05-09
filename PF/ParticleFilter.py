@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.stats as stats
 
-__all__ = ['prop', 'calc_weights', 'resample', 'normal_model_p', 'sample_normal_model']
+__all__ = ['prop', 'calc_weights', 'resample', 'normal_model_pdf', 'sample_normal_model']
 
 def prop(particles, command, transition_model):
     new_particles = np.zeros(particles.shape)
@@ -81,7 +81,7 @@ def resample(particles, weights, method, N_eff_threshold=0.5):
         raise ValueError('Invalid resample method')
     
 
-def normal_model_p(x, mu, cov):
+def normal_model_pdf(x, mu, cov):
     # Check that x and mu have the same dimensions
     if x.shape != mu.shape:
         raise ValueError(f"x and mu must have the same shape, but got x.shape={x.shape} and mu.shape={mu.shape}")
