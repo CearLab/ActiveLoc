@@ -3,7 +3,7 @@ import os
 import sys
 import time
 
-__all__ = ['load_params', 'load_ground_truth', 'save_experiment_results']
+__all__ = ['load_params', 'load_ground_truth', 'save_experiment_setup']
 
 def load_params(filename):
     params = {}
@@ -28,7 +28,7 @@ def load_ground_truth(folde_path):
     z = np.genfromtxt(z_path, delimiter=',', skip_header=1, invalid_raise=False)
     return x, z
 
-def save_experiment_results(n_particles, n_steps, resample_method, note, beacons_pos, sigma_transition, sigma_measurement, stepsize, x, z):
+def save_experiment_setup(n_particles, n_steps, resample_method, note, beacons_pos, sigma_transition, sigma_measurement, stepsize, x, z):
     if not os.path.exists('results'):
         os.makedirs('results')
 
