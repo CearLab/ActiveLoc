@@ -20,7 +20,7 @@ services:
       network: host
       dockerfile: Dockerfile.noetic.x86.base
     image: cearlab/activeloc:ros-noetic-base
-    container_name: IdoBase
+    container_name: cearlab/activeloc:ros-noetic-base
     tty: true
     working_dir: /home/ros/workspace
     command:
