@@ -4,12 +4,11 @@
 doc/code/SetupJackal.md
 
 # directories
-src/setup/lib
-src/setup/optim
-src/setup/CERES
-src/catkin_ws/devel
-src/catkin_ws/build
-src/.vscode
+src/setup/
+src/catkin_ws/devel/
+src/catkin_ws/build/
+src/.vscode/
+PF/
 fig/
 res/
 Zelazo2024/
