@@ -32,7 +32,7 @@ if __name__ == '__main__':
     name = rospy.get_param('~TF2name')
     rospy.loginfo(name)
     rospy.Subscriber('/%sodometry/filtered' % name,
-                     nav_msgs.msg.Odometry,
-                     handle_pose,
-                     '%sodom' %name)
+                    nav_msgs.msg.Odometry,
+                    handle_pose,
+                    '%sodom' %name)
     rospy.spin()
