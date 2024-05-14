@@ -29,8 +29,9 @@
     </include>
 
     <!-- navigation -->
-    <!-- <include file="$(find jackal_custom)/navigation/launch/move_base.launch">
-    </include> -->
+    <include file="$(find jackal_custom)/navigation/launch/move_base.launch">
+        <arg name="ns" value="$(arg ns)" />
+    </include>
 
 
 </launch>

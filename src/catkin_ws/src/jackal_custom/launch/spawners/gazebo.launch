@@ -17,6 +17,9 @@
     <arg name="world_name" value="$(arg world_name)" />    
   </include>
 
+  <!-- create map reference frame -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="Map" args="0 0 0 0 0 0 1 world map" />
+
   <!-- BEGIN ROBOT 1 -->
   <group ns="UGV01">    
     <include file="$(find jackal_custom)/launch/spawners/robot.launch" >
@@ -27,11 +30,11 @@
       <arg name="enable_ekf" value="true" /> 
       <arg name="ns" value="UGV01/" />      
     </include> 
-    <node pkg="tf2_ros" type="static_transform_publisher" name="World01" args="2 1 0 0 0 0 1 world UGV01/odom" />   
+    <node pkg="tf2_ros" type="static_transform_publisher" name="Map01" args="2 1 0 0 0 0 1 map UGV01/odom" />    
   </group>
 
   <!-- BEGIN ROBOT 2 -->
-  <group ns="UGV02">    
+  <!--group ns="UGV02">    
     <include file="$(find jackal_custom)/launch/spawners/robot.launch" >
       <arg name="init_pose" value="-x 2 -y -1 -z 0 -R 0 -P 0 -Y 0" />
       <arg name="robot_name"  value="Jack02" />
@@ -41,7 +44,7 @@
       <arg name="ns" value="UGV02/" />      
     </include>    
     <node pkg="tf2_ros" type="static_transform_publisher" name="World02" args="2 -1 0 0 0 0 1 world UGV02/odom" />   
-  </group>
+  </group-->
 
   <!-- Run Websocket. -->
   <!-- <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" > 
@@ -51,7 +54,7 @@
   <!-- Tf2 publisher -->
   <!-- <node name="tf2_web_republisher" pkg="tf2_web_republisher" type="tf2_web_republisher" /> -->
 
-  <param name="use_gui" value="true"/>
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find jackal_custom)/rviz/default.rviz" />
+  <!-- <param name="use_gui" value="true"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find jackal_custom)/rviz/default.rviz" /> -->
   
 </launch>
