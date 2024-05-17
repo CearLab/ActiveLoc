@@ -8,7 +8,7 @@ src/setup/
 src/catkin_ws/devel/
 src/catkin_ws/build/
 src/.vscode/
-PF/
+
 fig/
 res/
 Zelazo2024/
@@ -18,5 +18,6 @@ Zelazo2024/
 *.log
 *.asv
 *.gif
+*.pyc
 .env
 /PF/results
