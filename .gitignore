@@ -8,10 +8,10 @@ src/setup/
 src/catkin_ws/devel/
 src/catkin_ws/build/
 src/.vscode/
-
 fig/
 res/
 Zelazo2024/
+/PF/results
 
 # general files (extensions)
 *.bag
@@ -20,4 +20,3 @@ Zelazo2024/
 *.gif
 *.pyc
 .env
-/PF/results
