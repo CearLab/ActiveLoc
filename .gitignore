@@ -18,4 +18,5 @@ Zelazo2024/
 *.log
 *.asv
 *.gif
+.env
 /PF/results
