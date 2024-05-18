@@ -66,6 +66,15 @@ def add_experiment_to_notion(experiment_data):
                     }
                 }
             ]
+        },
+        "params json": {
+            "rich_text": [
+                {
+                    "text": {
+                        "content": experiment_data.get("params", "")
+                    }
+                }
+            ]
         }
         # Add other properties as needed
     }
