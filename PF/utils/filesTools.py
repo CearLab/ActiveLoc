@@ -2,16 +2,18 @@ import os
 import time
 import pandas as pd
 
-def get_exp_folder(note=''):
+def get_exp_folder(note='', notebook_name=''):
     if not os.path.exists('results'):
         os.makedirs('results')
 
-    date = time.strftime("%Y%m%d")
-    if not os.path.exists(os.path.join('results', date)):
-        os.makedirs(f'results/{date}')
+    subfolder_path = time.strftime("%Y%m%d")
+    #append notebook name to the folder name if it is provided
+    if notebook_name != '':
+        subfolder_path += f'_{notebook_name}'
+    if not os.path.exists(os.path.join('results', subfolder_path)):
+        os.makedirs(f'results/{subfolder_path}')
     timestamp = time.strftime("%Y%m%d_%H%M%S")
-    exp_folder_name = path = os.path.join('results', date, f'exp_{timestamp}')
-    
+    exp_folder_name = os.path.join('results', subfolder_path, f'exp_{timestamp}')
     if note != '':
         exp_folder_name += f'_{note}'
     os.mkdir(exp_folder_name)

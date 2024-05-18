@@ -24,6 +24,9 @@ def add_experiment_to_notion(experiment_data):
                 ...
             }
     """
+    if NOTION_SECRET is None or NOTION_EXP_TABLE_ID is None:
+        print("Notion secret or database ID not found in environment variables.")
+        raise ValueError("Notion secret or database ID not found in environment variables.")
     experiment_data['Date'] = time.strftime("%Y-%m-%d")
     url = f"https://api.notion.com/v1/pages"
     
@@ -75,7 +78,17 @@ def add_experiment_to_notion(experiment_data):
                     }
                 }
             ]
-        }
+        },
+        "notebook": {
+            "rich_text": [
+                {
+                    "text": {
+                        "content": experiment_data.get("notebook", "")
+                    }
+                }
+            ]
+        },
+        
         # Add other properties as needed
     }
     
@@ -89,7 +102,7 @@ def add_experiment_to_notion(experiment_data):
     response = requests.post(url, headers=headers, json=data)
     
     if response.status_code == 200:
-        print("Experiment added successfully!")
+        print("Experiment added successfully to notion!")
     else:
         print(f"Failed to add experiment. Response: {response.text}")
 
