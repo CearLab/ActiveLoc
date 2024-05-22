@@ -2,17 +2,23 @@
     "cmake.configureOnOpen": true,
     "cSpell.words": [
         "actionlib",
+        "anchorinit",
+        "aurs",
+        "bytesize",
         "circulant",
         "costmap",
         "costmaps",
+        "EIGHTBITS",
         "holonomic",
         "loginfo",
         "movebase",
+        "myserial",
         "Odometry",
         "oneshot",
         "raytrace",
         "rospy",
-        "sodometry"
+        "sodometry",
+        "stopbits"
     ],
     "python.analysis.extraPaths": [
         "./catkin_ws/src/jackal_custom/nodes/modules"
