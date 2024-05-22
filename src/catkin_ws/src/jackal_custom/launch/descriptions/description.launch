@@ -6,7 +6,7 @@
   <arg name="env_runner" value="$(eval 'env_run' if not optenv('OS', 'unknown').lower().startswith('windows') else 'env_run.bat')" />
 
   <param name="robot_description"
-         command="$(find jackal_description)/scripts/$(arg env_runner)
+        command="$(find jackal_description)/scripts/$(arg env_runner)
                     $(find jackal_custom)/urdf/configs/$(arg config)
                     $(find xacro)/xacro $(find jackal_custom)/urdf/xacro/jackal_custom_base.urdf.xacro 
                     right_id:=$(arg right_id) ns:=$(arg ns) --inorder" />
