@@ -15,15 +15,15 @@
     
     <param name="base_global_planner" type="string" value="navfn/NavfnROS" />
     <param name="base_local_planner" value="base_local_planner/TrajectoryPlannerROS"/>
-    <param name="recovery_behavior_enabled" value="false"/>
-    <param name="clearing_rotation_allowed" value="false"/>
+    <param name="recovery_behavior_enabled" value="true"/>
+    <param name="clearing_rotation_allowed" value="true"/>
     
-    <!-- parameters -->
+    <!-- parameters: frames -->
     <param name="global_costmap/global_frame" type="string" value="map" />
     <param name="global_costmap/robot_base_frame" type="string" value="$(arg ns)base_link" />
 
     <param name="local_costmap/global_frame" type="string" value="$(arg ns)odom" />
-    <param name="local_costmap/robot_base_frame" type="string" value="$(arg ns)base_link" />
+    <param name="local_costmap/robot_base_frame" type="string" value="$(arg ns)base_link" />    
     
     <!-- which odom I use -->
     <remap from="odom" to="/$(arg ns)odometry/filtered" />

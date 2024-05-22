@@ -11,3 +11,9 @@ oscillation_distance: 0.5
 
 recovery_behavior_enabled: true
 clearing_rotation_allowed: true
+
+# XY goal tolerance (in meters)
+xy_goal_tolerance: 0.05
+
+# Yaw goal tolerance (in radians)
+yaw_goal_tolerance: 6.28  # 6.28 radians is approximately 360 degrees
