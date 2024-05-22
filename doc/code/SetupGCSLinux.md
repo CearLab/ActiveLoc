@@ -232,142 +232,6 @@
     $ export EDITOR='nano -w'
 
 # Now we start with the project build. First, we install some general 
-# optimization general
-
-    $ sudo apt install libopenblas-dev liblapack-dev
-
-# Now let's make and go in the setup/lib folder and start building stuff
-
-    $ mkdir setup/lib
-    $ cd setup/lib
-
-# We now install ALGLIB: general optimization (check link: 05/04/2024)
-    
-    $ wget https://www.alglib.net/translator/re/alglib-4.01.0.cpp.gpl.tgz
-    $ tar -xf alglib-4.01.0.cpp.gpl.tgz
-    $ rm alglib-4.01.0.cpp.gpl.tgz
-
-# We now install ARMADILLO: general matrix computations and optimization 
-# (check link: 05/04/2024)
-
-    $ wget https://sourceforge.net/projects/arma/files/armadillo-12.6.7.tar.xz
-    $ tar -xf armadillo-12.6.7.tar.xz
-    $ rm armadillo-12.6.7.tar.xz
-    $ cd armadillo-12.6.7
-
-# The standard installation will be placed in /usr/lib
-
-    $ cmake .
-    $ sudo make install
-
-# Check if the installation finished correctly (you should see armadillo files)
-
-    $ ls /usr/lib | grep arma
-
-# If so, we can export the path
-
-    $ export ARMA_INCLUDE_PATH=/usr/lib && cd ..
-
-# We now install OPTIMLIB, a general matrix computations and optimization librry
-# (check link: 21/01/2024 - following README). We first need to pull a repo. As
-# previously explained, we can push/pull from local. So, first we chown lib to 
-# $USER, then we pull the repo. To do so, go in the local prompt (any terminal)
-# from your local PC. Navigate to "ActiveLoc/src/setup" and run the folowing:
-
-    $ sudo chown -R $USER:developers ./lib
-    $ git clone --recurse-submodules git@github.com:kthohr/optim.git
-    $ sudo chown -R $USER:developers optim/
-
-# Now you can go back to your docker container and proceed with the installation
-
-    $ cd optim
-    $ ./configure -i "/usr/local" -l arma -p
-    $ sudo make
-    $ sudo make install
-
-# Check installation
-
-    $ ls /usr/local/lib | grep optim
-    $ cd ..
-
-# Now we install CERES, a nonlinear optimization toolbox 
-# (check link: 30/05/2023 - following install instructions)
-# We first start by installing some dependencies
-
-    $ sudo apt-get install libgoogle-glog-dev libgflags-dev
-    $ sudo apt-get install libatlas-base-dev
-    $ sudo apt-get install libeigen3-dev
-    $ sudo apt-get install libsuitesparse-dev
-
-# Now we need to download and install stuff, 
-# please GO BACK TO LOCAL PROMPT
-
-    $ wget http://ceres-solver.org/ceres-solver-2.2.0.tar.gz
-    $ tar -xf ceres-solver-2.2.0.tar.gz
-    $ rm ceres-solver-2.2.0.tar.gz
-    $ mkdir CERES
-    $ mkdir CERES/ceres-bin
-    $ mv ceres-solver-2.2.0 CERES/
-    $ sudo chown -R $USER:developers CERES/
-    $ cd CERES/ceres-bin
-
-# Now we build the library, so we need to be back in the docker container. 
-
-    $ sudo cmake -DBUILD_SHARED_LIBS='ON' ../ceres-solver-2.2.0
-    $ sudo make
-    $ sudo make install 
-    
-# These last commands might be very slow, check the RAM consumption because it 
-# could be an issue. 
-# If you can't compile, a firts option is to extend the swap partition using a 
-# swap file. By doing so, you should be able to get to the end of the build.
-# Swap memory is used to store infrequently used data 
-# currently in the RAM, to decrease the burden on it. All the following should 
-# be run in local, as the container shares the host kernel and swap 
-# To see how much swap you have run 
-
-    $ free -h
-
-# To see the currently active files run 
-
-    $ cat /proc/swaps
-
-# Now we create our own swap file. Here the size is the block dimension (bs) 
-# multiplied with the number of blocks (count). In this case we allocate 5GB
-
-    $ sudo dd if=/dev/zero of=/swapros bs=1MB count=5120
-
-# Now set the permissions and make the file swap. Then enable and check the swap
-
-    $ sudo chmod 600 /swapros
-    $ sudo mkswap /swapros
-    $ sudo swapon /swapros
-
-# Now if you run again "free -h" and "cat /proc/swaps" you should see the new
-# swap file. Now try again with the build. If it succeeds you can unmount the 
-# swap file
-
-    $ sudo swapoff /swapros
-
-# Whenever you need some swap more just swapon this file
-
-# If you don't have space for a swap f file, build on a generic powerful pc 
-# and copy in the docker container:
-
-# the .so files in /usr/local/lib
-# the .h files in /usr/local/include/ceres
-# the .cmake files in /usr/local/lib/cmake/Ceres
-
-# Chekc the CERES installation
-
-    $ ls /usr/local/lib | grep ceres
-
-# If everything is fine we can run an easy upgrade and update
-
-    $ cd ~/workspace
-    $ sudo apt update
-    $ sudo apt upgrade
-
 # We add the last ros packages that we need
 
     $ sudo apt install ros-noetic-roslint
@@ -376,119 +240,25 @@
     $ sudo apt install ros-noetic-tf2-web-republisher
     $ sudo apt install ros-noetic-rosbridge-suite
 
-# We now proceed with the installation of the Vicon SDK for C++
-# First go tohttps://www.vicon.com/software/datastream-sdk/?section=downloads 
-# and download the .zip (link checked on 24/01/2024). Then move the .zip in the 
-# docker container, specifically in "workspace/setup/lib". 
+# Let's get to work. Now we create a ros workspace
 
-# Now, go on a local PC terminal and do the following (FILENAME is the name
-# of what you downloaded)
-
-    $ unzip FILENAME.zip
-    $ mv FILENAME.zip ~/Downloads/
-    $ mkdir ViconAPI
-    $ mv EXTRAXTDIRNAME ViconAPI/F1
-    $ cd ViconAPI/F1/Release/Linux64
-
-# Install p7zip for .7z files
-
-    $ sudo apt install p7zip-full
-
-# Extract source.7z and thirdparty.7z (check the correct name)
-
-    $ mkdir Source
-    $ mv FILENAME-source.7z Source/
-    $ cd Source
-    $ 7z x FILENAME-source.7z 
+    $ cd ~/workspace    
+    $ cd catkin_ws
+    $ catkin_make
+    $ source devel/setup.zsh
+    $ rospack profile
     $ cd ..
-    
-    $ mkdir Thirdparty
-    $ mv FILENAME-thirdparty.7z Thirdparty/
-    $ cd Thirdparty
-    $ 7z x FILENAME-thirdparty.7z
-    $ cd ..
+    $ sudo chown -R ros:developers ./catkin_ws
+    $ sudo chmod -R 774 ./catkin_ws
 
-    $ cd ../../../../
-    $ sudo chown -R $USER:developers ViconAPI
+# Now we add a ros submodule for the UWB messages
+# GO TO LOCAL PROMPT
 
-# Now, all the APIs are already present in these directories. However, they 
-# could have been compiled on some linux distro with different glibc version
-# that the one you're running. This might be the case if you're using an old 
-# linux distro on the jackal. So, we recompile the whole thing (yay). 
+    $ git submodule add https://github.com/valentinbarral/rosmsgs src/gtec/rosmsgs
 
-# We compile in the docker container, because we want to work from there in the
-# end. So, place yourself in a docker container prompt. 
+# Now rename the following files
 
-    $ cd ~/workspace/setup/lib/ViconAPI/F1/Release/Linux64/Source
-
-# Open the makefile and add the following lines:
-
-    INCLUDES = -I/home/ros/workspace/setup/lib/boost_1_82_0/boost_install/include \
-     		   -I/home/ros/workspace/setup/lib/ViconAPI/F1/Release/Linux64/Source/Vicon/CrossMarket/DataStream \
-     		   -I/home/ros/workspace/setup/lib/ViconAPI/F1/Release/Linux64/Source/Vicon/CrossMarket
-
-    LDFLAGS = -L/home/ros/workspace/setup/lib/boost_1_82_0/boost_install/lib \
-     		  -L/home/ros/workspace/setup/lib/ViconAPI/F1/Release/Linux64/ThirdParty/thirdparty/Boost/boost-1.75.0-linux-x64/lib \
-    		  -L/home/ros/workspace/setup/lib/ViconAPI/F1/Release/Linux64/Source/lib/Debug \
-    		  -L/home/ros/workspace/setup/lib/ViconAPI/F1/Release/Linux64/Source/bin/Debug
-
-# Now add at the end of every make target 
-# (all the @$(MAKE) statements) the following: 
-
-    CXXFLAGS="$(INCLUDES)" CFLAGS="$(INCLUDES)" LDFLAGS="$(LDFLAGS)"
-
-# As you can see in the INCLUDES, we are using libboost1.82 as glibc version. 
-
-# First we download it. Go to your local prompt in setup/lib and run
-
-    $ wget https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.tar.gz
-    $ tar -xf boost_1_82_0.tar.gz
-    $ mv boost_1_82_0.tar.gz ~/Downloads
-    $ sudo chown -R $USER:developers boost_1_82_0
-
-# so we first install it (in the docker, this is important. if you change 
-# glibc version on your local you could regret it...)
-
-    $ cd ~/workspace/setup/lib/boost_1_82_0
-    $ sudo mkdir boost_install
-    $ sudo ./bootstrap.sh --prefix=/home/ros/workspace/setup/lib/boost_1_82_0/boost_install
-    $ sudo ./b2
-    $ sudo ./b2 install
-    $ sudo chown -R ros:developers ./boost_install
-    $ sudo chown -R ros:developers b2
-    $ sudo chown -R ros:developers bin.v2
-    $ sudo chown -R ros:developers project-config.jam
-    $ sudo chown -R ros:developers stage
-
-# Now we can build ViconAPI. Still in the docker container
-
-    $ cd /home/ros/workspace/setup/lib/
-    $ sudo chown -R ros:developers ViconAPI
-    $ cd /home/ros/workspace/setup/lib/ViconAPI/F1/Release/Linux64/Source
-    $ make clean
-    $ make ViconDataStreamSDK_CPP
-
-# If you get errors like: 
-#    (e.g.) /usr/bin/ld: cannot find -lboost_test_exec_monitor-mt-d-x64
-# go to "/home/ros/workspace/setup/lib/boost_1_82_0/boost_install" and check if 
-# there is a similar lib installed
-
-    $ ll | grep test_exec 
-
-# if you find that there is a similar lib, just create a symlink with the
-# expected name. For example, if you find that there is a "libboost_test_exec_monitor.a"
-# do the following: 
-
-    $ ln -s libboost_test_exec_monitor.a libboost_test_exec_monitor-mt-d-x64.a
-
-# If you run again line 467 you should see the error disappeared. Proceed in the 
-# same way for similar errors. Other errors? Well I have no clue eheh. 
-
-# If you managed to compile ViconAPI well kudos, you should now be ready to work
-# on the project. 
-
-# Let's get to work.
-
-    $ cd ~/workspace
+    $ mv catkin_ws/src/jackal_custom/package.xml catkin_ws/src/jackal_custom/package.xml.old
+    $ mv catkin_ws/src/UWB_driver/package.xml catkin_ws/src/ackal_op/package.xml.old
 
 
