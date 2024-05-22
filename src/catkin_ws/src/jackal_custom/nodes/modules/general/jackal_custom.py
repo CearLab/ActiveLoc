@@ -16,16 +16,22 @@ import geometry_msgs.msg
 import nav_msgs.msg
 
 # circulant motion
-def follow(leader_topic, server_name, odom_name, mode):           
+def follow(leader_topic, server_name, odom_name, p_goal, a_goal, mode):           
     
     # publish
     pub = rospy.Publisher(server_name,geometry_msgs.msg.Twist, queue_size=10)
-    rospy.loginfo("Synchronization")        
+    rospy.loginfo("Synchronization")      
+    
+    # from string to array
+    p_goal = np.asarray([float(num) for num in p_goal.split()])
+    a_goal = np.asarray([float(num) for num in a_goal.split()])
+    rospy.loginfo(p_goal.size)
+    rospy.loginfo(a_goal.size)  
     
     # Subscribe to the Odometry topic       
     if mode==0:
         # move_base
-        ref_sub = rospy.Subscriber(leader_topic, nav_msgs.msg.Odometry, follow_odom_callback, (server_name, odom_name, pub, mode))
+        ref_sub = movebase_client(server_name,'map',p_goal,a_goal)
     else:    
         # moving target    
         ref_sub = message_filters.Subscriber(leader_topic, nav_msgs.msg.Odometry)
@@ -33,26 +39,8 @@ def follow(leader_topic, server_name, odom_name, mode):
 
         # Synchronize the messages
         ts = message_filters.ApproximateTimeSynchronizer([ref_sub, pos_sub], queue_size=10, slop=0.1)        
-        ts.registerCallback(follow_odom_callback, pub)        
-    
-    rospy.spin()        
-    
-    return 0
-
-def follow_odom_callback(ref, pos, pub, mode):
-    
-    # Callback function to print Odometry messages
-    # rospy.loginfo("Debug: Received Odometry")
-    
-    # send goal     
-    if mode==0:
-        # move_base
-        p_goal = np.array((4,4))
-        a_goal = np.array((0,0,0))
-        result = movebase_client(ref,pos,p_goal,a_goal)
-    else:
-        # moving target
-        result = ugv_control(ref,pos,pub)
+        ts.registerCallback(ugv_control, pub)        
+        rospy.spin()   
     
     return 0
 
@@ -86,7 +74,7 @@ def ugv_control(ref,pos,pub):
     
     # gains
     Kv = 0.1
-    Ko = 1
+    Ko = 0.5
     
     # compute control    
     v_x = Kv * d
@@ -103,14 +91,13 @@ def ugv_control(ref,pos,pub):
     return 0
 
 # send goal through move_base
-def movebase_client(server_name,odom_name,pos_goal,ang_goal):
+def movebase_client(server_name,odom_name,p_goal,a_goal):
     
     # Initialize the action client
     client = actionlib.SimpleActionClient(server_name, MoveBaseAction)
     
     # debug
-    rospy.loginfo("Debug: created action client")
-    rospy.loginfo("Debug: waiting for server")
+    rospy.loginfo("Debug: created action client")    
     
     # Wait until the action server has started up and started listening for goals
     client.wait_for_server()
@@ -121,26 +108,10 @@ def movebase_client(server_name,odom_name,pos_goal,ang_goal):
     # Create a goal to send to the action server
     goal = MoveBaseGoal()
     goal.target_pose.header.frame_id = odom_name
-    goal.target_pose.header.stamp = rospy.Time.now()
+    goal.target_pose.header.stamp = rospy.Time.now()        
     
-    # get pos
-    try:
-        p_goal = pos_goal.split(' ')
-        p_goal = [float(x) for x in p_goal]
-    except:
-        rospy.loginfo('Pos: not received a string. Assuming float array')    
-        p_goal = pos_goal
-    rospy.loginfo(str(p_goal))
-    
-    # get angle
-    try:
-        a_goal = ang_goal.split(' ')
-        a_goal = [float(x) for x in a_goal]
-    except:
-        rospy.loginfo('Ang: not received a string. Assuming float array')  
-        a_goal = ang_goal  
-    quaternion = tft.quaternion_from_euler(a_goal[0], a_goal[1], a_goal[2])
-    rospy.loginfo(str(quaternion))
+    # get quaternion
+    quaternion = tft.quaternion_from_euler(a_goal[0], a_goal[1], a_goal[2])    
     
     # in which reference frame?
     goal.target_pose.pose.position.x = p_goal[0]
