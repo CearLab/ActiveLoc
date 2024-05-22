@@ -8,7 +8,7 @@
   <arg name="baselinkname" default="$(arg ns)base_link" />
   <arg name="odomlinkname" default="$(arg ns)odom" />
 
-  <rosparam command="load" file="$(find jackal_custom)/control/config/control.yaml" />
+  <rosparam command="load" file="$(find jackal_move)/control/config/control.yaml" />
   <rosparam param="jackal_velocity_controller/base_frame_id" subst_value="True">$(arg baselinkname)</rosparam>
   <rosparam param="jackal_velocity_controller/odom_frame_id" subst_value="True">$(arg odomlinkname)</rosparam>
   <rosparam param="jackal_velocity_controller/left_wheel" subst_value="True">['$(arg ns)front_left_wheel', '$(arg ns)rear_left_wheel']</rosparam>
@@ -19,7 +19,7 @@
 
   <group if="$(arg enable_ekf)" >
     <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization">
-      <rosparam command="load" file="$(find jackal_custom)/control/config/robot_localization.yaml" />
+      <rosparam command="load" file="$(find jackal_move)/control/config/robot_localization.yaml" />
       <param name="odom_frame"      value="$(arg ns)odom"/>
       <param name="base_link_frame" value="$(arg ns)base_link"/>
       <param name="world_frame"     value="$(arg ns)odom"/>
@@ -27,19 +27,14 @@
       <param name="odom0"       value="/$(arg ns)ground_truth/state"/>    
       <param name="imu0"       value="/$(arg ns)imu/data"/>   
     </node>    
-  </group>
-
-  <!-- world - odom publisher -->
-  <!-- <node name="tf2_broadcaster" pkg="jackal_custom" type="tf2_broadcaster.py" respawn="false" output="screen" clear_params="true" >    
-    <param name="TF2name" type="string" value="$(arg ns)" />
-  </node> -->
+  </group>  
 
   <node pkg="twist_mux" type="twist_mux" name="twist_mux">
-    <rosparam command="load" file="$(find jackal_custom)/control/config/twist_mux.yaml" />    
+    <rosparam command="load" file="$(find jackal_move)/control/config/twist_mux.yaml" />    
     <remap from="cmd_vel_out" to="jackal_velocity_controller/cmd_vel"/>
   </node>  
 
-  <include file="$(find jackal_custom)/control/launch/teleop.launch" >
+  <include file="$(find jackal_move)/control/launch/teleop.launch" >
     <arg name="joy_dev" value="$(arg joy_dev)" /> 
   </include>  
 

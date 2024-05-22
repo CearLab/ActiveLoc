@@ -3,7 +3,7 @@
 
 # imports
 import rospy
-import general.jackal_custom as jc
+import move.jackal_move as jm
 import numpy as np
 
 # If the python node is executed as main process (sourced directly)
@@ -34,7 +34,7 @@ if __name__ == '__main__':
             goal_ang =  ''                    
         
         # call function
-        result = jc.follow(leader_topic, server_name, odom_name, goal_pos, goal_ang, mode)     
+        result = jm.follow(leader_topic, server_name, odom_name, goal_pos, goal_ang, mode)     
         
         if result:
             rospy.loginfo("Goal execution done!")
