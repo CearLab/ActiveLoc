@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>jackal_custom</name>
+  <name>jackal_move</name>
   <version>0.0.0</version>
-  <description>Jackal models and worlds</description>
+  <description>Jackal move and control functions</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
