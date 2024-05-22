@@ -1,0 +1,35 @@
+<launch>      
+  
+  <!-- UGV01 -->
+  <node pkg="jackal_custom" type="move_base_goal.py" respawn="false" name="move_base_goal_01" output="screen">
+    <param name="server_name" type="string" value="UGV01/move_base" />
+    <param name="odom_name" type="string" value="UGV01/odom" />
+    <param name="pos_goal" type="string" value="4 4" />
+    <param name="ang_goal" type="string" value="0 0 0.78" />
+  </node>
+
+  <!-- UGV02 -->
+  <node pkg="jackal_custom" type="move_base_goal.py" respawn="false" name="move_base_goal_02" output="screen">
+    <param name="server_name" type="string" value="UGV02/move_base" />
+    <param name="odom_name" type="string" value="UGV02/odom" />
+    <param name="pos_goal" type="string" value="4 -4" />
+    <param name="ang_goal" type="string" value="0 0 -0.78" />
+  </node>
+
+  <!-- UGV03 -->
+  <node pkg="jackal_custom" type="move_base_goal.py" respawn="false" name="move_base_goal_03" output="screen">
+    <param name="server_name" type="string" value="UGV03/move_base" />
+    <param name="odom_name" type="string" value="UGV03/odom" />
+    <param name="pos_goal" type="string" value="-4 -4" />
+    <param name="ang_goal" type="string" value="0 0 3.92" />
+  </node>
+
+  <!-- UGV04 -->
+  <node pkg="jackal_custom" type="move_base_goal.py" respawn="false" name="move_base_goal_04" output="screen">
+    <param name="server_name" type="string" value="UGV04/move_base" />
+    <param name="odom_name" type="string" value="UGV04/odom" />
+    <param name="pos_goal" type="string" value="-4 4" />
+    <param name="ang_goal" type="string" value="0 0 -3.92" />
+  </node>
+
+</launch>

@@ -1,0 +1,3 @@
+[submodule "src/catkin_ws/src/gtec/rosmsgs"]
+	path = src/catkin_ws/src/gtec/rosmsgs
+	url = https://github.com/valentinbarral/rosmsgs

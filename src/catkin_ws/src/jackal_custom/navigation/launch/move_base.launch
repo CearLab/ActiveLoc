@@ -1,0 +1,32 @@
+<launch>
+
+  <arg name="ns" default="" />    
+
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+
+    <rosparam file="$(find jackal_custom)/navigation/config/costmap_params_common.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find jackal_custom)/navigation/config/costmap_params_common.yaml" command="load" ns="local_costmap" />
+    
+    <rosparam file="$(find jackal_custom)/navigation/config/costmap_params_local.yaml" command="load" />
+    <rosparam file="$(find jackal_custom)/navigation/config/costmap_params_global.yaml" command="load" />
+    
+    <rosparam file="$(find jackal_custom)/navigation/config/planner_params_base_local.yaml" command="load" />
+    <rosparam file="$(find jackal_custom)/navigation/config/move_base_params.yaml" command="load" />
+    
+    <param name="base_global_planner" type="string" value="navfn/NavfnROS" />
+    <param name="base_local_planner" value="base_local_planner/TrajectoryPlannerROS"/>
+    <param name="recovery_behavior_enabled" value="true"/>
+    <param name="clearing_rotation_allowed" value="true"/>
+    
+    <!-- parameters: frames -->
+    <param name="global_costmap/global_frame" type="string" value="map" />
+    <param name="global_costmap/robot_base_frame" type="string" value="$(arg ns)base_link" />
+
+    <param name="local_costmap/global_frame" type="string" value="$(arg ns)odom" />
+    <param name="local_costmap/robot_base_frame" type="string" value="$(arg ns)base_link" />    
+    
+    <!-- which odom I use -->
+    <remap from="odom" to="/$(arg ns)odometry/filtered" />
+  </node>
+
+</launch>
