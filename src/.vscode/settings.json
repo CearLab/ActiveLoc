@@ -8,19 +8,29 @@
         "circulant",
         "costmap",
         "costmaps",
+        "datasheet",
         "EIGHTBITS",
         "holonomic",
+        "logdebug",
         "loginfo",
         "movebase",
         "myserial",
+        "Nanchors",
         "Odometry",
         "oneshot",
         "raytrace",
+        "roslib",
         "rospy",
+        "rostime",
         "sodometry",
-        "stopbits"
+        "stopbits",
+        "SUCC"
     ],
     "python.analysis.extraPaths": [
-        "./catkin_ws/src/jackal_custom/nodes/modules"
+        "./catkin_ws/src/jackal_custom/nodes/modules",
+        "./catkin_ws/src/jackal_move/nodes/modules",
+        "./catkin_ws/src/jackal_range/nodes/modules",
+        "./catkin_ws/devel/lib/python3/dist-packages/jackal_range/msg/_",
+        "./catkin_ws/devel/lib/python3/dist-packages/jackal_range/msg/_"
     ]
 }

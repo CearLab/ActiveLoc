@@ -10,36 +10,496 @@ import sys
 import message_filters 
 import math
 import roslib
+import random
 import numpy as np
 from collections import deque
 
+# message import
 import geometry_msgs.msg
 import nav_msgs.msg
 
-BUFSIZE = 6
+# custom message import
+from jackal_range.msg import RD_recap as RD
 
-def serialWrite(srl, data, sleepTime):
+# GLOBAL VARIABLES
+
+# SERIAL BUFFER LENGTHS
+BUFSIZE_SET = 6
+BUFSIZE_GET = 4
+
+# anchors ID dictionary
+ID = ['AN0','AN1','AN2','AN3']
+
+# number of anchors
+NUM_A = len(ID)
+
+# real or simulation
+REAL = 0
+
+# general anchors_params with anchor positions
+if REAL:
+    anchors_params = [
+        ['UKN', ID[0], -1.0, -1.0, -1.0],
+        ['UKN', ID[1], -1.0, -1.0, -1.0],
+        ['UKN', ID[2], -1.0, -1.0, -1.0],
+        ['UKN', ID[3], -1.0, -1.0, -1.0]
+    ]
+else:
+    anchors_params = [
+        ['A', ID[0], 0.0, +2.0, 3.0],
+        ['A', ID[1], 0.0, -2.0, 3.0],
+        ['A', ID[2], +2.0, 0.0, 3.0],
+        ['A', ID[3], -2.0, 0.0, 3.0]
+    ]
+
+# general anchors_params with anchor positions
+if REAL:
+    tag_params = [
+        ['UKN', ID[0], 0.0],
+        ['UKN', ID[1], 0.0],
+        ['UKN', ID[2], 0.0],
+        ['UKN', ID[3], 0.0]
+    ]
+else:
+    tag_params = [
+        ['A', ID[0], 0.0],
+        ['A', ID[1], 0.0],
+        ['A', ID[2], 0.0],
+        ['A', ID[3], 0.0]
+    ]
+
+# write on serial
+# INPUT: 
+#   srl: Serial object
+#   data: array with data to write
+#   sleepTime: how much to wait after sending the data
+#   print_flag: boolean to print or not debug
+def serialWrite(srl, data, sleepTime, print_flag):
     
-    # write
+    # flush the serial
     srl.flushInput()
     srl.flushOutput()
+    
+    # debug
+    rospy.logdebug('flushed stdin stdout')
 
-    chunks = [data[i:i+BUFSIZE] for i in range(0, len(data)+1, BUFSIZE)]
+    # split the data to write in chunks of limited size
+    # this has been done after troubleshooting and observing that too long data are missed by the serial
+    chunks = [data[i:i+BUFSIZE_SET] for i in range(0, len(data)+1, BUFSIZE_SET)]
+    
+    # check chunks
+    rospy.logdebug(chunks)
+
+    # send the chunks
     for ck in chunks:
-        srl.write(ck)
-        print('Send: ' + ck)
+        
+        # write in UTF-8
+        srl.write(ck.encode('utf-8'))
+        
+        # if debug, print
+        if print_flag:
+            print('Send: ' + ck)
 
+        # get the time t0
         t0 = time.time()
+        
+        # get elapsed time from t0
         dt = time.time() - t0
+        
+        # wait for response for at most sleepTime
         while dt < sleepTime:
+            
+            # update the elapsed time
             dt = time.time() - t0
+            
+            # if the serial is waiting, read the data and stream them
             if (srl.in_waiting > 0):
                 data = srl.readline().decode().strip()
-                print('Receive: ' + data.decode('utf-8'))
+                
+                # if debug
+                if print_flag:
+                    print('Receive: ' + data)
 
+    # open and close the serial (good practice)
     srl.close()
     srl.open()
+    
+# read the distances (it is a TAG running this)
+# INPUT:
+#   srl: Serial object
+#   stopTime: upper bound on waiting for data
+#   id: Anchor ID I want to read (from ID global variable)
+# OUTPUT:
+#   A: anchor position (array)
+#   D: distance measured
+#   SUCC: boolean, success of the reading (the anchor might not be available)
+#   NID: network ID
+def serialRead(srl, stopTime, id):
 
+    # start timer
+    t0 = time.time()
+    
+    # init outputs
+    A = np.zeros(3)
+    D = 0.0
+    SUCC = 0
 
+    # read for for the duration of stopTime
+    # compute elapsed time
+    dt = time.time() - t0
+    
+    # init flag describing if data have been received or not
+    empty = True
+    
+    # keep waiting until either there is no time left or we read something
+    while (dt < stopTime) or (empty == True):
+        
+        # update elapsed time
+        dt = time.time() - t0
+        
+        # if the serial is waiting
+        if (srl.in_waiting > 0):
 
+            # get data and split in chunks separated by a comma (lec mode in the UWB antennas, check datasheet)
+            data = srl.readline().decode().strip()
+            
+            # if we got data
+            if len(data) > 0:
+                
+                # update empty flag
+                empty = False
+                
+                # split with comma (lec mode)
+                items = data.split(',')
 
+                # find if anchor was read
+                try:
+                    
+                    # in the array of chunks, get the position of the one describing the anchor ID
+                    # the lec mode prints: #DISTANCES, Anchor Assigned ID, Anchor Hardware ID, Anchor Position (if set), Distance from the TAG
+                    pos = items.index(id)
+
+                    # set anchors
+                    A[0] = float(items[pos+2])
+                    A[1] = float(items[pos+3])
+                    A[2] = float(items[pos+4])
+
+                    # set D
+                    D = float(items[pos+5])    
+                    
+                    # set network ID (first letter of the Anchor Assigned ID)
+                    NID = items[pos][0]
+                    
+                    # set flag and return
+                    SUCC = 1
+                    return A,D,SUCC,NID
+
+                except Exception as e:
+                    # if the anchor is not available: debug and set SUCC to zero
+                    rospy.logdebug(e)
+                    SUCC = 0
+
+    # default return
+    return A,D,SUCC,0
+
+# setup the antenna
+# This function basically uses all the commands from the UWB CLI to setup the antenna mode
+def talker_setup():    
+
+    # general stuff    
+    sleepLong = 4
+    sleepShort = 2
+    print_flag = 1
+    
+    # debug
+    rospy.logdebug('start setup')    
+
+    # how many args were sent
+    argc = len(sys.argv)        
+
+    # check if there are enough params
+    if argc < 5:
+        rospy.logfatal('Insufficient number of parameters for UWB setup')
+    else:
+
+        # Serial port
+        SerialPort = sys.argv[1]
+
+        # Baud rate
+        BaudRate = sys.argv[2]
+
+        # NetworkID
+        NetworkID = sys.argv[3]
+
+        # Label
+        label = sys.argv[4]
+
+        # UWB mode (tag, anchor, anchorinit)
+        UWBmode = sys.argv[5] 
+
+        # If we setup a TAG we also need the read frequency
+        if UWBmode == 'tag':
+
+            if argc < 6:
+                rospy.logfatal('Insufficient number of parameters for UWB setup')
+
+            # Frequency
+            freq = sys.argv[6]
+
+        # If we setup an anchor or an anchor initiator we need their position (fixed, just an initialization)
+        elif (UWBmode == 'anchor') or (UWBmode == 'anchorinit'):
+
+            if argc < 8:
+                rospy.logfatal('Insufficient number of parameters for UWB setup');
+
+            # Position x
+            px = sys.argv[6]
+
+            # Position y
+            py = sys.argv[7]
+
+            # Position z
+            pz = sys.argv[8]
+            
+        else:
+            rospy.logfatal('Wrong UWBmode')
+            
+    # debug
+    rospy.logdebug('argv read')
+
+    # create the serial object and flush the buffers
+    myserial = serial.Serial(SerialPort, BaudRate, timeout=0.5, 
+    parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE,  bytesize=serial.EIGHTBITS)
+    myserial.flushInput()
+    myserial.flushOutput()    
+
+    # Check if the serial port is open
+    if not myserial.is_open:
+        rospy.logfatal('Failed to open serial port!')
+    else:
+        rospy.logdebug('Connected to: ' + SerialPort)
+
+    # start the configuration (double enter - see UWB datasheet)
+    data = '\x0D\x0D'
+    serialWrite(myserial, data, sleepLong, print_flag)
+
+    # set the mode
+    # the double enter is needed every time to check that everything works
+    if UWBmode == 'tag':
+
+        # set to tag mode
+        rospy.logdebug('Set mode: ' + UWBmode)
+        data = 'nmt\x0D'
+        serialWrite(myserial, data, sleepLong, print_flag)
+        data = '\x0D\x0D'
+        serialWrite(myserial, data, sleepLong, print_flag)
+
+        # set the frequency
+        rospy.logdebug('Set frequency')
+        data = 'aurs ' + freq + ' ' + freq + '\x0D'
+        serialWrite(myserial, data, sleepShort, print_flag)
+
+    elif UWBmode == 'anchor':
+        
+        # set to anchor
+        rospy.logdebug('Set mode: ' + UWBmode)
+        data = 'nma\x0D'
+        serialWrite(myserial, data, sleepLong, print_flag)
+        serialWrite(myserial, '\x0D\x0D', sleepLong, print_flag)
+
+        # set position
+        data = 'aps ' + str(px) + ' ' + str(py) + ' ' + str(pz) + '\x0D'
+        serialWrite(myserial, data, sleepShort, print_flag)
+
+    else:
+        
+        # set to anchor init
+        rospy.logdebug('Set mode: ' + UWBmode)
+        data = 'nmi\x0D'
+        serialWrite(myserial, data, sleepLong, print_flag)
+        serialWrite(myserial, '\x0D\x0D', sleepLong, print_flag)
+
+        # set position
+        data = 'aps ' + str(px) + ' ' + str(py) + ' ' + str(pz) + '\x0D'
+        serialWrite(myserial, data, sleepShort, print_flag)
+
+    # set the label
+    rospy.logdebug('Set label')
+    data = 'nls ' + label + ' \x0D'
+    serialWrite(myserial, data, sleepShort, print_flag)
+
+    # set the NetworkID
+    rospy.logdebug('Set NetworkID')
+    data = 'nis ' + str(NetworkID) + ' \x0D'
+    serialWrite(myserial, data, sleepShort, print_flag)
+
+    # see the results (drop the general antenna system info)
+    rospy.logdebug('Get info')
+    data = 'si\x0D'
+    serialWrite(myserial, data, sleepShort, print_flag)
+
+    # if we set anchors, see the position
+    if UWBmode == 'anchor' or UWBmode == 'anchorinit':
+        data = 'apg\x0D'
+        serialWrite(myserial, data, sleepShort, print_flag)
+    
+    # Close the serial port
+    rospy.logdebug('Close serial')
+    myserial.close()
+
+    # default return
+    return 0
+
+# read from the tag the distance and anchor info
+def talker_read():    
+
+    # general stuff init    
+    rate = 10 #(Hz)
+    sleepLong = 2 #(s)
+    stopTime = 0.8/float(rate) #(s) slightly less than freq for overhead
+    print_flag = 0
+    
+    # define message
+    msgD = RD()
+    
+    # Anchor counter
+    A_CNT = 0    
+
+    # input vals
+    argc = len(sys.argv)  
+    
+    # check if there are enough params
+    if argc < 1:
+        rospy.logfatal('Insufficient number of parameters for UWB setup')
+    else:
+
+        # Serial port
+        SerialPort = sys.argv[1]
+
+        # Baud rate
+        BaudRate = sys.argv[2]            
+        
+        # Tag ID
+        TagID = sys.argv[3]
+        
+    # publisher
+    pub = rospy.Publisher(TagID + 'Pub', RD, queue_size=10)
+
+    # set node rate    
+    r = rospy.Rate(rate)   
+
+    # start serial
+    myserial = serial.Serial(SerialPort, BaudRate, timeout=0.5, 
+    parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE,  bytesize=serial.EIGHTBITS)
+    # flush buffers
+    myserial.flushInput()
+    myserial.flushOutput()
+    
+    # Check if the serial port is open
+    if not myserial.is_open:
+        rospy.logfatal('Failed to open serial port!')
+        return -1
+    else:
+        rospy.logdebug('Connected to: ' + SerialPort)
+
+    # start the configuration - go to cli mode
+    data = '\x0D\x0D'
+    serialWrite(myserial, data, sleepLong, print_flag)
+
+    # start reading - send lec (stream of data)
+    data = 'lec\x0D'
+    serialWrite(myserial, data, sleepLong, print_flag)        
+    
+    # signal
+    rospy.loginfo('Start publishing')  
+    
+    # init the Anchors param
+    rospy.set_param('AnchorsInfo', anchors_params) 
+    
+    # init the Tag param
+    rospy.set_param(TagID + 'Info', tag_params) 
+
+    # loop
+    while not rospy.is_shutdown():
+        try:                        
+            
+            # cycle over the anchors
+            id = ID[A_CNT]
+            A_CNT = (A_CNT + 1)%NUM_A 
+            
+            # get measurement
+            A, D, SUCC, NID = serialRead(myserial, stopTime, id)
+            rospy.logdebug(str(id) + ' ' + str(A) + ' ' + str(D) + ' ' + str(SUCC))               
+            
+            # set if success in reading
+            if SUCC == 1: 
+            
+                # get anchors info - set param
+                tmp_anchors_params = rospy.get_param('AnchorsInfo')
+
+                # Find the index of the row containing the value
+                index = next((i for i, row in enumerate(tmp_anchors_params) if id in row), None)
+                tmp_anchors_params[index] = [NID, str(id), float(A[0]), float(A[1]), float(A[2])]
+                rospy.set_param('AnchorsInfo', tmp_anchors_params)                
+                
+                # get tag info - set param
+                tmp_tag_params = rospy.get_param(TagID + 'Info')
+                
+                # Find the index of the row containing the value
+                index = next((i for i, row in enumerate(tmp_tag_params) if id in row), None)
+                tmp_tag_params[index] = [NID, str(id), float(D)]
+                rospy.set_param(TagID + 'Info', tmp_tag_params)  
+                
+                # now setup the publisher
+                msgD.header.stamp = rospy.Time.now()
+                msgD.N_ID = [row[0] for row in tmp_tag_params]
+                msgD.A_ID = [row[1] for row in tmp_anchors_params]
+                msgD.NUM_A = NUM_A
+                
+                # get the XYZ
+                X_POS = np.asarray([row[2] for row in tmp_anchors_params])
+                Y_POS = np.asarray([row[3] for row in tmp_anchors_params])
+                Z_POS = np.asarray([row[4] for row in tmp_anchors_params])
+                
+                # store anchors in sequence
+                A_POS = []
+                for i in range(msgD.NUM_A):
+                    A_POS.append(X_POS[i])
+                    A_POS.append(Y_POS[i])
+                    A_POS.append(Z_POS[i])
+                
+                # rospy.loginfo(type(X_POS))
+                msgD.A_POS = A_POS
+                msgD.T_ID = TagID
+                msgD.D = [row[2] for row in tmp_tag_params]
+                pub.publish(msgD)
+            
+            
+        except Exception as e:
+            # nothing special            
+            rospy.logfatal(e)
+
+        # cycle
+        r.sleep()
+
+    # stop reading
+    data = 'lec\x0D'
+    serialWrite(myserial, data, sleepLong, print_flag)
+
+    # Close the serial port
+    rospy.logdebug('Close serial')
+    myserial.close()
+
+    return 0
+
+# this function computes the ground truth distances and populates the 
+# correct topics and parameters. To be used in simulation mode.
+# INPUT:
+#   gt_topic: topic with the ground truth
+#   frame: UWB frame
+def range_ground_truth():
+    
+    # define message
+    msgD = RD()
+    
+    return 0
