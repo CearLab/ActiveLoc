@@ -1,0 +1,9 @@
+global_costmap:
+  update_frequency: 5.0
+  static_map: false
+  resolution: 0.05
+  width: 20.0  # Set according to your environment size
+  height: 20.0  # Set according to your environment size
+  origin_x: -10.0  # Adjust based on your map and robot starting position
+  origin_y: -10.0  # Adjust based on your map and robot starting position
+  origin_yaw: 0.0  # Usually 0 unless your map is rotated

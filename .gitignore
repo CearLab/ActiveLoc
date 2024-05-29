@@ -4,19 +4,17 @@
 doc/code/SetupJackal.md
 
 # directories
-src/setup/
-src/catkin_ws/devel/
-src/catkin_ws/build/
-src/.vscode/
+src/setup/lib
+src/setup/optim
+src/setup/CERES
+src/catkin_ws/build
+src/catkin_ws/devel
 fig/
 res/
 Zelazo2024/
-/PF/results
 
 # general files (extensions)
 *.bag
 *.log
 *.asv
 *.gif
-*.pyc
-.env

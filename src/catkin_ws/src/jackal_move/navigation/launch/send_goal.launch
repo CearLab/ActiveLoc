@@ -1,0 +1,35 @@
+<launch>      
+  
+  <!-- UGV01 fixed -->
+  <node pkg="jackal_move" type="follower.py" respawn="false" name="reach_01" output="screen">        
+    <param name="server_name" type="string" value="UGV01/move_base" />           
+    <param name="goal_pos" type="string" value="4 4" />
+    <param name="goal_ang" type="string" value="0 0 0.78" />
+    <param name="mode" type="int" value="0" />
+  </node>  
+
+  <!-- UGV02 fixed -->
+  <node pkg="jackal_move" type="follower.py" respawn="false" name="reach_02" output="screen">        
+    <param name="server_name" type="string" value="UGV02/move_base" />           
+    <param name="goal_pos" type="string" value="4 -4" />
+    <param name="goal_ang" type="string" value="0 0 -0.78" />
+    <param name="mode" type="int" value="0" />
+  </node>  
+
+  <!-- UGV03 fixed -->
+  <node pkg="jackal_move" type="follower.py" respawn="false" name="reach_03" output="screen">        
+    <param name="server_name" type="string" value="UGV03/move_base" />           
+    <param name="goal_pos" type="string" value="-4 -4" />
+    <param name="goal_ang" type="string" value="0 0 3.92" />
+    <param name="mode" type="int" value="0" />
+  </node>    
+
+  <!-- UGV03 fixed -->
+  <node pkg="jackal_move" type="follower.py" respawn="false" name="reach_04" output="screen">        
+    <param name="server_name" type="string" value="UGV04/move_base" />           
+    <param name="goal_pos" type="string" value="-4 4" />
+    <param name="goal_ang" type="string" value="0 0 -3.92" />
+    <param name="mode" type="int" value="0" />
+  </node>    
+
+</launch>
