@@ -26,61 +26,32 @@ function [c, ceq] = nonlconEnergy(x,p)
     % get the agents of the team #1, which is the team storing the initial
     % condition
     agents0 = {teams{1}.team_mates{1:end}};
-    agents0 = {agents0{1:teams{1}.leader.agent_number-1} teams{1}.leader agents0{teams{1}.leader.agent_number:end}};    
+    agents0 = {agents0{1:teams{1}.leader.agent_number-1} teams{1}.leader agents0{teams{1}.leader.agent_number:end}};  
+    leaderID = teams{1}.leader.agent_number;
 
-    % get again the LOS table (could have passed it as @param)
-    [los_table,agents_list] = calcLosMap(agents0,'UWB');
-
-    % I also want to ensure a min distance between agents    
-    if ~isempty(los_table)
-        % get distances
-        D = los_table(:,5:5+p-1) - los_table(:,5+p:5+2*p-1);
-
-        % find max and min dist
-        Dmin = min(vecnorm(D,2,2));
-        Dmax = max(vecnorm(D,2,2));
-
-    else
-        % if no connection is present, only reasonable limits
-        Dmin = 0;
-        Dmax = Inf;
-
+    for i=1:numel(agents0)
+        X0(i,:) = agents0{i}.location;
     end
 
-    % set Dminthresh (min distance threshold)
-    Dminthresh = 0.1*teams{1}.leader.sensors.UWB.max_range;
-    if isinf(Dminthresh)
-        Dminthresh = 0;
-    end        
+    % leader keep the position
+    FixLeader = ~(sum(X0(leaderID,:) == xmat(leaderID,:)) == 2);
 
-    % set constraint (c < 0)
-    distconmin = (Dminthresh - Dmin);   
+    % bars constraints: the distances of the bars must be always the same as in
+    % Dslam
+    for i = 1:size(manager.WS.bars,1)
+        deltaPbars(i,:) = xmat(manager.WS.bars(i,1),:) - xmat(manager.WS.bars(i,2),:);
+    end
+    dbars = manager.WS.Dbars(manager.WS.bars(1,1),manager.WS.bars(:,2))';
+    FixBars = ~(sum(deltaPbars*deltaPbars' == dbars*dbars')==size(manager.WS.bars,1)); 
 
-    % of course I want to keep rigidity, if it is present
-    % get rigidity matrix 
-    R = calcRigitdyMatrix(los_table,agents_list);
 
-    % get nonzero eigs
-    e = eig(R'*R);
-
-    % get # nnz elements
-    pos = find(abs(e) < 1e-10);
-
-    % boolean flag on lambda4
-    isrigid = ~(numel(pos)==3);
-
-    % circular area constraint (useless now)
-    map = Map.getInstance();
-    Rmax = 1*max(map.map_span(:,2));
-    R = vecnorm(xmat,2,2);
-    InsideCircle = R - Rmax;
 
     % equality constraints (I want rigidity)
-    ceq = [ceq; isrigid];    
+    % ceq = [ceq; FixLeader];    
 
     % inequality constraints
-    c = [c; distconmin];        % min distance
-    % c = [c; InsideCircle];
+    c = [c; FixLeader   -1e-1]; 
+    % c = [c; FixBars     -1e-1]; 
 
 
 
