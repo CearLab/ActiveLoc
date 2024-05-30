@@ -12,10 +12,11 @@ src/catkin_ws/devel
 fig/
 res/
 Zelazo2024/
-__pycache__
+__pycache__/
 
 # general files (extensions)
 *.bag
 *.log
 *.asv
 *.gif
+*.pyc
