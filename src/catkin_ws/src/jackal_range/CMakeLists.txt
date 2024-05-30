@@ -163,6 +163,7 @@ include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} ${SDFormat_INCLUDE_DIRS}
 catkin_install_python(PROGRAMS   
   nodes/scripts/UWB_setup.py  
   nodes/scripts/UWB_read.py 
+  nodes/scripts/anchors_server.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
