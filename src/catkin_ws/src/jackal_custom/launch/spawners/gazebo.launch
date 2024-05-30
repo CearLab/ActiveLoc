@@ -81,6 +81,11 @@
   <!-- ANCHORS SERVER -->
   <include file="$(find jackal_custom)/launch/spawners/anchors.launch" />
 
+ <!-- BEGIN UWB -->
+  <!-- <group ns="UWB">      
+    <node pkg="jackal_range" type="UWB_sim.py" name="UWB_SIM" />   
+  </group> -->
+
   <!-- Run Websocket. -->
   <!-- <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" > 
     <arg name="port" value="9090"/>
