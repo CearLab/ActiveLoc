@@ -13,6 +13,7 @@ fig/
 res/
 Zelazo2024/
 __pycache__/
+.vscode/
 
 # general files (extensions)
 *.bag
