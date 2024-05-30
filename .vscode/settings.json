@@ -1,15 +1,32 @@
 {
     "cSpell.words": [
+        "actionlib",
+        "anchorinit",
+        "aurs",
+        "bytesize",
         "Cear",
         "containerd",
+        "datasheet",
         "devel",
+        "EIGHTBITS",
+        "logdebug",
+        "loginfo",
+        "myserial",
         "pygments",
         "republisher",
         "rosbridge",
         "roscpp",
         "rosinstall",
+        "roslib",
         "roslint",
         "rospack",
+        "rospy",
+        "stopbits",
+        "SUCC",
         "Xauthority"
+    ],
+    "python.analysis.extraPaths": [
+        "./src/catkin_ws/src/jackal_range/nodes/modules",
+        "./src/catkin_ws/src/jackal_move/nodes/modules"
     ]
 }

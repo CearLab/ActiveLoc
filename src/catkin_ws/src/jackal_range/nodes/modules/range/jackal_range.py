@@ -13,10 +13,14 @@ import roslib
 import random
 import numpy as np
 from collections import deque
+import tf_conversions
+import tf2_ros
+import colorsys
 
 # message import
 import geometry_msgs.msg
 import nav_msgs.msg
+from visualization_msgs.msg import Marker, MarkerArray
 
 # custom message import
 from jackal_range.msg import RD_recap as RD
@@ -503,3 +507,115 @@ def range_ground_truth():
     msgD = RD()
     
     return 0
+
+# this functions set a parameter with all the anchors info, and publish marker arrays
+# INPUT: 
+#   anchors pos: string with all anchors pos
+#   params: name of the parameters
+#   topic:  name of the published topic
+def anchors_server(anchors_pos, topic):
+    
+    # general stuff init    
+    rate = 10 #(Hz)
+    rate = rospy.Rate(rate)
+    
+    #  init broadcaster
+    br = tf2_ros.TransformBroadcaster()
+        
+    # publisher
+    pub = rospy.Publisher(topic, MarkerArray, queue_size=10)
+    
+    # now split the anchors_pos into the positions
+    # split with comma (lec mode)
+    items = np.array([float(x) for x in anchors_pos.split(' ')])
+    
+    # debug
+    rospy.logdebug(items)
+    
+    # get number of anchors
+    N_A = int(len(items)/3)        
+    
+    while not rospy.is_shutdown():
+        
+        # define marker array
+        marker_array = MarkerArray()
+    
+        # assign positions in N_A markers
+        for i in range(N_A):
+            
+            # define marker
+            marker = Marker()        
+            
+            # get position of anchor ith
+            position = (items[3*i], items[3*i+1], items[3*i+2])
+            orientation = (0.0, 0.0, 0.0, 1.0)
+            scale = (0.25, 0.25, 0.25)                        
+            
+            # assign marker
+            marker.header.frame_id = "A" + str(i) + "/base_link"
+            marker.header.stamp = rospy.Time.now()
+            marker.id = i
+            marker.type = Marker.CUBE
+            marker.action = Marker.ADD
+
+            marker.pose.position.x = position[0]
+            marker.pose.position.y = position[1]
+            marker.pose.position.z = position[2]
+
+            marker.pose.orientation.x = orientation[0]
+            marker.pose.orientation.y = orientation[1]
+            marker.pose.orientation.z = orientation[2]
+            marker.pose.orientation.w = orientation[3]
+
+            marker.scale.x = scale[0]
+            marker.scale.y = scale[1]
+            marker.scale.z = scale[2]
+
+            color = generate_color(i, N_A)
+            marker.color.r = color[0]
+            marker.color.g = color[1]
+            marker.color.b = color[2]
+            marker.color.a = color[3]
+
+            marker.lifetime = rospy.Duration()
+            
+            marker_array.markers.append(marker)
+            
+            # now also publish the transform
+            t = geometry_msgs.msg.TransformStamped()
+
+            t.header.stamp = rospy.Time.now()
+            t.header.frame_id = "map"
+            t.child_frame_id = marker.header.frame_id
+            
+            # Translation
+            t.transform.translation.x = marker.pose.position.x
+            t.transform.translation.y = marker.pose.position.y
+            t.transform.translation.z = marker.pose.position.z
+            
+            # Rotation (Quaternion)            
+            t.transform.rotation.x = marker.pose.orientation.x
+            t.transform.rotation.y = marker.pose.orientation.y
+            t.transform.rotation.z = marker.pose.orientation.z
+            t.transform.rotation.w = marker.pose.orientation.w
+            
+            # send the transform
+            br.sendTransform(t)
+            
+        # publish the array
+        pub.publish(marker_array)
+        
+        # sleep
+        rate.sleep()
+    
+    
+# ok this is an OCD method. I need the anchors to have incremental colors
+# INPUT
+#   index: number of marker
+#   total_markers: number of anchors
+def generate_color(index, total_markers):
+    hue = index / float(total_markers)  # Vary the hue between 0 and 1
+    saturation = 1.0  # Full saturation
+    value = 1.0  # Full brightness
+    rgb = colorsys.hsv_to_rgb(hue, saturation, value)
+    return rgb + (1.0,)  # Return as (r, g, b, a) tuple with full opacity
