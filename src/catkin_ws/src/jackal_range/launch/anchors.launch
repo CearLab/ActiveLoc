@@ -9,6 +9,7 @@
     <node pkg="jackal_range" name="anchors_server" type="anchors_server.py" >
     <param name="anchors_pos" type="string" value="+$(arg AX) +$(arg AY) +$(arg AZ) -$(arg AX) +$(arg AY) +$(arg AZ) -$(arg AX) -$(arg AY) +$(arg AZ) +$(arg AX) -$(arg AY) +$(arg AZ)" />
     <param name="topic" type="string" value="AnchorsMarkers" />
+    <param name="params_name" type="string" value="AnchorsInfo" />
     </node>  
 
 </launch>

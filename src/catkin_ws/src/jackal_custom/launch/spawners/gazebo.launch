@@ -26,8 +26,13 @@
   <!-- create map reference frame -->
   <node pkg="tf2_ros" type="static_transform_publisher" name="WorldToMap" args="0 0 0 0 0 0 1 world map" />
 
+  <!-- ANCHORS SERVER -->
+  <include file="$(find jackal_range)/launch/anchors.launch" />
+
   <!-- BEGIN ROBOT 1 -->
   <group ns="UGV01">    
+
+    <!-- spawn robot -->
     <include file="$(find jackal_custom)/launch/spawners/robot.launch" >
       <arg name="init_pose" value="-x 2 -y 2 -z 0 -R 0 -P 0 -Y 0" />
       <arg name="robot_name"  value="Jack01" />
@@ -36,63 +41,22 @@
       <arg name="enable_ekf" value="true" /> 
       <arg name="ns" value="UGV01/" />      
     </include> 
+
+    <!-- publish TF -->
     <node pkg="tf2_ros" type="static_transform_publisher" name="MapToOdom" args="0 0 0 0 0 0 1 map UGV01/odom" />    
+
+    <!-- DISTANCE VISUALIZATION -->
+    <include file="$(find jackal_range)/launch/vis_line.launch" >
+      <arg name="ns" value="UGV01/" />      
+    </include>     
+    
   </group>
+  
 
-  <!-- BEGIN ROBOT 2 -->
-  <!-- <group ns="UGV02">    
-    <include file="$(find jackal_custom)/launch/spawners/robot.launch" >
-      <arg name="init_pose" value="-x 2 -y -2 -z 0 -R 0 -P 0 -Y 0" />
-      <arg name="robot_name"  value="Jack02" />
-      <arg name="joystick" value="true" />
-      <arg name="joy_dev" value="/dev/input/js0" />
-      <arg name="enable_ekf" value="true" /> 
-      <arg name="ns" value="UGV02/" />      
-    </include>    
-    <node pkg="tf2_ros" type="static_transform_publisher" name="MapToOdom" args="0 0 0 0 0 0 1 map UGV02/odom" />   
-  </group> -->
-
-  <!-- BEGIN ROBOT 3 -->
-  <!-- <group ns="UGV03">    
-    <include file="$(find jackal_custom)/launch/spawners/robot.launch" >
-      <arg name="init_pose" value="-x -2 -y -2 -z 0 -R 0 -P 0 -Y 0" />
-      <arg name="robot_name"  value="Jack03" />
-      <arg name="joystick" value="true" />
-      <arg name="joy_dev" value="/dev/input/js0" />
-      <arg name="enable_ekf" value="true" /> 
-      <arg name="ns" value="UGV03/" />      
-    </include>    
-    <node pkg="tf2_ros" type="static_transform_publisher" name="MapToOdom" args="0 0 0 0 0 0 1 map UGV03/odom" />   
-  </group> -->
-
-  <!-- BEGIN ROBOT 4 -->
-  <!-- <group ns="UGV04">    
-    <include file="$(find jackal_custom)/launch/spawners/robot.launch" >
-      <arg name="init_pose" value="-x -2 -y 2 -z 0 -R 0 -P 0 -Y 0" />
-      <arg name="robot_name"  value="Jack04" />
-      <arg name="joystick" value="true" />
-      <arg name="joy_dev" value="/dev/input/js0" />
-      <arg name="enable_ekf" value="true" /> 
-      <arg name="ns" value="UGV04/" />      
-    </include>    
-    <node pkg="tf2_ros" type="static_transform_publisher" name="MapToOdom" args="0 0 0 0 0 0 1 map UGV04/odom" />   
-  </group> -->
-
-  <!-- ANCHORS SERVER -->
-  <include file="$(find jackal_custom)/launch/spawners/anchors.launch" />
-
- <!-- BEGIN UWB -->
+  <!-- BEGIN UWB -->
   <!-- <group ns="UWB">      
     <node pkg="jackal_range" type="UWB_sim.py" name="UWB_SIM" />   
-  </group> -->
-
-  <!-- Run Websocket. -->
-  <!-- <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" > 
-    <arg name="port" value="9090"/>
-  </include> -->  
-
-  <!-- Tf2 publisher -->
-  <!-- <node name="tf2_web_republisher" pkg="tf2_web_republisher" type="tf2_web_republisher" /> -->
+  </group> -->  
 
   <param name="use_gui" value="true"/>
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find jackal_custom)/rviz/default.rviz" />

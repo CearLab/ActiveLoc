@@ -11,22 +11,22 @@ if __name__ == '__main__':
     try:
         
         # ros::init() the node
-        rospy.init_node('Anchors_server', anonymous=True)
+        rospy.init_node('Line_visualization', anonymous=True)
         
         # node started
-        rospy.loginfo('Anchors setup')     
+        rospy.loginfo('Visualize line in rviz')     
         
-        # mode (0-move_base, 1-prop control)                
-        anchors_pos = rospy.get_param('~anchors_pos', '')        
+        # get params
+        odom = rospy.get_param('~odom', '')        
+        params_name = rospy.get_param('~params_name', '')        
         topic = rospy.get_param('~topic', '')
-        params_name = rospy.get_param('~params_name', '')
         
-        rospy.loginfo(anchors_pos)        
+        rospy.loginfo(odom)        
+        rospy.loginfo(params_name)        
         rospy.loginfo(topic)
-        rospy.loginfo(params_name)
         
         # call talker
-        jr.anchors_server(anchors_pos,topic,params_name)
+        jr.publish_line_marker(odom,params_name,topic)
         
     except rospy.ROSInterruptException:
         rospy.loginfo("UWB_setup failed")
