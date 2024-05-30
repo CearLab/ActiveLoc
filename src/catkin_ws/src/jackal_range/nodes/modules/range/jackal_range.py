@@ -19,7 +19,9 @@ import colorsys
 
 # message import
 import geometry_msgs.msg
+from geometry_msgs.msg import Point
 import nav_msgs.msg
+from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
 
 # custom message import
@@ -495,13 +497,6 @@ def talker_read():
     myserial.close()
 
     return 0
-
-# this function computes the ground truth distances and populates the 
-# correct topics and parameters. To be used in simulation mode.
-# INPUT:
-#   gt_topic: topic with the ground truth
-#   frame: UWB frame
-def range_ground_truth():
     
     # define message
     msgD = RD()
@@ -513,7 +508,7 @@ def range_ground_truth():
 #   anchors pos: string with all anchors pos
 #   params: name of the parameters
 #   topic:  name of the published topic
-def anchors_server(anchors_pos, topic):
+def anchors_server(anchors_pos, topic, params_name):
     
     # general stuff init    
     rate = 10 #(Hz)
@@ -533,26 +528,31 @@ def anchors_server(anchors_pos, topic):
     rospy.logdebug(items)
     
     # get number of anchors
-    N_A = int(len(items)/3)        
+    N_A = int(len(items)/3)     
+    
+    # init the Anchors param
+    rospy.set_param(params_name, anchors_params)    
     
     while not rospy.is_shutdown():
         
         # define marker array
-        marker_array = MarkerArray()
+        marker_array = MarkerArray()                
     
         # assign positions in N_A markers
         for i in range(N_A):
             
             # define marker
-            marker = Marker()        
+            marker = Marker()
+            
+            scale_factor = 0.25
             
             # get position of anchor ith
             position = (items[3*i], items[3*i+1], items[3*i+2])
             orientation = (0.0, 0.0, 0.0, 1.0)
-            scale = (0.25, 0.25, 0.25)                        
+            scale = (scale_factor, scale_factor, scale_factor)                        
             
             # assign marker
-            marker.header.frame_id = "A" + str(i) + "/base_link"
+            marker.header.frame_id = "AN" + str(i) + "/base_link"
             marker.header.stamp = rospy.Time.now()
             marker.id = i
             marker.type = Marker.CUBE
@@ -579,7 +579,19 @@ def anchors_server(anchors_pos, topic):
 
             marker.lifetime = rospy.Duration()
             
-            marker_array.markers.append(marker)
+            marker_array.markers.append(marker)  
+            
+            # now we set the anchors pos in the info param
+            # get anchors info - get param
+            tmp_anchors_params = rospy.get_param(params_name)
+
+            # Find the index of the row containing the value
+            id = "AN"+str(i)
+            # set network ID (first letter of the Anchor Assigned ID)
+            NID = id[0]
+            index = next((i for i, row in enumerate(tmp_anchors_params) if id in row), None)
+            tmp_anchors_params[index] = [NID, str(id), float(position[0]), float(position[1]), float(position[2])]
+            rospy.set_param(params_name, tmp_anchors_params)                                      
             
             # now also publish the transform
             t = geometry_msgs.msg.TransformStamped()
@@ -619,3 +631,80 @@ def generate_color(index, total_markers):
     value = 1.0  # Full brightness
     rgb = colorsys.hsv_to_rgb(hue, saturation, value)
     return rgb + (1.0,)  # Return as (r, g, b, a) tuple with full opacity
+
+# I want to visualize in RVIZ a line connecting two points
+def publish_line_marker(odom,params_name,topic):
+    
+    # general stuff init    
+    rate = 10 #(Hz)
+    rate = rospy.Rate(rate)
+    
+    # subscribe to the odom
+    sub = rospy.Subscriber(odom, Odometry, lambda msg: odom_callback(msg, params_name, topic))
+    
+    # spin
+    rospy.spin()
+    
+    
+# callback when odometry is received
+def odom_callback(msg, params_name, topic):
+    
+    # Line publisher
+    pub = rospy.Publisher(topic+"/line", MarkerArray, queue_size=10)
+    
+    # define marker_array with lines
+    marker_array_line = MarkerArray()    
+    
+    # get anchors info - get param    
+    tmp_anchors_params = rospy.get_param(params_name)        
+    
+    # N_A
+    N_A = len(tmp_anchors_params)
+    rospy.loginfo("Number of anchors:" + str(N_A))
+    
+    for i in range(N_A):
+        
+        # define color of the line
+        color = generate_color(i, N_A)
+    
+        # define marker for line
+        marker_line = Marker()    
+        
+        marker_line.header.frame_id = "world"
+        marker_line.header.stamp = rospy.Time.now()
+        marker_line.ns = "AN" + str(i) + "/line_markers"
+        marker_line.id = i
+        marker_line.type = Marker.LINE_STRIP
+        marker_line.action = Marker.ADD
+        marker_line.scale.x = 0.01  # Line width
+        marker_line.color.r = color[0]
+        marker_line.color.g = color[1]
+        marker_line.color.b = color[2]
+        marker_line.color.a = color[3]
+        
+        marker_line.pose.orientation.x = 0
+        marker_line.pose.orientation.y = 0
+        marker_line.pose.orientation.z = 0
+        marker_line.pose.orientation.w = 1
+
+        # Define two points
+        pointANC = Point()
+        pointANC.x = float(tmp_anchors_params[i][2])
+        pointANC.y = float(tmp_anchors_params[i][3])
+        pointANC.z = float(tmp_anchors_params[i][4])
+
+        pointUGV = Point()
+        pointUGV.x = msg.pose.pose.position.x
+        pointUGV.y = msg.pose.pose.position.y
+        pointUGV.z = msg.pose.pose.position.z
+
+        # Add points to the marker
+        marker_line.points.append(pointANC)
+        marker_line.points.append(pointUGV)   
+        
+        # append marker
+        marker_array_line.markers.append(marker_line)   
+    
+
+    # Publish the marker
+    pub.publish(marker_array_line)

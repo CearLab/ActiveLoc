@@ -5,14 +5,18 @@
         "aurs",
         "bytesize",
         "Cear",
+        "circulant",
         "containerd",
         "datasheet",
         "devel",
         "EIGHTBITS",
         "logdebug",
         "loginfo",
+        "movebase",
         "myserial",
+        "Odometry",
         "pygments",
+        "rangesub",
         "republisher",
         "rosbridge",
         "roscpp",
@@ -21,12 +25,15 @@
         "roslint",
         "rospack",
         "rospy",
+        "RVIZ",
         "stopbits",
         "SUCC",
+        "tstmsg",
         "Xauthority"
     ],
     "python.analysis.extraPaths": [
         "./src/catkin_ws/src/jackal_range/nodes/modules",
-        "./src/catkin_ws/src/jackal_move/nodes/modules"
+        "./src/catkin_ws/src/jackal_move/nodes/modules",
+        "./src/catkin_ws/src/jackal_pf/nodes/modules"
     ]
 }
