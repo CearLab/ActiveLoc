@@ -1,5 +1,7 @@
 {
     "cSpell.words": [
+        "Cear",
+        "containerd",
         "devel",
         "pygments",
         "republisher",
@@ -7,6 +9,7 @@
         "roscpp",
         "rosinstall",
         "roslint",
-        "rospack"
+        "rospack",
+        "Xauthority"
     ]
 }
