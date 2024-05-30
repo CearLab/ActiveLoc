@@ -12,6 +12,7 @@ src/catkin_ws/devel
 fig/
 res/
 Zelazo2024/
+__pycache__/
 
 # general files (extensions)
 *.bag
