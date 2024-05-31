@@ -164,6 +164,8 @@ catkin_install_python(PROGRAMS
   nodes/scripts/UWB_setup.py  
   nodes/scripts/UWB_read.py 
   nodes/scripts/UWB_sim.py
+  nodes/scripts/anchors_server.py
+  nodes/scripts/UGV_vis_line.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

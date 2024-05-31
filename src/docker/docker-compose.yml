@@ -70,7 +70,7 @@ services:
       - ./config/.bashrc:/home/ros/.bashrc:rw
       - /etc/localtime:/etc/localtime:ro
       - type: bind
-        source: ../
+        source: ../../
         target: /home/ros/workspace
 
   # dev setup - noetic - nvidia
@@ -114,7 +114,7 @@ services:
       - ./config/.bashrc:/home/ros/.bashrc:rw
       - /etc/localtime:/etc/localtime:ro
       - type: bind
-        source: ../
+        source: ../../
         target: /home/ros/workspace
 
 # define a custom network
