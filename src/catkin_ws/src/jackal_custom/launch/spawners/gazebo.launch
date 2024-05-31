@@ -73,7 +73,7 @@
     <node pkg="tf2_ros" type="static_transform_publisher" name="MapToOdom" args="0 0 0 0 0 0 1 map UGV04/odom" />   
   </group>
 
- <!-- BEGIN UWB -->
+  <!-- BEGIN UWB -->
   <!-- <group ns="UWB">      
     <node pkg="jackal_range" type="UWB_sim.py" name="UWB_SIM" />   
   </group> -->
