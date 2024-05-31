@@ -5,12 +5,11 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /UGV011
-        - /UGV021
-        - /UGV031
-        - /UGV041
         - /UGV01EKF1/Covariance1
+        - /UGV01VisLine1
+        - /UGV01VisLine1/Namespaces1
       Splitter Ratio: 0.5
-    Tree Height: 708
+    Tree Height: 845
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -157,245 +156,50 @@ Visualization Manager:
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: true
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        UGV02/base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV02/chassis_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV02/front_fender_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV02/front_left_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV02/front_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV02/front_right_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV02/imu_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV02/mid_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV02/navsat_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV02/rear_fender_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV02/rear_left_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV02/rear_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV02/rear_right_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV02/right_tag:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
       Name: UGV02
       Robot Description: UGV02/robot_description
       TF Prefix: ""
       Update Interval: 0
-      Value: true
+      Value: false
       Visual Enabled: true
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: true
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        UGV03/base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV03/chassis_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV03/front_fender_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV03/front_left_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV03/front_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV03/front_right_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV03/imu_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV03/mid_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV03/navsat_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV03/rear_fender_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV03/rear_left_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV03/rear_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV03/rear_right_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV03/right_tag:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
       Name: UGV03
       Robot Description: UGV03/robot_description
       TF Prefix: ""
       Update Interval: 0
-      Value: true
+      Value: false
       Visual Enabled: true
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: true
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        UGV04/base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV04/chassis_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV04/front_fender_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV04/front_left_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV04/front_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV04/front_right_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV04/imu_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV04/mid_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV04/navsat_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV04/rear_fender_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV04/rear_left_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV04/rear_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV04/rear_right_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV04/right_tag:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
       Name: UGV04
       Robot Description: UGV04/robot_description
       TF Prefix: ""
       Update Interval: 0
-      Value: true
+      Value: false
       Visual Enabled: true
     - Angle Tolerance: 0.10000000149011612
       Class: rviz/Odometry
@@ -449,7 +253,7 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: false
-      Enabled: true
+      Enabled: false
       Keep: 1
       Name: UGV02EKF
       Position Tolerance: 0.10000000149011612
@@ -466,7 +270,7 @@ Visualization Manager:
         Value: Arrow
       Topic: UGV02/odometry/filtered
       Unreliable: false
-      Value: true
+      Value: false
     - Angle Tolerance: 0.10000000149011612
       Class: rviz/Odometry
       Covariance:
@@ -484,7 +288,7 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: false
-      Enabled: true
+      Enabled: false
       Keep: 1
       Name: UGV03EKF
       Position Tolerance: 0.10000000149011612
@@ -501,7 +305,7 @@ Visualization Manager:
         Value: Arrow
       Topic: UGV03/odometry/filtered
       Unreliable: false
-      Value: true
+      Value: false
     - Angle Tolerance: 0.10000000149011612
       Class: rviz/Odometry
       Covariance:
@@ -519,7 +323,7 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: false
-      Enabled: true
+      Enabled: false
       Keep: 1
       Name: UGV04EKF
       Position Tolerance: 0.10000000149011612
@@ -536,6 +340,22 @@ Visualization Manager:
         Value: Arrow
       Topic: UGV04/odometry/filtered
       Unreliable: false
+      Value: false
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /AnchorsMarkers
+      Name: AnchorsMarkers
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /UGV01/vis_line/line
+      Name: UGV01VisLine
+      Namespaces:
+        {}
+      Queue Size: 100
       Value: true
   Enabled: true
   Global Options:
@@ -565,7 +385,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 37.621253967285156
+      Distance: 25.2432861328125
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -573,25 +393,25 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.024875927716493607
-        Y: -0.014972618781030178
-        Z: -0.011580977588891983
+        X: 0.43713894486427307
+        Y: 0.714213490486145
+        Z: -1.4218789339065552
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.1903984695672989
+      Pitch: 0.5853981971740723
       Target Frame: <Fixed Frame>
-      Yaw: 0.905398964881897
+      Yaw: 1.7503995895385742
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 999
+  Height: 1136
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001560000034dfc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003b0000034d000000c700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f0000034dfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003b0000034d000000a000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007740000003efc0100000002fb0000000800540069006d00650100000000000007740000030700fffffffb0000000800540069006d00650100000000000004500000000000000000000005030000034d00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000040000000000000156000003d6fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003b000003d6000000c700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f000003d6fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003b000003d6000000a000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d00650100000000000007800000030700fffffffb0000000800540069006d006501000000000000045000000000000000000000050f000003d600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -600,6 +420,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1908
-  X: 1080
-  Y: 0
+  Width: 1920
+  X: 0
+  Y: 27

@@ -41,7 +41,13 @@ class PFnode:
     
     op = Odometry()
     
+    # state and measurement init
+    x = np.zeros(TOTAL_STATE_SIZE)
+    z = np.zeros(RANGE_MEASUREMENT_SIZE)        
+    
+    # class constructor
     def __init__(self):
+        
         # Initialize the ROS node
         rospy.loginfo('starting init')
         self.init_variables()
@@ -195,14 +201,18 @@ class PFnode:
 
 
 
+    # run the node
     def run(self):
         rospy.spin()
 
+# default exec
 if __name__ == '__main__':
+    
     try:
         rospy.init_node('pf')
         rospy.loginfo('+++++++++++++++node started+++++++++++++++++')
         node = PFnode()
         node.run()
+        
     except rospy.ROSInterruptException:
         pass
