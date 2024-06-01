@@ -3,11 +3,20 @@
     <!-- Configuration of Jackal which you would like to simulate. -->
     <arg name="ns" default="" /> 
 
-    <!-- ANCHORS SERVER -->
-    <node pkg="jackal_range" name="UGV_vis_line" type="UGV_vis_line.py" >
+    <!-- LINE VISUALIZATION - GROUND TRUTH -->
+    <node pkg="jackal_range" name="UGV_vis_line_GT" type="UGV_vis_line.py" >
         <param name="odom" type="string" value="/$(arg ns)ground_truth/state" />        
         <param name="params_name" type="string" value="/AnchorsInfo" />
-        <param name="topic" type="string" value="/$(arg ns)vis_line" />
+        <param name="topic" type="string" value="/$(arg ns)vis_line/ground_truth" />
+        <param name="color" type="string" value="0.0 1.0 0.0 1.0" />
+    </node>  
+
+    <!-- LINE VISUALIZATION - FROM EKF -->
+    <node pkg="jackal_range" name="UGV_vis_line_EKF" type="UGV_vis_line.py" >
+        <param name="odom" type="string" value="/$(arg ns)odometry/filtered" />        
+        <param name="params_name" type="string" value="/AnchorsInfo" />
+        <param name="topic" type="string" value="/$(arg ns)vis_line/ekf" />
+        <param name="color" type="string" value="1.0 0.0 0.0 1.0" />
     </node>  
 
 </launch>

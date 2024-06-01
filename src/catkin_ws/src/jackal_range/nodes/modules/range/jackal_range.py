@@ -572,7 +572,7 @@ def anchors_server(anchors_pos, topic, params_name):
             marker.color.r = color[0]
             marker.color.g = color[1]
             marker.color.b = color[2]
-            marker.color.a = color[3]
+            marker.color.a = 0.5*color[3]
 
             # keep the markers while the node is running
             marker.lifetime = rospy.Duration()          
@@ -598,35 +598,23 @@ def anchors_server(anchors_pos, topic, params_name):
         
         # sleep
         rate.sleep()
-    
-    
-# ok this is an OCD method. I need the anchors to have incremental colors
-# INPUT
-#   index: number of marker
-#   total_markers: number of anchors
-def generate_color(index, total_markers):
-    hue = index / float(total_markers)  # Vary the hue between 0 and 1
-    saturation = 1.0  # Full saturation
-    value = 1.0  # Full brightness
-    rgb = colorsys.hsv_to_rgb(hue, saturation, value)
-    return rgb + (1.0,)  # Return as (r, g, b, a) tuple with full opacity
 
 # I want to visualize in RVIZ a line connecting two points
-def publish_line_marker(odom,params_name,topic):
+def publish_line_marker(odom,params_name,topic, color):
     
     # general stuff init    
     rate = 10 #(Hz)
     rate = rospy.Rate(rate)
     
     # subscribe to the odom
-    sub = rospy.Subscriber(odom, Odometry, lambda msg: vis_line_callback(msg, params_name, topic))
+    sub = rospy.Subscriber(odom, Odometry, lambda msg: vis_line_callback(msg, params_name, topic, color))
     
     # spin
     rospy.spin()
     
     
 # callback when odometry is received and publishing the line markers
-def vis_line_callback(msg, params_name, topic):
+def vis_line_callback(msg, params_name, topic, color):
     
     # Line publisher
     pub = rospy.Publisher(topic+"/line", MarkerArray, queue_size=10)
@@ -641,10 +629,22 @@ def vis_line_callback(msg, params_name, topic):
     N_A = len(tmp_anchors_params)
     rospy.loginfo("Number of anchors:" + str(N_A))
     
+    # convert color
+    # Convert the string to a list of floats
+    color = np.asarray([float(x) for x in color.split()])        
+    
+    # see if you need to generate colors    
+    if color[0] == -1:
+        color_gen = 1
+    else:
+        color_gen = 0
+        color = tuple(color)     
+    
     for i in range(N_A):
         
         # define color of the line
-        color = generate_color(i, N_A)
+        if color_gen == 1:
+            color = generate_color(i, N_A)                    
     
         # define marker for line
         marker_line = Marker()    
@@ -687,3 +687,15 @@ def vis_line_callback(msg, params_name, topic):
 
     # Publish the marker
     pub.publish(marker_array_line)
+    
+    
+# ok this is an OCD method. I need the anchors to have incremental colors
+# INPUT
+#   index: number of marker
+#   total_markers: number of anchors
+def generate_color(index, total_markers):
+    hue = index / float(total_markers)  # Vary the hue between 0 and 1
+    saturation = 1.0  # Full saturation
+    value = 1.0  # Full brightness
+    rgb = colorsys.hsv_to_rgb(hue, saturation, value)
+    return rgb + (1.0,)  # Return as (r, g, b, a) tuple with full opacity

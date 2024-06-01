@@ -35,8 +35,8 @@
 
     <!-- <node pkg="jackal_range" type="UWB_sim.py" name="UWB_SIM" args = "$(arg ns)" />    -->
     <!-- <node pkg="jackal_pf" type="PFnode.py" name="pf" args="$(arg ns)"/> -->
-    <node pkg="jackal_pf" type="PFnode.py" name="pf"/>
-    <node pkg="jackal_range" type="UWB_sim.py" name="uwb_sim" />   
+    <!-- <node pkg="jackal_pf" type="PFnode.py" name="pf"/> -->
+    <!-- <node pkg="jackal_range" type="UWB_sim.py" name="uwb_sim" />    -->
 
 
 

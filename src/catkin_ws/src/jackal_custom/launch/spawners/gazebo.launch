@@ -52,7 +52,6 @@
     
   </group>
   
-
   <!-- BEGIN UWB -->
   <!-- <group ns="UWB">      
     <node pkg="jackal_range" type="UWB_sim.py" name="UWB_SIM" />   
