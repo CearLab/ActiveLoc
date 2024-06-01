@@ -512,10 +512,7 @@ def anchors_server(anchors_pos, topic, params_name):
     
     # general stuff init    
     rate = 10 #(Hz)
-    rate = rospy.Rate(rate)
-    
-    #  init broadcaster
-    br = tf2_ros.TransformBroadcaster()
+    rate = rospy.Rate(rate)        
         
     # publisher
     pub = rospy.Publisher(topic, MarkerArray, queue_size=10)
@@ -551,8 +548,8 @@ def anchors_server(anchors_pos, topic, params_name):
             orientation = (0.0, 0.0, 0.0, 1.0)
             scale = (scale_factor, scale_factor, scale_factor)                        
             
-            # assign marker
-            marker.header.frame_id = "AN" + str(i) + "/base_link"
+            # assign marker            
+            marker.header.frame_id = "world"
             marker.header.stamp = rospy.Time.now()
             marker.id = i
             marker.type = Marker.CUBE
@@ -577,8 +574,10 @@ def anchors_server(anchors_pos, topic, params_name):
             marker.color.b = color[2]
             marker.color.a = color[3]
 
-            marker.lifetime = rospy.Duration()
+            # keep the markers while the node is running
+            marker.lifetime = rospy.Duration()          
             
+            # append the last marker  
             marker_array.markers.append(marker)  
             
             # now we set the anchors pos in the info param
@@ -587,32 +586,12 @@ def anchors_server(anchors_pos, topic, params_name):
 
             # Find the index of the row containing the value
             id = "AN"+str(i)
+            
             # set network ID (first letter of the Anchor Assigned ID)
             NID = id[0]
             index = next((i for i, row in enumerate(tmp_anchors_params) if id in row), None)
             tmp_anchors_params[index] = [NID, str(id), float(position[0]), float(position[1]), float(position[2])]
-            rospy.set_param(params_name, tmp_anchors_params)                                      
-            
-            # now also publish the transform
-            t = geometry_msgs.msg.TransformStamped()
-
-            t.header.stamp = rospy.Time.now()
-            t.header.frame_id = "map"
-            t.child_frame_id = marker.header.frame_id
-            
-            # Translation
-            t.transform.translation.x = marker.pose.position.x
-            t.transform.translation.y = marker.pose.position.y
-            t.transform.translation.z = marker.pose.position.z
-            
-            # Rotation (Quaternion)            
-            t.transform.rotation.x = marker.pose.orientation.x
-            t.transform.rotation.y = marker.pose.orientation.y
-            t.transform.rotation.z = marker.pose.orientation.z
-            t.transform.rotation.w = marker.pose.orientation.w
-            
-            # send the transform
-            br.sendTransform(t)
+            rospy.set_param(params_name, tmp_anchors_params)                        
             
         # publish the array
         pub.publish(marker_array)
@@ -640,14 +619,14 @@ def publish_line_marker(odom,params_name,topic):
     rate = rospy.Rate(rate)
     
     # subscribe to the odom
-    sub = rospy.Subscriber(odom, Odometry, lambda msg: odom_callback(msg, params_name, topic))
+    sub = rospy.Subscriber(odom, Odometry, lambda msg: vis_line_callback(msg, params_name, topic))
     
     # spin
     rospy.spin()
     
     
-# callback when odometry is received
-def odom_callback(msg, params_name, topic):
+# callback when odometry is received and publishing the line markers
+def vis_line_callback(msg, params_name, topic):
     
     # Line publisher
     pub = rospy.Publisher(topic+"/line", MarkerArray, queue_size=10)
