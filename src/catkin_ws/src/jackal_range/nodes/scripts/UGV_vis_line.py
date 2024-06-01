@@ -4,6 +4,7 @@
 import rospy
 import sys
 import serial
+import numpy as np
 import range.jackal_range as jr
 
 if __name__ == '__main__':
@@ -19,14 +20,16 @@ if __name__ == '__main__':
         # get params
         odom = rospy.get_param('~odom', '')        
         params_name = rospy.get_param('~params_name', '')        
-        topic = rospy.get_param('~topic', '')
+        topic = rospy.get_param('~topic', '')        
+        color = rospy.get_param('~color', '')
         
         rospy.loginfo(odom)        
         rospy.loginfo(params_name)        
         rospy.loginfo(topic)
+        rospy.loginfo(color)
         
         # call talker
-        jr.publish_line_marker(odom,params_name,topic)
+        jr.publish_line_marker(odom,params_name,topic,color)
         
     except rospy.ROSInterruptException:
         rospy.loginfo("UWB_setup failed")
