@@ -239,9 +239,9 @@ def single_step_particle_filter(particles, command, measurement, transition_mode
         list: Updated list of particles after performing the particle filter step.
     """
     
+    particles = prop(particles, command, transition_model)
     weights = calc_weights(particles, measurement, measurement_model)
     particles = resample(particles, weights, resample_method)
-    particles = prop(particles, command, transition_model)
     return particles
 
 def single_step_particle_filter_measurement_window(particles, command, measurement, transition_model, measurement_model, current_step, weights, resample_method='systematic', window_size=3):
