@@ -1,0 +1,10 @@
+<launch>    
+
+    <!-- ANCHORS SERVER -->
+    <node pkg="jackal_range" name="anchors_server_estimate" type="anchors_server.py" >
+    <param name="anchors_pos" type="string" value="" />
+    <param name="topic" type="string" value="AnchorsMarkersEstimate" />
+    <param name="params_name" type="string" value="AnchorsInfoEstimate" />
+    </node>    
+
+</launch>

@@ -39,40 +39,22 @@ ID = ['AN0','AN1','AN2','AN3']
 # number of anchors
 NUM_A = len(ID)
 
-# real or simulation
-REAL = 0
+# general anchors_params with anchor positions
+anchors_params = [
+    ['UKN', ID[0], 0.0, 0.0, 0.0],
+    ['UKN', ID[1], 0.0, 0.0, 0.0],
+    ['UKN', ID[2], 0.0, 0.0, 0.0],
+    ['UKN', ID[3], 0.0, 0.0, 0.0]
+]
 
 # general anchors_params with anchor positions
-if REAL:
-    anchors_params = [
-        ['UKN', ID[0], -1.0, -1.0, -1.0],
-        ['UKN', ID[1], -1.0, -1.0, -1.0],
-        ['UKN', ID[2], -1.0, -1.0, -1.0],
-        ['UKN', ID[3], -1.0, -1.0, -1.0]
-    ]
-else:
-    anchors_params = [
-        ['A', ID[0], 0.0, +2.0, 3.0],
-        ['A', ID[1], 0.0, -2.0, 3.0],
-        ['A', ID[2], +2.0, 0.0, 3.0],
-        ['A', ID[3], -2.0, 0.0, 3.0]
-    ]
 
-# general anchors_params with anchor positions
-if REAL:
-    tag_params = [
-        ['UKN', ID[0], 0.0],
-        ['UKN', ID[1], 0.0],
-        ['UKN', ID[2], 0.0],
-        ['UKN', ID[3], 0.0]
-    ]
-else:
-    tag_params = [
-        ['A', ID[0], 0.0],
-        ['A', ID[1], 0.0],
-        ['A', ID[2], 0.0],
-        ['A', ID[3], 0.0]
-    ]
+tag_params = [
+    ['UKN', ID[0], 0.0],
+    ['UKN', ID[1], 0.0],
+    ['UKN', ID[2], 0.0],
+    ['UKN', ID[3], 0.0]
+]
 
 # write on serial
 # INPUT: 
@@ -512,19 +494,34 @@ def anchors_server(anchors_pos, topic, params_name):
     
     # general stuff init    
     rate = 10 #(Hz)
-    rate = rospy.Rate(rate)        
+    rate = rospy.Rate(rate)      
+    
+    # define we're accessing the global variable
+    global anchors_params  
+    
+    # init the Anchors param
+    rospy.set_param(params_name, anchors_params)    
         
     # publisher
-    pub = rospy.Publisher(topic, MarkerArray, queue_size=10)
+    pub = rospy.Publisher(topic, MarkerArray, queue_size=10)        
     
-    # now split the anchors_pos into the positions
-    # split with comma (lec mode)
-    items = np.array([float(x) for x in anchors_pos.split(' ')])
+    # if anchors_pos is not empty, split it
+    if anchors_pos != '':
+        
+        # now split the anchors_pos into the positions
+        # split with comma (lec mode)
+        items = np.array([float(x) for x in anchors_pos.split(' ')])             
+        
+    else:
+        
+        # We should get here in the Anchors Estimate node, so we gather the anchors from the params_name
+        anchors_params = rospy.get_param(params_name)  
+                
+        # now extract the coordinates from anchors_params
+        items = np.array([coord for anchor in anchors_params for coord in anchor[2:]])            
+
     
-    # debug
-    rospy.logdebug(items)
-    
-    # get number of anchors
+    # get number of anchors (not rows of the param because maybe we are setting more than 4 anchors at once).         
     N_A = int(len(items)/3)     
     
     # init the Anchors param
