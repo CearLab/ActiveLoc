@@ -3,9 +3,7 @@
   <!-- general -->
   <arg name="use_sim_time" default="true" />
   <arg name="gui" default="false" />  
-  <arg name="headless" default="false" />
-  <!-- <arg name="world_name" default="$(find jackal_custom)/worlds/scenario1.world" /> -->
-  <!-- <arg name="world_name" default="$(find jackal_gazebo)/worlds/jackal_race.world" /> -->    
+  <arg name="headless" default="false" />  
   <arg name="world_name" default="$(find jackal_custom)/worlds/empty.world" />
 
   <!-- anchors params -->
@@ -53,12 +51,7 @@
       <arg name="ns" value="UGV01/" />      
     </include>     
     
-  </group>
-  
-  <!-- BEGIN UWB -->
-  <!-- <group ns="UWB">      
-    <node pkg="jackal_range" type="UWB_sim.py" name="UWB_SIM" />   
-  </group> -->  
+  </group>  
 
   <param name="use_gui" value="true"/>
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find jackal_custom)/rviz/default.rviz" />

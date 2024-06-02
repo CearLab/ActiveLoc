@@ -31,12 +31,7 @@
     <!-- navigation -->
     <include file="$(find jackal_move)/navigation/launch/move_base.launch">
         <arg name="ns" value="$(arg ns)" />
-    </include>
-
-    <!-- <node pkg="jackal_range" type="UWB_sim.py" name="UWB_SIM" args = "$(arg ns)" />    -->
-    <!-- <node pkg="jackal_pf" type="PFnode.py" name="pf" args="$(arg ns)"/> -->
-    <!-- <node pkg="jackal_pf" type="PFnode.py" name="pf"/> -->
-    <!-- <node pkg="jackal_range" type="UWB_sim.py" name="uwb_sim" />    -->
+    </include>    
 
 
 
