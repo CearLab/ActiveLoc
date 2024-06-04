@@ -11,6 +11,8 @@ RATE = 10
 NS = None
 
 def calc_range_meas(agent_loc,beacon_loc):
+    # rospy.logfatal('agent_loc: {}'.format(agent_loc))
+    # rospy.logfatal('beacon_loc: {}'.format(beacon_loc))
     return np.linalg.norm(agent_loc - beacon_loc)
 
 if len(sys.argv) > 1:
@@ -77,6 +79,8 @@ class UWB:
 
 
     def timer_callback_tf(self, event):
+        if self.tf_available:
+            return
         odom_frame = f"/{self.namsepace}/odom"
         right_tag_frame = f"/{self.namsepace}/right_tag"
         rospy.loginfo_once('odom_frame: {}'.format(odom_frame))
@@ -118,6 +122,7 @@ class UWB:
                                 self.current_gt.pose.pose.position.z
                                 ]).T
             agent_pos = self.DCM@(agent_pos + self.trans)
+            agent_pos = agent_pos
             self.op.D = [calc_range_meas(agent_pos, np.array(self.op.A_POS[i*3:i*3+3])) for i in range(4)]
             self.uwb_pub.publish(self.op)
             rospy.loginfo_once('first published')
