@@ -6,12 +6,15 @@ import sys
 import serial
 import range.jackal_range as jr
 
-if __name__ == '__main__':
+if __name__ == '__main__':    
     
     try:
         
         # ros::init() the node
         rospy.init_node('Anchors_server', anonymous=True)
+        
+        # define class instance
+        jr_instance = jr.JackalRange()
         
         # node started
         rospy.loginfo('Anchors setup')     
@@ -26,7 +29,7 @@ if __name__ == '__main__':
         rospy.loginfo(params_name)
         
         # call talker
-        jr.anchors_server(anchors_pos,topic,params_name)
+        jr_instance.anchors_server(anchors_pos,topic,params_name)
         
     except rospy.ROSInterruptException:
         rospy.loginfo("UWB_setup failed")

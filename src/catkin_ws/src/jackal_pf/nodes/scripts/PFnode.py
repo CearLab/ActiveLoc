@@ -12,204 +12,300 @@ from geometry_msgs.msg import PointStamped, Twist, Pose, Point, Quaternion, Vect
 from nav_msgs.msg import Odometry
 from PFutils.pfMetry import pfmetry
 
-
+# global vars
+# sampling method
 RESAMPLE_METHOD = 'systematic'
+# namespace
 NS = sys.argv[1]
+# spin rate
 RATE = 5
+# PF number of particles
 NUM_OF_PARTICLES = 100
+
 class PFnode:
-    namespace = None
     
+    # init namespace
+    namespace = None
+
+    # range init 
     rangesub = None
     current_range_msg = RD_recap()
-    last_range_msg_time = 0.
-    cntrl_odom_msg_curr_range_time = None
+    last_range_msg_time = 0.                    # ? both time stamps?
+    ctrl_odom_msg_curr_range_time = None
     
+    # cmd_vel init 
     cmdvelsub = None
     current_theta = 0
     dpos = np.zeros(STATE_SIZE_2D)
     current_cmd_vel_time = None
     last_cmd_vel_time = None
     
-    cntrlodomsub = None
+    # odometry init
+    ctrlodomsub = None
     current_controller_odom_msg : Odometry = None
     last_controller_odom_msg = Odometry()
 
+    # PF init
     x = np.zeros(TOTAL_STATE_SIZE)
     z = np.zeros(RANGE_MEASUREMENT_SIZE)
     u = np.zeros(TOTAL_STATE_SIZE)
-    particals = None
+    particles = None
     beacons_position = list()
     
+    # assign odometry message
     op = Odometry()
     
     # state and measurement init
     x = np.zeros(TOTAL_STATE_SIZE)
     z = np.zeros(RANGE_MEASUREMENT_SIZE)        
-    
-    
+        
     metry_obj = None
+    
     # class constructor
-    def __init__(self):
+    def __init__(self):   
+        
+        NS_name = rospy.get_param('~NS_name', '')              
         
         # Initialize the ROS node
         rospy.loginfo('starting init')
         self.init_metry()
         self.init_variables()
-        self.namespace_handler()
+        self.namespace_handler(NS_name)
         self.subscribers()
         self.publishers()
         self.define_models()
         self.init_timers()
         rospy.loginfo('finished init')
 
+    # init metry
     def init_metry(self):
         rospy.loginfo('starting init metry')
         self.metry_obj = pfmetry()
     
+    # init Odometry variables
     def init_variables(self):
         self.last_controller_odom_msg.header.stamp = rospy.Time.now()
         self.last_controller_odom_msg.pose.pose = Pose(Point(0.0, 0.0, 0.0), Quaternion(0.0, 0.0, 0.0, 1.0))
         self.last_controller_odom_msg.twist.twist = Twist(Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, 0.0))
-        
+
+    # init timers
     def init_timers(self):
         rospy.loginfo('starting set timers')
         self.main_timer = rospy.Timer(rospy.Duration(1/RATE), self.timer_callback)
         rospy.loginfo('finished set timers')
         
+    # PF model definition
     def define_models(self):
+        
+        # log
         rospy.loginfo('defining models')
-        cov_transition_agent = [SIGMA_TRANSITION_AGENT**2 for i in range(NUM_OF_AGENTS*STATE_SIZE_2D)]
-        # cov_transition_agent = [0 for i in range(NUM_OF_AGENTS*STATE_SIZE_2D)]
+        
+        # define covariance matrix of the transition model: agents and beacons
+        cov_transition_agent = [SIGMA_TRANSITION_AGENT**2 for i in range(NUM_OF_AGENTS*STATE_SIZE_2D)]        
         cov_transition_beacon = [SIGMA_TRANSITION_BEACON**2 for i in range(NUM_OF_BEACONS*STATE_SIZE_2D)]
         cov_transition_beacon = [0 for i in range(NUM_OF_BEACONS*STATE_SIZE_2D)]
         self.cov_measurement = np.diag([SIGMA_MEASUREMENT**2 for i in range(RANGE_MEASUREMENT_SIZE)])
         self.cov_transition = np.diag(cov_transition_agent + cov_transition_beacon)
+        
+        # define the likelihood function
         self.measurements_likelihood = lambda z, x: PF.normal_model_pdf(z, calculate_true_range_meas(x), self.cov_measurement)
+        
+        # define the transition function
         self.propagate_state_function = lambda x, u: x + PF.sample_normal_model(u, self.cov_transition)
         
         rospy.loginfo('finished defining models')
 
-    def namespace_handler(self):
-        if len(sys.argv) > 1:
-            NS = sys.argv[1]
-        if NS.startswith('_'):
+    # get the namespace
+    def namespace_handler(self, NS):                 
+        
+        # get the namespace        
+        if NS is None:
+            self.namespace = rospy.get_namespace()
+            rospy.loginfo('got namespace from ros: {}'.format(self.namespace))
+        elif NS.startswith('_'):            
             NS = None
             rospy.loginfo('namespace is private, using ROS namespace')
-        if NS is None:
-            self.namsepace = rospy.get_namespace()
-            rospy.loginfo('got namespace from ros: {}'.format(self.namsepace))
         else:
-            self.namsepace = NS
-            rospy.loginfo('got namespace from args: {}'.format(self.namsepace))
+            self.namespace = NS
+            rospy.loginfo('got namespace from args: {}'.format(self.namespace))                    
+                
         # remove all leading and trailing slashes
-        self.namsepace = self.namsepace.strip('/')
-        rospy.loginfo('final name space: {}'.format(self.namsepace))
+        self.namespace = self.namespace.strip('/')
+        rospy.loginfo('final name space: {}'.format(self.namespace))
 
-    
+    # define subscribers
     def subscribers(self):
-        rospy.loginfo('startimg subscribers')
-        range_topic = f'/{self.namsepace}/range'
-        cmdveltopic = f'/{self.namsepace}/cmd_vel'
-        cntrlodomtopic = f'/{self.namsepace}/jackal_velocity_controller/odom'
-        # cntrlodomtopic = f'/{self.namsepace}/ground_truth/state'
+        
+        # define topic names
+        rospy.loginfo('starting subscribers')
+        range_topic = f'/{self.namespace}/range'
+        cmdveltopic = f'/{self.namespace}/cmd_vel'
+        ctrlodomtopic = f'/{self.namespace}/jackal_velocity_controller/odom'
+        
+        # log
         rospy.loginfo('range_topic: {}'.format(range_topic))
         rospy.loginfo('cmdveltopic: {}'.format(cmdveltopic))
-        rospy.loginfo('cntrlodomtopic: {}'.format(cntrlodomtopic))
+        rospy.loginfo('ctrlodomtopic: {}'.format(ctrlodomtopic))
+        
+        # init subscribers
         self.rangesub = rospy.Subscriber(range_topic, RD_recap, self.rangeMsgHandler)
         self.cmdvelsub = rospy.Subscriber(cmdveltopic, Twist, self.velCmdHandler) #NOT IN USE
-        self.cntrlodomsub = rospy.Subscriber(cntrlodomtopic, Odometry, self.controllerOdomHandler)
+        self.ctrlodomsub = rospy.Subscriber(ctrlodomtopic, Odometry, self.controllerOdomHandler)
+        
+        # log
         rospy.loginfo('finished subscribers')
         
+    # define publishers
     def publishers(self):
-        rospy.loginfo('startimg subscribers')
-        pfest_topic = f'/{self.namsepace}/PFest'
+        
+        # define topic names
+        rospy.loginfo('starting subscribers')
+        pfest_topic = f'/{self.namespace}/PFest'
         rospy.loginfo('pfest_topic: {}'.format(pfest_topic))
+        
+        # init publishers
         self.publisher = rospy.Publisher(pfest_topic, Odometry, queue_size=10)
         rospy.loginfo('finished subscribers')
         
+    # handle the RD_recap message
     def rangeMsgHandler(self, data):
+        
+        # log
         rospy.loginfo_once('got first range message')
         rospy.loginfo_once('range message: %s', data)
+        
+        # set the msg
         self.current_range_msg = data
-        self.cntrl_odom_msg_curr_range_time = self.current_controller_odom_msg
-        if self.particals is None:
+        self.ctrl_odom_msg_curr_range_time = self.current_controller_odom_msg
+        
+        # init particles
+        # ? where is particles initialized? is there a chance that particles is not None?
+        # ? Ok I see, it's a one time initialization
+        if self.particles is None:
             self.initialize_particles()
     
-    def velCmdHandler(self, data): #NOT IN USE
+    # handle the Twist message from velocity command
+    # !! NOT IN USE
+    def velCmdHandler(self, data): 
+        
+        # log
         rospy.loginfo_once('got first velocity command')
         return
+    
+        # not in use right now
         time_now = rospy.get_time()
         self.last_cmd_vel_time = self.current_cmd_vel_time
         self.current_cmd_vel_time = time_now
         self.current_omega = data.angular.z
-        omege = data.angular.z
+        omega = data.angular.z
         if self.last_cmd_vel_time is None:
             self.last_cmd_vel_time = time_now
         dt = self.current_cmd_vel_time - self.last_cmd_vel_time
-        self.current_theta += omege*dt
+        self.current_theta += omega*dt
         self.dpos += np.array([data.linear.x*np.cos(self.current_theta), data.linear.x*np.sin(self.current_theta)]) * dt
         rospy.loginfo('dpos: %s', self.dpos)
         rospy.loginfo_once('velocity command: %s', data)
 
+    # handle the Odometry message from the controller
     def controllerOdomHandler(self, data):
+        
+        # log
         rospy.loginfo_once('got first controller odom message')
         rospy.loginfo_once('controller odom message: %s', data)
+        
+        # set data
         self.current_controller_odom_msg = data
 
-    
+    # PF init particles
     def initialize_particles(self):
+        
+        # if I get no odom I don't initialize particles
+        # remember that here er're talking about the odometry from the integration of the cmd_vel command
+        # so basically, if I don't get an update on the position of the robot, I don't initialize the particles
         if self.current_controller_odom_msg is None:
             return
-        initial_state = np.zeros(TOTAL_STATE_SIZE)
-        initial_state[get_agent_index(0)] = np.array([self.current_controller_odom_msg.pose.pose.position.x, self.current_controller_odom_msg.pose.pose.position.y])
-        self.particals = np.zeros((NUM_OF_PARTICLES, TOTAL_STATE_SIZE))
         
+        # init state
+        initial_state = np.zeros(TOTAL_STATE_SIZE)
+        # the agents positions are initialized with the current controller odometry (integrated)
+        initial_state[get_agent_index(0)] = np.array([self.current_controller_odom_msg.pose.pose.position.x, self.current_controller_odom_msg.pose.pose.position.y])
+        self.particles = np.zeros((NUM_OF_PARTICLES, TOTAL_STATE_SIZE))
+        
+        # here I update the anchors from the range measurements
+        # TODO should we do this from the anchors parameters?
         for i in range(NUM_OF_BEACONS):
             initial_state[get_beacon_index(i)] = np.array([self.current_range_msg.A_POS[i*3 + 0], self.current_range_msg.A_POS[i*3 + 1]])
-            self.particals[:,get_beacon_index(i)] = initial_state[get_beacon_index(i)]
-        self.particals[:,get_agent_index(0)] += np.random.normal(initial_state[get_agent_index(0)], 4, (NUM_OF_PARTICLES, STATE_SIZE_2D))
+            self.particles[:,get_beacon_index(i)] = initial_state[get_beacon_index(i)]
+        # add gaussian noise to the particles (process noise)
+        self.particles[:,get_agent_index(0)] += np.random.normal(initial_state[get_agent_index(0)], 4, (NUM_OF_PARTICLES, STATE_SIZE_2D))
         
-        rospy.loginfo('initial state: %s', initial_state)
-        # log the first 5 particles
-        rospy.loginfo('first 5 particles: \n %s', self.particals[:5])
+        # log
+        rospy.loginfo('initial state: %s', initial_state)        
+        rospy.loginfo('first 5 particles: \n %s', self.particles[:5])
         
         
+    # timer callback
     def timer_callback(self, event):
+        
+        # log first timer callback
         rospy.loginfo_once('first timer callback, dt: %s', self.current_range_msg.header.stamp.to_sec() - self.last_range_msg_time)
+        
+        # if the range message is newer than the last range message time
         if self.current_range_msg.header.stamp.to_sec() > self.last_range_msg_time:
+            
+            # log
             rospy.loginfo_once('starting first PF step')
-            self.metry_obj.write('particales', self.particals)
+            
+            # set particles
+            self.metry_obj.write('particles', self.particles)
             self.metry_obj.write('u', self.u)
             self.metry_obj.write('z', self.z)
             self.last_range_msg_time = self.current_range_msg.header.stamp.to_sec()
+            
+            # get last XY position and current one
             last_odom_xy = np.array([self.last_controller_odom_msg.pose.pose.position.x, self.last_controller_odom_msg.pose.pose.position.y])
-            current_odom_xy = np.array([self.cntrl_odom_msg_curr_range_time.pose.pose.position.x, self.cntrl_odom_msg_curr_range_time.pose.pose.position.y])
-            self.last_controller_odom_msg = self.cntrl_odom_msg_curr_range_time
+            current_odom_xy = np.array([self.ctrl_odom_msg_curr_range_time.pose.pose.position.x, self.ctrl_odom_msg_curr_range_time.pose.pose.position.y])
+            
+            # set odom time as the range time
+            self.last_controller_odom_msg = self.ctrl_odom_msg_curr_range_time
+            # control is difference between current and last odom
             self.u[get_agent_index(0)] = np.array([current_odom_xy - last_odom_xy])
+            # self.u = np.nan_to_num(self.u, nan=0.0)
+            # measure is the range measurement
             self.z = np.array(self.current_range_msg.D).T
+            
+            # init mean anc cov
             self.mean = np.zeros(TOTAL_STATE_SIZE)
             self.cov = np.zeros((TOTAL_STATE_SIZE, TOTAL_STATE_SIZE))
-            self.particals = PF.single_step_particle_filter(self.particals,
+            
+            # call the PF
+            self.particles = PF.single_step_particle_filter(self.particles,
                                                             self.u,
                                                             self.z,
                                                             self.propagate_state_function,
                                                             self.measurements_likelihood,
                                                             resample_method = RESAMPLE_METHOD)
-            self.mean, self.cov = calculate_mean_and_cov(self.particals)
+            
+            # average the particles
+            self.mean, self.cov = calculate_mean_and_cov(self.particles)
+            
+            # log
             self.metry_obj.write('mean', self.mean)
             self.metry_obj.write('cov', self.cov)
+            
+            # set data
             self.op.header.stamp = rospy.Time.now()
+            self.op.header.frame_id = self.namespace + '/odom'
+            self.op.child_frame_id = self.namespace + '/base_link'
             self.op.pose.pose.position = Point(self.mean[0], self.mean[1], 0.)
             self.op.pose.covariance[0:2] = self.cov[0:2].tolist()
-            self.op.pose.covariance[2:4] = self.cov[TOTAL_STATE_SIZE:TOTAL_STATE_SIZE + 2].tolist()
+            self.op.pose.covariance[2:4] = self.cov[TOTAL_STATE_SIZE:TOTAL_STATE_SIZE + 2].tolist()            
             self.op.twist.twist.linear = Vector3(self.u[0], self.u[1], 0.)
+            
+            # publish and log
             self.publisher.publish(self.op)
             rospy.loginfo_once('finished first PF step')
-
-
-
-
+            
     # run the node
     def run(self):
         rospy.spin()
@@ -219,7 +315,9 @@ if __name__ == '__main__':
     
     try:
         rospy.init_node('pf')
-        rospy.loginfo('+++++++++++++++node started+++++++++++++++++')
+        rospy.loginfo('+++++++++++++++ node started +++++++++++++++++')
+        
+        # init
         node = PFnode()
         node.run()
         

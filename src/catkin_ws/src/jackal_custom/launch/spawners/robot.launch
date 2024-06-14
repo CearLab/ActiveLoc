@@ -8,7 +8,7 @@
     <arg name="joystick" default="true" />
     <arg name="joy_dev" default="/dev/input/js0" />
     <arg name="enable_ekf" default="true" />
-    <arg name="ns" default="" />    
+    <arg name="ns" default="" />       
 
     <!-- Load Jackal's description -->
     <include file="$(find jackal_custom)/launch/descriptions/description.launch">
@@ -32,9 +32,17 @@
     <include file="$(find jackal_move)/navigation/launch/move_base.launch">
         <arg name="ns" value="$(arg ns)" />
     </include>    
-    <param name="range_meas_cov" type="double" value="0.1"/>
-    <node pkg="jackal_pf" type="PFnode.py" name="pf"/>
-    <node pkg="jackal_range" type="UWB_sim.py" name="uwb_sim" />   
+
+    <!-- UWB sim node -->
+    <include file="$(find jackal_range)/launch/UWB_sim.launch">
+        <arg name="ns" value="$(arg ns)" />        
+    </include>
+    
+    <!-- PF node -->
+    <include file="$(find jackal_pf)/launch/PF_instance.launch">
+        <arg name="ns" value="$(arg ns)" />
+    </include>
+    
 
 
 </launch>
