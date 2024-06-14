@@ -32,7 +32,7 @@
 
     <!-- spawn robot -->
     <include file="$(find jackal_custom)/launch/spawners/robot.launch" >
-      <arg name="init_pose" value="-x 2 -y 2 -z 0 -R 0 -P 0 -Y 0" />
+      <arg name="init_pose" value="-x 2 -y 1 -z 0 -R 0 -P 0 -Y 0" />
       <arg name="robot_name"  value="Jack01" />
       <arg name="joystick" value="true" />
       <arg name="joy_dev" value="/dev/input/js0" />

@@ -7,12 +7,15 @@ import serial
 import numpy as np
 import range.jackal_range as jr
 
-if __name__ == '__main__':
+if __name__ == '__main__':        
     
     try:
         
         # ros::init() the node
         rospy.init_node('Line_visualization', anonymous=True)
+        
+        # define class instance
+        jr_instance = jr.JackalRange()
         
         # node started
         rospy.loginfo('Visualize line in rviz')     
@@ -29,7 +32,7 @@ if __name__ == '__main__':
         rospy.loginfo(color)
         
         # call talker
-        jr.publish_line_marker(odom,params_name,topic,color)
+        jr_instance.publish_line_marker(odom,params_name,topic,color)
         
     except rospy.ROSInterruptException:
         rospy.loginfo("UWB_setup failed")

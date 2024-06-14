@@ -15,8 +15,10 @@
     
     <param name="base_global_planner" type="string" value="navfn/NavfnROS" />
     <param name="base_local_planner" value="base_local_planner/TrajectoryPlannerROS"/>
-    <param name="recovery_behavior_enabled" value="true"/>
-    <param name="clearing_rotation_allowed" value="true"/>
+    <param name="recovery_behavior_enabled" value="false"/>
+    <param name="clearing_rotation_allowed" value="false"/>
+    <param name="xy_goal_tolerance" value="0.50"/>
+    <param name="yaw_goal_tolerance" value="6.00"/>
     
     <!-- parameters: frames -->
     <param name="global_costmap/global_frame" type="string" value="map" />
@@ -27,6 +29,7 @@
     
     <!-- which odom I use -->
     <remap from="odom" to="/$(arg ns)odometry/filtered" />
+    <!-- <remap from="odom" to="/$(arg ns)ground_truth/state" /> -->
   </node>
 
 </launch>
