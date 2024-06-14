@@ -34,14 +34,14 @@
     </include>    
 
     <!-- UWB sim node -->
-    <include file="$(find jackal_range)/launch/UWB_sim.launch">
+    <!-- <include file="$(find jackal_range)/launch/UWB_sim.launch">
         <arg name="ns" value="$(arg ns)" />        
-    </include>
+    </include> -->
     
     <!-- PF node -->
-    <include file="$(find jackal_pf)/launch/PF_instance.launch">
+    <!-- <include file="$(find jackal_pf)/launch/PF_instance.launch">
         <arg name="ns" value="$(arg ns)" />
-    </include>
+    </include> -->
     
 
 

@@ -1,9 +1,9 @@
 <launch>    
 
     <!-- anchors params -->
-    <arg name="AX" default="5" />
-    <arg name="AY" default="5" />
-    <arg name="AZ" default="0.184" />      
+    <arg name="AX" default="" />
+    <arg name="AY" default="" />
+    <arg name="AZ" default="" />      
 
     <!-- ANCHORS SERVER -->
     <node pkg="jackal_range" name="anchors_server_estimate" type="anchors_server.py" >
