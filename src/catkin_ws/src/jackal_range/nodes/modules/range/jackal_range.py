@@ -33,7 +33,7 @@ class JackalRange:
     BUFSIZE_GET = 4
 
     # anchors ID dictionary
-    ID = ['AN0','AN1','AN2','AN3']
+    ID = ['AN0','AN1','AN2','AN3']    
     
     # rate
     RATE = 10 #(Hz)
@@ -136,7 +136,30 @@ class JackalRange:
             rospy.sleep(0.1)
             self.tf_available = False
             rospy.logwarn("Transformation error raised: %s", e)
-                            
+    
+    # callback for the transform
+    def sort_points_clockwise(self,points):
+        
+        # Compute the distances from the origin
+        distances = np.sqrt(points[:,0]**2 + points[:,1]**2)
+
+        # Find the point closest to the origin        
+        origin = np.mean(points, axis=0)
+        points_shifted = points - origin
+        
+        # debug
+        # rospy.logwarn('points: ' + str(points))
+        # rospy.logwarn('points_shifted: ' + str(points_shifted))
+
+        # Compute the angles from the origin
+        angles = np.arctan2(points_shifted[:,1], points_shifted[:,0])
+
+        # Sort the points by the angles in clockwise order
+        sorted_indices = np.argsort(-angles)
+        sorted_indices = np.roll(sorted_indices, shift=1, axis=0)
+        sorted_points = points[sorted_indices]
+
+        return sorted_points, sorted_indices
 
     # write on serial
     # INPUT: 
@@ -204,15 +227,16 @@ class JackalRange:
     #   D: distance measured
     #   SUCC: boolean, success of the reading (the anchor might not be available)
     #   NID: network ID
-    def serialRead(self, srl, stopTime, id):
+    def serialRead(self, srl, stopTime):
 
         # start timer
         t0 = time.time()
         
         # init outputs
-        A = np.zeros(3)
-        D = 0.0
-        SUCC = 0
+        A = np.zeros((self.NUM_A,3))
+        D = np.zeros(self.NUM_A)
+        SUCC = np.zeros(self.NUM_A)
+        NID = ['' for _ in range(self.NUM_A)]                
 
         # read for for the duration of stopTime
         # compute elapsed time
@@ -240,37 +264,58 @@ class JackalRange:
                     empty = False
                     
                     # split with comma (lec mode)
-                    items = data.split(',')
+                    items = data.split(',')                    
 
                     # find if anchor was read
-                    try:
+                    try:                                                
                         
-                        # in the array of chunks, get the position of the one describing the anchor ID
-                        # the lec mode prints: #DISTANCES, Anchor Assigned ID, Anchor Hardware ID, Anchor Position (if set), Distance from the TAG
-                        pos = items.index(id)
+                        # cycle over the anchors
+                        for id_num in range(len(self.ID)):
+                        
+                            id = self.ID[id_num]
+                            if id in items:                                
+                        
+                                # in the array of chunks, get the position of the one describing the anchor ID
+                                # the lec mode prints: #DISTANCES, Anchor Assigned ID, Anchor Hardware ID, Anchor Position (if set), Distance from the TAG
+                                pos = items.index(id)                                
 
-                        # set anchors
-                        A[0] = float(items[pos+2])
-                        A[1] = float(items[pos+3])
-                        A[2] = float(items[pos+4])
+                                # set anchors
+                                A[id_num][0] = float(items[pos+2])
+                                A[id_num][1] = float(items[pos+3])
+                                A[id_num][2] = float(items[pos+4])
 
-                        # set D
-                        D = float(items[pos+5])    
+                                # set D
+                                D[id_num] = float(items[pos+5])    
+                                
+                                # set network ID (first letter of the Anchor Assigned ID)
+                                NID[id_num] = items[pos][0]
                         
-                        # set network ID (first letter of the Anchor Assigned ID)
-                        NID = items[pos][0]
+                                # set flag and return
+                                SUCC[id_num] = 1
+                            else:
+                                
+                                # set the flag and return
+                                SUCC[id_num] = 0
+                                
+                                # set anchors
+                                A[id_num][0] = float(-999.0)
+                                A[id_num][1] = float(-999.0)
+                                A[id_num][2] = float(-999.0)  
+                                
+                                # set D
+                                D[id_num] = float(-1.0)  
+                                
+                                # set network ID (first letter of the Anchor Assigned ID)
+                                NID[id_num] = 'N/A'                                
                         
-                        # set flag and return
-                        SUCC = 1
                         return A,D,SUCC,NID
 
                     except Exception as e:
                         # if the anchor is not available: debug and set SUCC to zero
-                        rospy.logdebug(e)
-                        SUCC = 0
+                        rospy.logfatal(e)                        
 
         # default return
-        return A,D,SUCC,0
+        return A,D,SUCC,NID
 
     # setup the antenna
     # This function basically uses all the commands from the UWB CLI to setup the antenna mode
@@ -429,10 +474,7 @@ class JackalRange:
         print_flag = 0
         
         # define message
-        msgD = RD()
-        
-        # Anchor counter
-        A_CNT = 0    
+        msgD = RD()                
 
         # input vals
         argc = len(sys.argv)  
@@ -452,7 +494,7 @@ class JackalRange:
             TagID = sys.argv[3]
             
         # publisher
-        pub = rospy.Publisher(TagID + 'Pub', RD, queue_size=10)
+        pub = rospy.Publisher('range', RD, queue_size=10)
 
         # set node rate    
         r = rospy.Rate(self.RATE)   
@@ -483,41 +525,50 @@ class JackalRange:
         rospy.loginfo('Start publishing')  
         
         # init the Anchors param
-        rospy.set_param('AnchorsInfo', self.anchors_params) 
+        rospy.set_param('AnchorsInfoReal', self.anchors_params) 
         
         # init the Tag param
-        self.rospy.set_param(TagID + 'Info', self.tag_params) 
+        rospy.set_param(TagID + 'Info', self.tag_params)                
 
         # loop
-        while not rospy.is_shutdown():
-            try:                        
-                
-                # cycle over the anchors
-                id = self.ID[A_CNT]
-                A_CNT = (A_CNT + 1)%self.NUM_A 
+        while not rospy.is_shutdown():          
+            
+            try:                                
                 
                 # get measurement
-                A, D, SUCC, NID = self.serialRead(myserial, stopTime, id)
-                rospy.logdebug(str(id) + ' ' + str(A) + ' ' + str(D) + ' ' + str(SUCC))               
+                A, D, SUCC, NID = self.serialRead(myserial, stopTime)  
+                
+                # sort everything
+                A, sorted_indices = self.sort_points_clockwise(A)
+                D = D[sorted_indices]
+                SUCC = SUCC[sorted_indices]
+                NID = [NID[i] for i in sorted_indices]
+                
+                # debug
+                # rospy.logwarn('A: ' + str(A))
+                
+                # check readings
+                # rospy.logwarn('SUCC: ' + str(SUCC))
                 
                 # set if success in reading
-                if SUCC == 1: 
+                if any(element == 1 for element in SUCC): 
                 
                     # get anchors info - set param
-                    tmp_anchors_params = rospy.get_param('AnchorsInfo')
-
-                    # Find the index of the row containing the value
-                    index = next((i for i, row in enumerate(tmp_anchors_params) if id in row), None)
-                    tmp_anchors_params[index] = [NID, str(id), float(A[0]), float(A[1]), float(A[2])]
-                    rospy.set_param('AnchorsInfo', tmp_anchors_params)                
+                    tmp_anchors_params = rospy.get_param('AnchorsInfoReal')
                     
                     # get tag info - set param
                     tmp_tag_params = rospy.get_param(TagID + 'Info')
                     
-                    # Find the index of the row containing the value
-                    index = next((i for i, row in enumerate(tmp_tag_params) if id in row), None)
-                    tmp_tag_params[index] = [NID, str(id), float(D)]
-                    rospy.set_param(TagID + 'Info', tmp_tag_params)  
+                    # cycle over the anchors
+                    for index in range(self.NUM_A):                                                
+                    
+                        # update the param
+                        tmp_anchors_params[index] = [NID[index], str(self.ID[index]), float(A[index][0]), float(A[index][1]), float(A[index][2])]
+                        rospy.set_param('AnchorsInfoReal', tmp_anchors_params)                
+                        
+                        # update the param
+                        tmp_tag_params[index] = [NID[index], str(self.ID[index]), float(D[index])]
+                        rospy.set_param('Info', tmp_tag_params)  
                     
                     # now setup the publisher
                     msgD.header.stamp = rospy.Time.now()
@@ -547,9 +598,7 @@ class JackalRange:
             except Exception as e:
                 # nothing special            
                 rospy.logfatal(e)
-
-            # cycle
-            r.sleep()
+            
 
         # stop reading
         data = 'lec\x0D'
@@ -558,6 +607,8 @@ class JackalRange:
         # Close the serial port
         rospy.logdebug('Close serial')
         myserial.close()
+        
+        rospy.logwarn('End of the node')
 
         return 0                
 
@@ -575,26 +626,7 @@ class JackalRange:
         rospy.set_param(params_name, self.anchors_params)    
             
         # publisher
-        pub = rospy.Publisher(topic, MarkerArray, queue_size=10)        
-        
-        # if anchors_pos is not empty, split it
-        if anchors_pos != '':
-            
-            # now split the anchors_pos into the positions
-            # split with comma (lec mode)
-            items = np.array([float(x) for x in anchors_pos.split(' ')])             
-            
-        else:
-            
-            # We should get here in the Anchors Estimate node, so we gather the anchors from the params_name
-            self.anchors_params = rospy.get_param(params_name)  
-                    
-            # now extract the coordinates from anchors_params
-            items = np.array([coord for anchor in self.anchors_params for coord in anchor[2:]])            
-
-        
-        # get number of anchors (not rows of the param because maybe we are setting more than 4 anchors at once).         
-        N_A = int(len(items)/3)     
+        pub = rospy.Publisher(topic, MarkerArray, queue_size=10)                        
         
         # init the Anchors param
         rospy.set_param(params_name, self.anchors_params)    
@@ -603,6 +635,28 @@ class JackalRange:
             
             # define marker array
             marker_array = MarkerArray()                
+            
+            # if anchors_pos is not empty, split it
+            if anchors_pos != '':
+                
+                # now split the anchors_pos into the positions
+                # split with comma (lec mode)
+                items = np.array([float(x) for x in anchors_pos.split(' ')])             
+                
+            else:
+                
+                # We should get here in the Anchors Estimate node, so we gather the anchors from the params_name
+                self.anchors_params = rospy.get_param(params_name)  
+                        
+                # now extract the coordinates from anchors_params
+                items = np.array([coord for anchor in self.anchors_params for coord in anchor[2:]])                       
+
+            
+            # get number of anchors (not rows of the param because maybe we are setting more than 4 anchors at once).         
+            N_A = int(len(items)/3)   
+            
+            # debug
+            # rospy.logwarn(items)  
         
             # assign positions in N_A markers
             for i in range(N_A):
@@ -663,10 +717,7 @@ class JackalRange:
                 rospy.set_param(params_name, tmp_anchors_params)                        
                 
             # publish the array
-            pub.publish(marker_array)
-            
-            # sleep
-            rate.sleep()
+            pub.publish(marker_array)                        
 
     # I want to visualize in RVIZ a line connecting two points
     def publish_line_marker(self,odom,params_name,topic, color):
@@ -694,7 +745,10 @@ class JackalRange:
         marker_array_line = MarkerArray()        
         
         # get anchors info - get param    
-        tmp_anchors_params = rospy.get_param(params_name)
+        try:
+            tmp_anchors_params = rospy.get_param(params_name)
+        except:
+            return
         
         # debug
         rospy.loginfo(tmp_anchors_params)
@@ -739,6 +793,9 @@ class JackalRange:
             marker_line.pose.orientation.y = 0
             marker_line.pose.orientation.z = 0
             marker_line.pose.orientation.w = 1
+            
+            # debug
+            # rospy.logwarn(tmp_anchors_params[i])
 
             # Define anchor point
             pointANC = Point()

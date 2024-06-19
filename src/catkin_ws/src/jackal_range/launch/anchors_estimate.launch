@@ -3,14 +3,17 @@
     <!-- anchors params -->
     <arg name="AX" default="" />
     <arg name="AY" default="" />
-    <arg name="AZ" default="" />      
+    <arg name="AZ" default="" />    
+
+    <!-- Configuration of Jackal which you would like to simulate. -->
+    <arg name="ns" default="" />   
 
     <!-- ANCHORS SERVER -->
     <node pkg="jackal_range" name="anchors_server_estimate" type="anchors_server.py" >
-    <!-- <param name="anchors_pos" type="string" value="" /> -->
-    <param name="anchors_pos" type="string" value="+$(arg AX) +$(arg AY) +$(arg AZ) -$(arg AX) +$(arg AY) +$(arg AZ) -$(arg AX) -$(arg AY) +$(arg AZ) +$(arg AX) -$(arg AY) +$(arg AZ)" />
-    <param name="topic" type="string" value="AnchorsMarkersEstimate" />
-    <param name="params_name" type="string" value="AnchorsInfoEstimate" />
+        <param name="anchors_pos" type="string" value="" />
+        <!-- <param name="anchors_pos" type="string" value="+$(arg AX) +$(arg AY) +$(arg AZ) -$(arg AX) +$(arg AY) +$(arg AZ) -$(arg AX) -$(arg AY) +$(arg AZ) +$(arg AX) -$(arg AY) +$(arg AZ)" /> -->
+        <param name="topic" type="string" value="/$(arg ns)AnchorsMarkersEstimate" />
+        <param name="params_name" type="string" value="/$(arg ns)AnchorsInfoReal" />
     </node>    
 
 </launch>

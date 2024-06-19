@@ -8,7 +8,10 @@
     <arg name="joystick" default="true" />
     <arg name="joy_dev" default="/dev/input/js0" />
     <arg name="enable_ekf" default="true" />
-    <arg name="ns" default="" />       
+    <arg name="ns" default="" />   
+    
+    <!-- simulation or real -->
+    <arg name="simulated" default=""/>    
 
     <!-- Load Jackal's description -->
     <include file="$(find jackal_custom)/launch/descriptions/description.launch">
@@ -33,15 +36,23 @@
         <arg name="ns" value="$(arg ns)" />
     </include>    
 
+    <!-- real measurement -->
+    <group if="$(arg simulated)">
+        <node pkg="jackal_range" name="UWB_read" type="UWB_read.py"
+                    args="/dev/ttyACM0 115200 $(arg ns)/Tag01" />
+    </group>
+
     <!-- UWB sim node -->
-    <!-- <include file="$(find jackal_range)/launch/UWB_sim.launch">
-        <arg name="ns" value="$(arg ns)" />        
-    </include> -->
+    <group unless="$(arg simulated)">
+        <include file="$(find jackal_range)/launch/UWB_sim.launch">
+            <arg name="ns" value="$(arg ns)" />        
+        </include>
+    </group>
     
     <!-- PF node -->
-    <!-- <include file="$(find jackal_pf)/launch/PF_instance.launch">
+    <include file="$(find jackal_pf)/launch/PF_instance.launch">
         <arg name="ns" value="$(arg ns)" />
-    </include> -->
+    </include>
     
 
 
