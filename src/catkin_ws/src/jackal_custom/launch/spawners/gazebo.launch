@@ -11,6 +11,9 @@
   <arg name="AY" default="5" />
   <arg name="AZ" default="0.184" />
 
+  <!-- simulation or real -->
+  <arg name="simulated" default="true"/>    
+
 
   <!-- Launch Gazebo with the specified world -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -22,17 +25,19 @@
   </include>
 
   <!-- create map reference frame -->
-  <node pkg="tf2_ros" type="static_transform_publisher" name="WorldToMap" args="0 0 0 0 0 0 1 world map" />
-
-  <!-- ANCHORS SERVER -->
-  <include file="$(find jackal_range)/launch/anchors_real.launch" >
-    <arg name="AX" value="$(arg AX)" />
-    <arg name="AY" value="$(arg AY)" />
-    <arg name="AZ" value="$(arg AZ)" />
-  </include>
+  <node pkg="tf2_ros" type="static_transform_publisher" name="WorldToMap" args="0 0 0 0 0 0 1 world map" />  
 
   <!-- BEGIN ROBOT 1 -->
   <group ns="UGV01">    
+
+    <!-- ANCHORS SERVER -->
+    <include file="$(find jackal_range)/launch/anchors_real.launch" >
+      <arg name="AX" value="$(arg AX)" />
+      <arg name="AY" value="$(arg AY)" />
+      <arg name="AZ" value="$(arg AZ)" />
+      <arg name="ns" value="UGV01/" /> 
+      <arg name="simulated" value="$(arg simulated)" /> 
+    </include>
 
     <!-- spawn robot -->
     <include file="$(find jackal_custom)/launch/spawners/robot.launch" >
@@ -41,7 +46,8 @@
       <arg name="joystick" value="true" />
       <arg name="joy_dev" value="/dev/input/js0" />
       <arg name="enable_ekf" value="true" /> 
-      <arg name="ns" value="UGV01/" />      
+      <arg name="ns" value="UGV01/" />  
+      <arg name="simulated" value="$(arg simulated)" />    
     </include> 
 
     <!-- publish TF -->
@@ -52,6 +58,7 @@
       <arg name="AX" value="$(arg AX)" />
       <arg name="AY" value="$(arg AY)" />
       <arg name="AZ" value="$(arg AZ)" />
+      <arg name="ns" value="UGV01/" />  
     </include>
 
     <!-- DISTANCE VISUALIZATION -->

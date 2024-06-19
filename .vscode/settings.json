@@ -2,6 +2,8 @@
     "cSpell.words": [
         "actionlib",
         "anchorinit",
+        "arctan",
+        "argmin",
         "aurs",
         "bytesize",
         "Cear",
@@ -17,6 +19,7 @@
         "dpos",
         "EIGHTBITS",
         "initop",
+        "lexsort",
         "linalg",
         "logdebug",
         "logerr",

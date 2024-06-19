@@ -224,8 +224,16 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /AnchorsMarkersReal
+      Marker Topic: /UGV01/AnchorsMarkersReal
       Name: AnchorsMarkers
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /UGV01/AnchorsMarkersEstimate
+      Name: MarkerArrayEstimate
       Namespaces:
         "": true
       Queue Size: 100
@@ -250,14 +258,6 @@ Visualization Manager:
         AN1/line_markers: true
         AN2/line_markers: true
         AN3/line_markers: true
-      Queue Size: 100
-      Value: true
-    - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /UGV01/AnchorsMarkersEstimate
-      Name: MarkerArrayEstimate
-      Namespaces:
-        "": true
       Queue Size: 100
       Value: true
   Enabled: true
