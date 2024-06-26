@@ -9,9 +9,9 @@
     <arg name="joy_dev" default="/dev/input/js0" />
     <arg name="enable_ekf" default="true" />
     <arg name="ns" default="" />   
-    
-    <!-- simulation or real -->
-    <arg name="simulated" default=""/>    
+
+    <!-- parameter to select real or simulated data -->
+    <arg name="real" default="" />        
 
     <!-- Load Jackal's description -->
     <include file="$(find jackal_custom)/launch/descriptions/description.launch">
@@ -36,17 +36,17 @@
         <arg name="ns" value="$(arg ns)" />
     </include>    
 
-    <!-- real measurement -->
-    <group if="$(arg simulated)">
+    <!-- real measurement -->  
+    <group if="$(arg real)">   
         <node pkg="jackal_range" name="UWB_read" type="UWB_read.py"
-                    args="/dev/ttyACM0 115200 $(arg ns)/Tag01" />
+            args="/dev/ttyACM1 115200 $(arg ns)/Tag01" />    
     </group>
 
-    <!-- UWB sim node -->
-    <group unless="$(arg simulated)">
+    <!-- UWB sim node -->    
+    <group unless="$(arg real)"> 
         <include file="$(find jackal_range)/launch/UWB_sim.launch">
             <arg name="ns" value="$(arg ns)" />        
-        </include>
+        </include>    
     </group>
     
     <!-- PF node -->

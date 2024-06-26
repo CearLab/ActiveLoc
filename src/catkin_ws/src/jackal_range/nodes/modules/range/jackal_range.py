@@ -622,7 +622,7 @@ class JackalRange:
         # general stuff init            
         rate = rospy.Rate(self.RATE)                
         
-        # init the Anchors param
+        # init the Anchors param        
         rospy.set_param(params_name, self.anchors_params)    
             
         # publisher
@@ -649,7 +649,7 @@ class JackalRange:
                 self.anchors_params = rospy.get_param(params_name)  
                         
                 # now extract the coordinates from anchors_params
-                items = np.array([coord for anchor in self.anchors_params for coord in anchor[2:]])                       
+                items = np.array([coord for anchor in self.anchors_params for coord in anchor[2:]])                             
 
             
             # get number of anchors (not rows of the param because maybe we are setting more than 4 anchors at once).         
