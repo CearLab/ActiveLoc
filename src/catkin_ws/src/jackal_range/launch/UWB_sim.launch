@@ -6,7 +6,7 @@
     <!-- UWB simulator node -->
     <node pkg="jackal_range" name="UWB_sim" type="UWB_sim.py" respawn="false" respawn_delay="2">
         <param name="NS_name" type="string" value="$(arg ns)" />
-        <param name="params_name" type="string" value="/AnchorsInfoReal" />
+        <param name="params_name" type="string" value="/$(arg ns)AnchorsInfoReal" />
         <param name="range_meas_cov" type="double" value="0.10"/>        
     </node>    
 
