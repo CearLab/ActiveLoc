@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
 
 import numpy as np
 import rospy
@@ -21,6 +22,8 @@ NS = sys.argv[1]
 RATE = 5
 # PF number of particles
 NUM_OF_PARTICLES = 100
+# variance for the initial spread of the particles
+INITIAL_PARTICLES_VARIANCE = 4
 
 class PFnode:
     
@@ -30,10 +33,11 @@ class PFnode:
     # range init 
     rangesub = None
     current_range_msg = RD_recap()
-    last_range_msg_time = 0.                    # ? both time stamps?
+    last_range_msg_time = 0.                  
     ctrl_odom_msg_curr_range_time = None
     
     # cmd_vel init 
+    # !! NOT IN USE when i will be brave enough, i will get rid of this
     cmdvelsub = None
     current_theta = 0
     dpos = np.zeros(STATE_SIZE_2D)
@@ -55,16 +59,15 @@ class PFnode:
     # assign odometry message
     op = Odometry()
     
-    # state and measurement init
-    x = np.zeros(TOTAL_STATE_SIZE)
-    z = np.zeros(RANGE_MEASUREMENT_SIZE)        
-        
+
+    
+    # ? what we want do with the metry?
     metry_obj = None
     
     # class constructor
     def __init__(self):   
         
-        NS_name = rospy.get_param('~NS_name', '')              
+        NS_name = rospy.get_param('~NS_name', '')   # ? why we call this here and not in the handler?      
         
         # Initialize the ROS node
         rospy.loginfo('starting init')
@@ -232,18 +235,29 @@ class PFnode:
         self.particles = np.zeros((NUM_OF_PARTICLES, TOTAL_STATE_SIZE))
         
         # here I update the anchors from the range measurements
-        # TODO should we do this from the anchors parameters?
         for i in range(NUM_OF_BEACONS):
             initial_state[get_beacon_index(i)] = np.array([self.current_range_msg.A_POS[i*3 + 0], self.current_range_msg.A_POS[i*3 + 1]])
             self.particles[:,get_beacon_index(i)] = initial_state[get_beacon_index(i)]
+        
         # add gaussian noise to the particles (process noise)
-        self.particles[:,get_agent_index(0)] += np.random.normal(initial_state[get_agent_index(0)], 4, (NUM_OF_PARTICLES, STATE_SIZE_2D))
+        # ? how shuld we initialize the particles? shoud it really be a gaussian noise? or maybe a uniform noise? 
+        self.particles[:,get_agent_index(0)] += np.random.normal(initial_state[get_agent_index(0)], INITIAL_PARTICLES_VARIANCE, (NUM_OF_PARTICLES, STATE_SIZE_2D))
         
         # log
         rospy.loginfo('initial state: %s', initial_state)        
         rospy.loginfo('first 5 particles: \n %s', self.particles[:5])
         
-        
+    
+    def is_particle_filter_time(self):
+        if self.current_range_msg.header.stamp.to_sec() <= self.last_range_msg_time:
+            return False
+        if np.any(self.current_range_msg.D < 0):
+            rospy.loginfo('measurement rejected: range to one of the beacons is negative')
+            return False
+        if np.any(self.current_range_msg.A_POS < 0):
+            rospy.loginfo('measurement rejected: one of the beacons is not in the map')
+            return False
+        return True
     # timer callback
     def timer_callback(self, event):
         
@@ -251,7 +265,7 @@ class PFnode:
         rospy.loginfo_once('first timer callback, dt: %s', self.current_range_msg.header.stamp.to_sec() - self.last_range_msg_time)
         
         # if the range message is newer than the last range message time
-        if self.current_range_msg.header.stamp.to_sec() > self.last_range_msg_time:
+        if self.is_particle_filter_time():
             
             # log
             rospy.loginfo_once('starting first PF step')
