@@ -3,23 +3,31 @@
     <!-- anchors params -->
     <arg name="AX" default="" />
     <arg name="AY" default="" />
-    <arg name="AZ" default="" /> 
-
-    <!-- simulation or real -->
-    <arg name="simulated" default=""/>    
+    <arg name="AZ" default="" />  
 
     <!-- Configuration of Jackal which you would like to simulate. -->
-    <arg name="ns" default="" />      
+    <arg name="ns" default="" />   
+
+    <!-- parameter to select real or simulated data -->
+    <arg name="real" default="" />
 
     <!-- ANCHORS SERVER -->
-    <node pkg="jackal_range" name="anchors_server_real" type="anchors_server.py">
+    <!-- this is run when the arg $real is true -->
+    <group if="$(arg real)">        
+        <node pkg="jackal_range" name="anchors_server_real_real" type="anchors_server.py">
+            <param name="anchors_pos" type="string" value="" />                    
+            <param name="topic" type="string" value="/$(arg ns)AnchorsMarkersReal" />
+            <param name="params_name" type="string" value="/$(arg ns)AnchorsInfoReal" />        
+        </node>  
+    </group>
 
-        <group if="$(arg simulated)">
-            <param name="anchors_pos" type="string" value="" />
-        </group>
-        <!-- <param name="anchors_pos" type="string" value="+$(arg AX) +$(arg AY) +$(arg AZ) -$(arg AX) +$(arg AY) +$(arg AZ) -$(arg AX) -$(arg AY) +$(arg AZ) +$(arg AX) -$(arg AY) +$(arg AZ)" /> -->
-        <param name="topic" type="string" value="/$(arg ns)AnchorsMarkersReal" />
-        <param name="params_name" type="string" value="/$(arg ns)AnchorsInfoReal" />        
-    </node>  
+    <!-- this is run when the arg $real is false -->
+    <group unless="$(arg real)">         
+        <node pkg="jackal_range" name="anchors_server_real_sim" type="anchors_server.py">
+            <param name="anchors_pos" type="string" value="+$(arg AX) +$(arg AY) +$(arg AZ) -$(arg AX) +$(arg AY) +$(arg AZ) -$(arg AX) -$(arg AY) +$(arg AZ) +$(arg AX) -$(arg AY) +$(arg AZ)" />        
+            <param name="topic" type="string" value="/$(arg ns)AnchorsMarkersReal" />
+            <param name="params_name" type="string" value="/$(arg ns)AnchorsInfoReal" />        
+        </node>  
+    </group>    
 
 </launch>
