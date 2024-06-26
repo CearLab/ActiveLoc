@@ -251,11 +251,11 @@ class PFnode:
     def is_particle_filter_time(self):
         if self.current_range_msg.header.stamp.to_sec() <= self.last_range_msg_time:
             return False
-        if np.any(self.current_range_msg.D < 0):
-            rospy.loginfo('measurement rejected: range to one of the beacons is negative')
+        if np.any(np.array(self.current_range_msg.D) < 0):
+            rospy.logfatal('measurement rejected: range to one of the beacons is negative')
             return False
-        if np.any(self.current_range_msg.A_POS < 0):
-            rospy.loginfo('measurement rejected: one of the beacons is not in the map')
+        if np.any(np.array(self.current_range_msg.A_POS) == -999.):
+            rospy.logfatal('measurement rejected: one of the beacons is not in the map')
             return False
         return True
     # timer callback
