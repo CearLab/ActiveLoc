@@ -9,11 +9,10 @@
   <!-- anchors params -->
   <arg name="AX" default="5" />
   <arg name="AY" default="5" />
-  <arg name="AZ" default="0.184" />
-
-  <!-- simulation or real -->
-  <arg name="simulated" default="true"/>    
-
+  <arg name="AZ" default="0.184" />  
+  
+  <!-- arg to select real or simulated data -->
+  <arg name="real" default="false" />
 
   <!-- Launch Gazebo with the specified world -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -35,19 +34,19 @@
       <arg name="AX" value="$(arg AX)" />
       <arg name="AY" value="$(arg AY)" />
       <arg name="AZ" value="$(arg AZ)" />
-      <arg name="ns" value="UGV01/" /> 
-      <arg name="simulated" value="$(arg simulated)" /> 
+      <arg name="ns" value="UGV01/" />     
+      <arg name="real" value="$(arg real)" />  
     </include>
 
     <!-- spawn robot -->
     <include file="$(find jackal_custom)/launch/spawners/robot.launch" >
-      <arg name="init_pose" value="-x 2 -y 1 -z 0 -R 0 -P 0 -Y 0" />
+      <arg name="init_pose" value="-x 2 -y 2 -z 0 -R 0 -P 0 -Y 0" />
       <arg name="robot_name"  value="Jack01" />
       <arg name="joystick" value="true" />
       <arg name="joy_dev" value="/dev/input/js0" />
       <arg name="enable_ekf" value="true" /> 
-      <arg name="ns" value="UGV01/" />  
-      <arg name="simulated" value="$(arg simulated)" />    
+      <arg name="ns" value="UGV01/" />      
+      <arg name="real" value="$(arg real)" />     
     </include> 
 
     <!-- publish TF -->
@@ -58,7 +57,8 @@
       <arg name="AX" value="$(arg AX)" />
       <arg name="AY" value="$(arg AY)" />
       <arg name="AZ" value="$(arg AZ)" />
-      <arg name="ns" value="UGV01/" />  
+      <arg name="ns" value="UGV01/" /> 
+      <arg name="real" value="$(arg real)" />       
     </include>
 
     <!-- DISTANCE VISUALIZATION -->

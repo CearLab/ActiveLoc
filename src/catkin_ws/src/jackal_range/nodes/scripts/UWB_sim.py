@@ -55,7 +55,8 @@ class UWB:
         self.op = RD()
         
         # We should get here in the Anchors Estimate node, so we gather the anchors from the params_name
-        # if not available, we use the default params, otherwise we would have a AvailableKey error
+        # if not available, we use the default params, otherwise we would have a AvailableKey error                
+        rospy.logwarn('AnchorsInfoReal: ' + str(params_name))
         try:
             anchors_params = rospy.get_param(params_name)  
         except:

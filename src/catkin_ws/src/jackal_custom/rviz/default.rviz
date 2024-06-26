@@ -7,7 +7,8 @@ Panels:
         - /UGV01EKF1/Shape1
         - /UGV01EKF1/Covariance1
         - /UGV01VisLineGT1/Namespaces1
-      Splitter Ratio: 0.5
+        - /TF_tree1/Frames1
+      Splitter Ratio: 0.8058823347091675
     Tree Height: 845
   - Class: rviz/Selection
     Name: Selection
@@ -260,6 +261,84 @@ Visualization Manager:
         AN3/line_markers: true
       Queue Size: 100
       Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Filter (blacklist): ""
+      Filter (whitelist): ""
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+        UGV01/base_link:
+          Value: false
+        UGV01/chassis_link:
+          Value: false
+        UGV01/front_fender_link:
+          Value: false
+        UGV01/front_left_wheel_link:
+          Value: true
+        UGV01/front_mount:
+          Value: false
+        UGV01/front_right_wheel_link:
+          Value: true
+        UGV01/imu_link:
+          Value: false
+        UGV01/mid_mount:
+          Value: false
+        UGV01/navsat_link:
+          Value: false
+        UGV01/odom:
+          Value: false
+        UGV01/rear_fender_link:
+          Value: false
+        UGV01/rear_left_wheel_link:
+          Value: true
+        UGV01/rear_mount:
+          Value: false
+        UGV01/rear_right_wheel_link:
+          Value: true
+        UGV01/right_tag:
+          Value: false
+        map:
+          Value: false
+        world:
+          Value: false
+      Marker Alpha: 1
+      Marker Scale: 1
+      Name: TF_tree
+      Show Arrows: false
+      Show Axes: true
+      Show Names: false
+      Tree:
+        world:
+          map:
+            UGV01/odom:
+              UGV01/base_link:
+                UGV01/chassis_link:
+                  UGV01/front_fender_link:
+                    {}
+                  UGV01/front_left_wheel_link:
+                    {}
+                  UGV01/front_right_wheel_link:
+                    {}
+                  UGV01/mid_mount:
+                    UGV01/front_mount:
+                      {}
+                    UGV01/rear_mount:
+                      {}
+                  UGV01/navsat_link:
+                    {}
+                  UGV01/rear_fender_link:
+                    {}
+                  UGV01/rear_left_wheel_link:
+                    {}
+                  UGV01/rear_right_wheel_link:
+                    {}
+                  UGV01/right_tag:
+                    {}
+                UGV01/imu_link:
+                  {}
+      Update Interval: 0
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -288,7 +367,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 25.2432861328125
+      Distance: 23.79646110534668
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -296,17 +375,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.43713894486427307
-        Y: 0.714213490486145
-        Z: -1.4218789339065552
+        X: 0.4212219715118408
+        Y: -1.904041051864624
+        Z: -2.077282190322876
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6353982090950012
+      Pitch: 0.7353982925415039
       Target Frame: <Fixed Frame>
-      Yaw: 2.250399351119995
+      Yaw: 2.3103981018066406
     Saved: ~
 Window Geometry:
   Displays:
