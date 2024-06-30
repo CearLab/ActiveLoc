@@ -1,0 +1,55 @@
+<launch>
+
+  <!-- general -->
+  <arg name="use_sim_time" default="false" />
+  <arg name="gui" default="false" />  
+  <arg name="headless" default="false" />        
+
+  <!-- create map reference frame -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="WorldToMap" args="0 0 0 0 0 0 1 world map" />  
+
+  <!-- BEGIN ROBOT 1 -->
+  <group ns="UGV01">    
+
+    <!-- ANCHORS SERVER -->
+    <include file="$(find jackal_range)/launch/anchors_real.launch" >
+      <arg name="AX" value="" />
+      <arg name="AY" value="" />
+      <arg name="AZ" value="" />
+      <arg name="ns" value="UGV01/" />     
+      <arg name="real" value="true" />  
+    </include>
+
+    <!-- spawn robot -->
+    <include file="$(find jackal_custom)/launch/spawners/robot_real.launch" >
+      <arg name="init_pose" value="-x 2.4 -y 1.5 -z 0 -R 0 -P 0 -Y 0" />
+      <arg name="robot_name"  value="Jack01" />
+      <arg name="joystick" value="true" />
+      <arg name="joy_dev" value="/dev/input/js0" />
+      <arg name="enable_ekf" value="true" /> 
+      <arg name="ns" value="UGV01/" />      
+    </include> 
+
+    <!-- publish TF -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="MapToOdom" args="0 0 0 0 0 0 1 map UGV01/odom" />   
+
+    <!-- ANCHORS SERVER -->
+    <include file="$(find jackal_range)/launch/anchors_estimate.launch" > 
+      <arg name="AX" value="" />
+      <arg name="AY" value="" />
+      <arg name="AZ" value="" />
+      <arg name="ns" value="UGV01/" /> 
+      <arg name="real" value="true" />       
+    </include>
+
+    <!-- DISTANCE VISUALIZATION -->
+    <include file="$(find jackal_range)/launch/vis_line.launch" >
+      <arg name="ns" value="UGV01/" />      
+    </include>     
+    
+  </group>  
+
+  <param name="use_gui" value="true"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find jackal_custom)/rviz/default.rviz" />
+  
+</launch>
