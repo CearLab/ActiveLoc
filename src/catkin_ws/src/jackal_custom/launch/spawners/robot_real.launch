@@ -33,5 +33,14 @@
         <arg name="ns" value="$(arg ns)" />
     </include>
 
+    <!-- UWB measurement -->      
+    <node pkg="jackal_range" name="UWB_read" type="UWB_read.py"
+        args="/dev/ttyACM0 115200 $(arg ns)/Tag01" /> 
+
+    <!-- PF node -->
+    <include file="$(find jackal_pf)/launch/PF_instance.launch">
+        <arg name="ns" value="$(arg ns)" />
+    </include>
+
 
 </launch>
