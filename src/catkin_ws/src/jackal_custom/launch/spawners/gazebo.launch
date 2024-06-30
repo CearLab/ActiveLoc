@@ -12,7 +12,7 @@
   <arg name="AZ" default="0.184" />  
   
   <!-- arg to select real or simulated data -->
-  <arg name="real" default="false" />
+  <arg name="real" default="true" />
 
   <!-- Launch Gazebo with the specified world -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -40,7 +40,7 @@
 
     <!-- spawn robot -->
     <include file="$(find jackal_custom)/launch/spawners/robot.launch" >
-      <arg name="init_pose" value="-x 2 -y 2 -z 0 -R 0 -P 0 -Y 0" />
+      <arg name="init_pose" value="-x 2.4 -y 1.5 -z 0 -R 0 -P 0 -Y 0" />
       <arg name="robot_name"  value="Jack01" />
       <arg name="joystick" value="true" />
       <arg name="joy_dev" value="/dev/input/js0" />
