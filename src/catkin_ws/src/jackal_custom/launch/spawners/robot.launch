@@ -39,7 +39,7 @@
     <!-- real measurement -->  
     <group if="$(arg real)">   
         <node pkg="jackal_range" name="UWB_read" type="UWB_read.py"
-            args="/dev/ttyACM1 115200 $(arg ns)/Tag01" />    
+            args="/dev/ttyACM0 115200 $(arg ns)/Tag01" />    
     </group>
 
     <!-- UWB sim node -->    
