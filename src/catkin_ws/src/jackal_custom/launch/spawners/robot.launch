@@ -46,15 +46,15 @@
 
     <!-- control -->
     <include file="$(find jackal_move)/control/launch/control.launch">
-        <arg name="enable_ekf" value="false" />    
+        <arg name="enable_ekf" value="true" />    
         <arg name="ns" value="$(arg ns)" />        
         <arg name="joy_dev" value="$(arg joy_dev)" /> 
     </include>
 
     <!-- navigation -->
-    <!-- <include file="$(find jackal_move)/navigation/launch/move_base.launch">
+    <include file="$(find jackal_move)/navigation/launch/move_base.launch">
         <arg name="ns" value="$(arg ns)" />
-    </include> -->
+    </include>
 
     <!-- UWB real measurement -->  
     <group if="$(arg real_UWB)">   
