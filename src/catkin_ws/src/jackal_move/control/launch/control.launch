@@ -27,7 +27,7 @@
       <param name="odom1"       value="/$(arg ns)PFest"/>
       <!-- <param name="odom0"       value="/$(arg ns)ground_truth/state"/>     -->
       <!-- <param name="odom1"       value="/$(arg ns)ground_truth/state"/>     -->
-      <param name="imu0"       value="/$(arg ns)imu/data"/>   
+      <param name="imu0"       value="/$(arg ns)imu/data/remap"/>   
     </node>    
   </group>  
 

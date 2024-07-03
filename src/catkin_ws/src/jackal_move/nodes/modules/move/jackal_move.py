@@ -136,7 +136,7 @@ def movebase_client(server_name,odom_name,p_goal,a_goal):
     # Print the result of executing the action
     return client.get_result()
 
-def encoder_parser(data,pub,broadcaster,ns):
+def encoder_parser(data,pub):
     
     # Extract odometry information from feedback
     odom = nav_msgs.msg.Odometry()
@@ -188,8 +188,6 @@ def encoder_parser(data,pub,broadcaster,ns):
     
     return 0
 
-import math
-
 def update_position(x0, y0, theta0, dL, dR, L):
     # Compute distance traveled by the center of the robot
     dC = (dL + dR) / 2.0
@@ -209,3 +207,15 @@ def update_position(x0, y0, theta0, dL, dR, L):
         theta = theta0
     
     return x, y, theta
+
+def imu_remapper(data,pub,ns):
+    
+    # Extract odometry information from feedback
+    data.header.frame_id = str(ns) + data.header.frame_id
+    
+    # Publish the odometry message
+    pub.publish(data)
+    
+    # rospy.logwarn('Encoder parsed: time '+ str(rospy.Time.now()))
+    
+    return 0

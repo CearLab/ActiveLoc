@@ -1,0 +1,13 @@
+<launch>
+
+    <!-- Configuration of Jackal which you would like to simulate. -->
+    <arg name="ns" default="" />   
+
+    <!-- parse the encoders -->      
+    <node pkg="jackal_move" name="imu_remapper" type="imu_remapper.py">
+        <param name="subscribe_topic" type="string" value="/$(arg ns)imu/data" />                    
+        <param name="publish_topic" type="string" value="/$(arg ns)imu/data/remap" />
+        <param name="ns" type="string" value="$(arg ns)" />     
+    </node>
+
+</launch>
