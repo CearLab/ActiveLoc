@@ -44,6 +44,26 @@
 
   <xacro:macro name="wheel" params="prefix *joint_pose">
 
+    <joint name="${prefix}_wheel" type="continuous">
+      <parent link="$(arg ns)chassis_link"/>
+      <child link="${prefix}_wheel_link" />
+      <xacro:insert_block name="joint_pose" />
+      <axis xyz="0 1 0" />
+    </joint>    
+
+    <!-- In reality, Jackal has only two motors, one per side. However, it's more
+        straightforward for Gazebo to simulate as if there's an actuator per wheel.
+        So we keep it also in the real -->
+    <transmission name="${prefix}_wheel_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${prefix}_wheel">
+        <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${prefix}_actuator">
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+
     <link name="${prefix}_wheel_link">
       <visual>
         <origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
@@ -67,38 +87,18 @@
           izz="0.0013"/>
       </inertial>
     </link>
-
-    <joint name="${prefix}_wheel" type="continuous">
-      <parent link="$(arg ns)chassis_link"/>
-      <child link="${prefix}_wheel_link" />
-      <xacro:insert_block name="joint_pose" />
-      <axis xyz="0 1 0" />
-    </joint>    
-
-    <!-- In reality, Jackal has only two motors, one per side. However, it's more
-        straightforward for Gazebo to simulate as if there's an actuator per wheel.
-        So we keep it also in the real one. -->
-    <transmission name="${prefix}_wheel_trans">
-      <type>transmission_interface/SimpleTransmission</type>
-      <joint name="${prefix}_wheel">
-        <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
-      </joint>
-      <actuator name="${prefix}_actuator">
-        <mechanicalReduction>1</mechanicalReduction>
-      </actuator>
-    </transmission>
   </xacro:macro>
 
-  <xacro:wheel prefix="$(arg ns)front_left">
+  <xacro:wheel prefix="front_left">
     <origin xyz="${wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
   </xacro:wheel>
-  <xacro:wheel prefix="$(arg ns)front_right">
+  <xacro:wheel prefix="front_right">
     <origin xyz="${wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
   </xacro:wheel>
-  <xacro:wheel prefix="$(arg ns)rear_left">
+  <xacro:wheel prefix="rear_left">
     <origin xyz="${-wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
   </xacro:wheel>
-  <xacro:wheel prefix="$(arg ns)rear_right">
+  <xacro:wheel prefix="rear_right">
     <origin xyz="${-wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
   </xacro:wheel>
   
