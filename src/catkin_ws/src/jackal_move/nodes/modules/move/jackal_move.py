@@ -184,20 +184,6 @@ def encoder_parser(data,pub,broadcaster,ns):
     # Publish the odometry message
     pub.publish(odom)
     
-    # now here I want to publish the wheel tf
-    child_links_left = [ns + 'front_left_wheel', ns + 'rear_left_wheel']
-    child_links_right = [ns + 'front_right_wheel', ns + 'rear_right_wheel']
-    parent_link = ns + 'chassis_link'
-    translation_left = [np.array((wheelbase/2, track/2, wheel_vertical_offset)), np.array((wheelbase/2, -track/2, wheel_vertical_offset))]
-    translation_right = [np.array((-wheelbase/2, track/2, wheel_vertical_offset)), np.array((-wheelbase/2, -track/2, wheel_vertical_offset))]
-    rotation = tft.quaternion_from_euler(0, 0, 0)
-    
-    # Publish the transforms
-    broadcaster.sendTransform(translation_left[0], rotation,  rospy.Time.now(), child_links_left[0], parent_link) # front_left
-    broadcaster.sendTransform(translation_left[1], rotation,  rospy.Time.now(), child_links_left[1], parent_link) # rear_left
-    broadcaster.sendTransform(translation_right[0], rotation, rospy.Time.now(), child_links_right[0], parent_link) # front_right
-    broadcaster.sendTransform(translation_right[1], rotation, rospy.Time.now(), child_links_right[1], parent_link) # rear_right
-    
     # rospy.logwarn('Encoder parsed: time '+ str(rospy.Time.now()))
     
     return 0
