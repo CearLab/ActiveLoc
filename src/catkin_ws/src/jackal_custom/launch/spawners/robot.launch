@@ -16,14 +16,15 @@
 
     <!-- Load Jackal's description real -->
     <group if="$(arg real_robot)">
+
+        <!-- Run default base jackal HW -->
+        <include file="$(find jackal_custom)/launch/descriptions/base.launch">
+        </include>
+
         <include file="$(find jackal_custom)/launch/descriptions/description_real.launch">
             <arg name="config" value="$(arg config)" />
             <arg name="right_id" value="$(arg right_id)" />   
             <arg name="ns" value="$(arg ns)" />     
-        </include>
-    
-        <!-- Run default base jackal HW -->
-        <include file="$(find jackal_custom)/launch/descriptions/base.launch">
         </include>
 
         <include file="$(find jackal_move)/various_launch/encoder_parser.launch"> 
@@ -70,9 +71,9 @@
     </group>
 
     <!-- PF node -->
-    <!-- <include file="$(find jackal_pf)/launch/PF_instance.launch">
+    <include file="$(find jackal_pf)/launch/PF_instance.launch">
         <arg name="ns" value="$(arg ns)" />
-    </include> -->
+    </include>
 
 
 </launch>
