@@ -74,6 +74,19 @@
       <xacro:insert_block name="joint_pose" />
       <axis xyz="0 1 0" />
     </joint>    
+
+    <!-- In reality, Jackal has only two motors, one per side. However, it's more
+        straightforward for Gazebo to simulate as if there's an actuator per wheel.
+        So we keep it also in the real one. -->
+    <transmission name="${prefix}_wheel_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${prefix}_wheel">
+        <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${prefix}_actuator">
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
   </xacro:macro>
 
   <xacro:wheel prefix="$(arg ns)front_left">
