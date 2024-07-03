@@ -1,10 +1,10 @@
 <launch>
 
   <!-- set simulation time -->
-  <param name="use_simulation_time" value="true"/>
+  <param name="use_simulation_time" value="false"/>
 
-  <!-- <param name="use_gui" value="true"/> -->
-  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find jackal_custom)/rviz/default.rviz" /> -->
+  <param name="use_gui" value="true"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find jackal_custom)/rviz/default.rviz" />
 
   <!-- Run Websocket. -->
   <!-- <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" > 
