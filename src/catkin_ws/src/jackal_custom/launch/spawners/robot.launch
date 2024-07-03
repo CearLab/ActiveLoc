@@ -27,7 +27,7 @@
             <arg name="ns" value="$(arg ns)" />     
         </include>
 
-        <include file="$(find jackal_move)/various_launch/encoder_parser.launch"> 
+        <include file="$(find jackal_move)/various_launch/imu_remapper.launch"> 
             <arg name="ns" value="$(arg ns)" />     
         </include>
     </group>
