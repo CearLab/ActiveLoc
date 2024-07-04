@@ -10,11 +10,17 @@ TOTAL_STATE_SIZE = NUM_OF_AGENTS * STATE_SIZE_2D + NUM_OF_BEACONS * STATE_SIZE_2
 SIGMA_TRANSITION_AGENT = 0.5
 SIGMA_TRANSITION_BEACON = 0
 SIGMA_MEASUREMENT = 0.1
+beacon_height_ = 0
 
 get_agent_index = lambda i: slice(i*STATE_SIZE_2D, i*STATE_SIZE_2D + STATE_SIZE_2D)
 get_beacon_index = lambda i: slice(STATE_SIZE_2D*NUM_OF_AGENTS + i*STATE_SIZE_2D, STATE_SIZE_2D*NUM_OF_AGENTS + i*STATE_SIZE_2D + STATE_SIZE_2D)
 get_agent_position = lambda x, i: x[get_agent_index(i)]
 get_beacon_postion = lambda x, j: x[get_beacon_index(j)]
+
+def set_beacon_height(height):
+    global beacon_height_
+    print("Setting beacon height to: ", height)
+    beacon_height_ = height
 
 def state_to_agent_and_beacons_pos(x):
     """
@@ -61,9 +67,14 @@ def calculate_true_range_meas(x):
     """
     z = np.zeros(RANGE_MEASUREMENT_SIZE)
     for i in range(NUM_OF_AGENTS):
-        current_agent_position = x[get_agent_index(i)]
+        current_agent_position = np.zeros(3)
+        current_agent_position[0:1] = x[get_agent_index(i)]
+        
         for j in range(NUM_OF_BEACONS):
-            current_beacon_position = x[get_beacon_index(j)]
+            current_beacon_position = np.zeros(3)
+            current_beacon_position[0:1] = x[get_beacon_index(j)]
+            print(beacon_height_)
+            current_agent_position[2] = beacon_height_
             z[i*NUM_OF_BEACONS + j] = np.linalg.norm(current_agent_position - current_beacon_position)
     return z
 
