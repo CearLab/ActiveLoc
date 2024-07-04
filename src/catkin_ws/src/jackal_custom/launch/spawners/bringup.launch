@@ -8,7 +8,7 @@
   <!-- anchors params -->
   <arg name="AX" default="5" />
   <arg name="AY" default="5" />
-  <arg name="AZ" default="0.184" /> 
+  <arg name="AZ" default="2" /> 
 
   <!-- arg to select real or simulated data -->
   <arg name="real_robot" default="true" /> 
