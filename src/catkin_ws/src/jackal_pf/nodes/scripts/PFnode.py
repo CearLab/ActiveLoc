@@ -14,6 +14,7 @@ from nav_msgs.msg import Odometry
 from PFutils.pfMetry import pfmetry
 
 # global vars
+print(sys.argv)
 # sampling method
 RESAMPLE_METHOD = 'systematic'
 # namespace
@@ -24,8 +25,6 @@ RATE = 5
 NUM_OF_PARTICLES = 100
 # variance for the initial spread of the particles
 INITIAL_PARTICLES_VARIANCE = 4
-# beacon height
-beacon_height_ = sys.argv[2]
 
 class PFnode:
     
@@ -69,7 +68,7 @@ class PFnode:
     # class constructor
     def __init__(self):   
         
-        NS_name = rospy.get_param('~NS_name', '')   # ? why we call this here and not in the handler?      
+        NS_name = rospy.get_param('~NS_name', '')   # ? why we call this here and not in the handler?  
         
         # Initialize the ROS node
         rospy.loginfo('starting init')
@@ -103,8 +102,7 @@ class PFnode:
     def define_models(self):
         
         # log
-        rospy.loginfo('defining models')
-        set_beacon_height(beacon_height_)
+        rospy.loginfo('defining models')  
         # define covariance matrix of the transition model: agents and beacons
         cov_transition_agent = [SIGMA_TRANSITION_AGENT**2 for i in range(NUM_OF_AGENTS*STATE_SIZE_2D)]        
         cov_transition_beacon = [SIGMA_TRANSITION_BEACON**2 for i in range(NUM_OF_BEACONS*STATE_SIZE_2D)]
@@ -239,6 +237,9 @@ class PFnode:
         # here I update the anchors from the range measurements
         for i in range(NUM_OF_BEACONS):
             initial_state[get_beacon_index(i)] = np.array([self.current_range_msg.A_POS[i*3 + 0], self.current_range_msg.A_POS[i*3 + 1]])
+            set_beacon_height(self.current_range_msg.A_POS[i*3 + 2])
+            rospy.logwarn('beacon height read: ' + str(self.current_range_msg.A_POS[i*3 + 2]))
+
             self.particles[:,get_beacon_index(i)] = initial_state[get_beacon_index(i)]
         
         # add gaussian noise to the particles (process noise)
