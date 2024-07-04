@@ -3,10 +3,10 @@
   <param name="use_gui" value="true"/>
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find jackal_custom)/rviz/default.rviz" />
 
-  <arg name="joy_dev" default="/dev/input/js0" />
+  <!-- <arg name="joy_dev" default="/dev/input/js0" />
   <include file="$(find jackal_move)/control/launch/teleop.launch" >
     <arg name="joy_dev" value="$(arg joy_dev)" /> 
-  </include>
+  </include> -->
 
   <!-- Run Websocket. -->
   <!-- <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" > 
