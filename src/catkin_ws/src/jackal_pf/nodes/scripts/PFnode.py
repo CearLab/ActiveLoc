@@ -24,6 +24,8 @@ RATE = 5
 NUM_OF_PARTICLES = 100
 # variance for the initial spread of the particles
 INITIAL_PARTICLES_VARIANCE = 4
+# beacon height
+beacon_height_ = sys.argv[2]
 
 class PFnode:
     
@@ -102,7 +104,7 @@ class PFnode:
         
         # log
         rospy.loginfo('defining models')
-        
+        set_beacon_height(beacon_height_)
         # define covariance matrix of the transition model: agents and beacons
         cov_transition_agent = [SIGMA_TRANSITION_AGENT**2 for i in range(NUM_OF_AGENTS*STATE_SIZE_2D)]        
         cov_transition_beacon = [SIGMA_TRANSITION_BEACON**2 for i in range(NUM_OF_BEACONS*STATE_SIZE_2D)]

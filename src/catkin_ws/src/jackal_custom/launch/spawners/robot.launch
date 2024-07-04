@@ -9,6 +9,10 @@
     <arg name="joy_dev" default="/dev/input/js0" />
     <arg name="enable_ekf" default="true" />
     <arg name="ns" default="" />  
+      <!-- anchors params -->
+    <arg name="AX" default="" />
+    <arg name="AY" default="" />
+    <arg name="AZ" default="" /> 
 
     <!-- parameter to select real or simulated data -->
     <arg name="real_UWB" default="" /> 
@@ -73,6 +77,7 @@
     <!-- PF node -->
     <include file="$(find jackal_pf)/launch/PF_instance.launch">
         <arg name="ns" value="$(arg ns)" />
+        <arg name="AZ" value="$(arg AZ)" />
     </include>
 
 
