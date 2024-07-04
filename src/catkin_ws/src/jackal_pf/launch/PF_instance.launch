@@ -1,12 +1,10 @@
 <launch>    
 
     <!-- Configuration of Jackal which you would like to simulate. -->
-    <arg name="ns" default="" /> 
-    <arg name="AZ" default="" />
+    <arg name="ns" default="" />
+
     <!-- PF node -->
     <node pkg="jackal_pf" name="PF" type="PFnode.py" >
-        <param name="NS_name" type="string" value="$(arg ns)" />
-        <param name="AZ" type="float" value="$(arg AZ)" />           
-    </node>    
+        <param name="NS_name" type="string" value="$(arg ns)" />    </node>    
 
 </launch>

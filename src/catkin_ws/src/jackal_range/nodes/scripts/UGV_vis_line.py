@@ -13,6 +13,7 @@ if __name__ == '__main__':
         
         # ros::init() the node
         rospy.init_node('Line_visualization', anonymous=True)
+        rospy.Rate(10)
         
         # define class instance
         jr_instance = jr.JackalRange()

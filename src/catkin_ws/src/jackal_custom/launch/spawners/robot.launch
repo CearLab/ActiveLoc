@@ -8,11 +8,7 @@
     <arg name="joystick" default="true" />
     <arg name="joy_dev" default="/dev/input/js0" />
     <arg name="enable_ekf" default="true" />
-    <arg name="ns" default="" />  
-      <!-- anchors params -->
-    <arg name="AX" default="" />
-    <arg name="AY" default="" />
-    <arg name="AZ" default="" /> 
+    <arg name="ns" default="" />
 
     <!-- parameter to select real or simulated data -->
     <arg name="real_UWB" default="" /> 
@@ -47,24 +43,12 @@
         <!-- Spawn Jackal -->
         <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model"
                     args="$(arg init_pose) -urdf -param robot_description -model $(arg robot_name)" />
-    </group>
-
-    <!-- control -->
-    <include file="$(find jackal_move)/control/launch/control.launch">
-        <arg name="enable_ekf" value="true" />    
-        <arg name="ns" value="$(arg ns)" />        
-        <arg name="joy_dev" value="$(arg joy_dev)" /> 
-    </include>
-
-    <!-- navigation -->
-    <include file="$(find jackal_move)/navigation/launch/move_base.launch">
-        <arg name="ns" value="$(arg ns)" />
-    </include>
+    </group>    
 
     <!-- UWB real measurement -->  
     <group if="$(arg real_UWB)">   
         <node pkg="jackal_range" name="UWB_read" type="UWB_read.py"
-            args="/dev/ttyACM0 115200 $(arg ns)/Tag01" />    
+            args="/dev/ttyACM1 115200 $(arg ns)Tag01" />    
     </group>
 
     <!-- UWB sim node -->    
@@ -72,13 +56,7 @@
         <include file="$(find jackal_range)/launch/UWB_sim.launch">
             <arg name="ns" value="$(arg ns)" />        
         </include>    
-    </group>
-
-    <!-- PF node -->
-    <include file="$(find jackal_pf)/launch/PF_instance.launch">
-        <arg name="ns" value="$(arg ns)" />
-        <arg name="AZ" value="$(arg AZ)" />
-    </include>
+    </group>    
 
 
 </launch>
