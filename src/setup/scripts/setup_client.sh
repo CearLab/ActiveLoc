@@ -1,2 +1,2 @@
-export ROS_MASTER_URI=http://132.68.134.236:11311
-export ROS_IP=132.68.135.5
+export ROS_MASTER_URI=http://192.168.0.31:11311
+export ROS_IP=192.168.0.14
