@@ -2,20 +2,37 @@
 
   <param name="use_gui" value="true"/>
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find jackal_custom)/rviz/default.rviz" />
+  <arg name="joy_dev" default="/dev/input/js0" />
 
-  <!-- <arg name="joy_dev" default="/dev/input/js0" />
-  <include file="$(find jackal_move)/control/launch/teleop.launch" >
-    <arg name="joy_dev" value="$(arg joy_dev)" /> 
-  </include> -->
+  <!-- namespaces -->
+  <arg name="ns_01" default="" />
 
-  <!-- Run Websocket. -->
-  <!-- <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" > 
-      <arg name="port" value="9090"/>
-  </include> -->
+  <!-- BEGIN ROBOT 1 -->
+  <group ns="UGV01">        
 
-  <!-- Tf2 publisher -->
-  <!-- <node name="tf2_web_republisher" pkg="tf2_web_republisher" type="tf2_web_republisher">
-  </node>   -->
+    <!-- control -->
+    <include file="$(find jackal_move)/control/launch/control.launch">
+        <arg name="enable_ekf" value="true" />    
+        <arg name="ns" value="$(arg ns_01)" />        
+        <arg name="joy_dev" value="$(arg joy_dev)" /> 
+    </include>    
+
+    <!-- navigation -->
+    <include file="$(find jackal_move)/navigation/launch/move_base.launch">
+        <arg name="ns" value="$(arg ns_01)" />
+    </include>
+
+    <!-- PF node -->
+    <include file="$(find jackal_pf)/launch/PF_instance.launch">
+        <arg name="ns" value="$(arg ns_01)" />
+    </include>
+
+    <!-- DISTANCE VISUALIZATION -->
+    <include file="$(find jackal_range)/launch/vis_line.launch" >
+      <arg name="ns" value="UGV01/" />      
+    </include> 
+
+  </group>
 
 
 </launch>
