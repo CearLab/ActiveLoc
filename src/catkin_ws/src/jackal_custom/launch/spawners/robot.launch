@@ -63,11 +63,6 @@
         <include file="$(find jackal_range)/launch/UWB_sim.launch">
             <arg name="ns" value="$(arg ns)" />        
         </include>    
-    </group>    
-
-    <!-- PF node -->
-    <include file="$(find jackal_pf)/launch/PF_instance.launch">
-        <arg name="ns" value="$(arg ns)" />
-    </include>
+    </group>
 
 </launch>
