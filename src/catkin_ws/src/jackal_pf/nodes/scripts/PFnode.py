@@ -21,8 +21,6 @@ RESAMPLE_METHOD = 'systematic'
 NS = sys.argv[1]
 # spin rate
 RATE = 5
-# PF number of particles
-NUM_OF_PARTICLES = 100
 # variance for the initial spread of the particles
 INITIAL_PARTICLES_VARIANCE = 4
 
@@ -68,7 +66,8 @@ class PFnode:
     # class constructor
     def __init__(self):   
         
-        NS_name = rospy.get_param('~NS_name', '')   # ? why we call this here and not in the handler?  
+        NS_name = rospy.get_param('~NS_name', '')   # ? why we call this here and not in the handler?
+        self.NUM_OF_PARTICLES = int(rospy.get_param('~N_particles', '')) 
         
         # Initialize the ROS node
         rospy.loginfo('starting init')
@@ -232,7 +231,7 @@ class PFnode:
         initial_state = np.zeros(TOTAL_STATE_SIZE)
         # the agents positions are initialized with the current controller odometry (integrated)
         initial_state[get_agent_index(0)] = np.array([self.current_controller_odom_msg.pose.pose.position.x, self.current_controller_odom_msg.pose.pose.position.y])
-        self.particles = np.zeros((NUM_OF_PARTICLES, TOTAL_STATE_SIZE))
+        self.particles = np.zeros((self.NUM_OF_PARTICLES, TOTAL_STATE_SIZE))
         
         # here I update the anchors from the range measurements
         for i in range(NUM_OF_BEACONS):
@@ -244,7 +243,7 @@ class PFnode:
         
         # add gaussian noise to the particles (process noise)
         # ? how shuld we initialize the particles? shoud it really be a gaussian noise? or maybe a uniform noise? 
-        self.particles[:,get_agent_index(0)] += np.random.normal(initial_state[get_agent_index(0)], INITIAL_PARTICLES_VARIANCE, (NUM_OF_PARTICLES, STATE_SIZE_2D))
+        self.particles[:,get_agent_index(0)] += np.random.normal(initial_state[get_agent_index(0)], INITIAL_PARTICLES_VARIANCE, (self.NUM_OF_PARTICLES, STATE_SIZE_2D))
         
         # log
         rospy.loginfo('initial state: %s', initial_state)        
@@ -315,12 +314,13 @@ class PFnode:
             self.op.header.frame_id = self.namespace + '/odom'
             self.op.child_frame_id = self.namespace + '/base_link'
             self.op.pose.pose.position = Point(self.mean[0], self.mean[1], 0.)
+            self.op.pose.pose.orientation = Quaternion(0., 0., 0., 1.)
             self.op.pose.covariance[0:2] = self.cov[0:2].tolist()
             self.op.pose.covariance[2:4] = self.cov[TOTAL_STATE_SIZE:TOTAL_STATE_SIZE + 2].tolist()    
             self.op.pose.covariance[0] += 0.5*0.5          
-
-            self.op.pose.covariance[3] += 0.5*0.5          
+            self.op.pose.covariance[3] += 0.5*0.5  
             self.op.twist.twist.linear = Vector3(self.u[0], self.u[1], 0.)
+            self.op.twist.twist.angular = Vector3(0., 0., 0.)
             
             # publish and log
             self.publisher.publish(self.op)
