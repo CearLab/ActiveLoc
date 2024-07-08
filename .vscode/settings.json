@@ -54,5 +54,6 @@
         "./src/catkin_ws/src/jackal_move/nodes/modules",
         "./src/catkin_ws/src/jackal_pf/nodes/modules"
     ],
-    "cmake.configureOnOpen": true
+    "cmake.configureOnOpen": true,
+    "cmake.sourceDirectory": "/home/ros/workspace/src/catkin_ws/src/jackal_custom"
 }
