@@ -521,7 +521,7 @@ class JackalRange:
         rospy.logwarn('Tag rebooting') 
         data = 'reset\x0D'
         self.serialWrite(myserial, data, sleepLong, print_flag)    
-        rospy.sleep(10) 
+        rospy.sleep(5) 
         rospy.logwarn('Tag rebooted')
         myserial = serial.Serial(SerialPort, BaudRate, timeout=0.5, 
         parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE,  bytesize=serial.EIGHTBITS)  
