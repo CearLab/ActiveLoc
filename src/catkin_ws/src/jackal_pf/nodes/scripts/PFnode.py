@@ -316,7 +316,10 @@ class PFnode:
             self.op.child_frame_id = self.namespace + '/base_link'
             self.op.pose.pose.position = Point(self.mean[0], self.mean[1], 0.)
             self.op.pose.covariance[0:2] = self.cov[0:2].tolist()
-            self.op.pose.covariance[2:4] = self.cov[TOTAL_STATE_SIZE:TOTAL_STATE_SIZE + 2].tolist()            
+            self.op.pose.covariance[2:4] = self.cov[TOTAL_STATE_SIZE:TOTAL_STATE_SIZE + 2].tolist()    
+            self.op.pose.covariance[0] += 0.5*0.5          
+
+            self.op.pose.covariance[3] += 0.5*0.5          
             self.op.twist.twist.linear = Vector3(self.u[0], self.u[1], 0.)
             
             # publish and log

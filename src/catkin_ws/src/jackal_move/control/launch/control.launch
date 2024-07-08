@@ -29,7 +29,7 @@
       <!-- <param name="odom1"       value="/$(arg ns)ground_truth/state"/>     -->
       <param name="imu0"       value="/$(arg ns)imu/data/remap"/>   
     </node>    
-  </group>  
+  </group>      
 
   <node pkg="twist_mux" type="twist_mux" name="twist_mux">
     <rosparam command="load" file="$(find jackal_move)/control/config/twist_mux.yaml" />    
