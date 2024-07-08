@@ -15,6 +15,11 @@
         <arg name="ns" value="UGV01/" />
     </include>
 
+    <!-- PF node -->
+    <include file="$(find jackal_pf)/launch/PF_instance.launch">
+        <arg name="ns" value="$(arg ns)" />
+    </include>
+
     <!-- DISTANCE VISUALIZATION -->
     <include file="$(find jackal_range)/launch/vis_line.launch" >
       <arg name="ns" value="UGV01/" />      
