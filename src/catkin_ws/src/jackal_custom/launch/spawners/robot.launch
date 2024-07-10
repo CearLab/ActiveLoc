@@ -2,7 +2,7 @@
 
     <!-- Configuration of Jackal which you would like to simulate. -->
     <arg name="config" default="base" />
-    <arg name="robot_name" default="Jack01" />    
+    <arg name="robot_name" default="" />    
     <arg name="right_id" default="1" />
     <arg name="init_pose" default="-x 0 -y 0 -z 0 -R 0 -P 0 -Y 0"/>
     <arg name="joystick" default="true" />

@@ -16,6 +16,7 @@ RATE = 10
 # namespace
 NS = None
 
+
 # method to calculate the range measurement from the agent to the beacon
 def calc_range_meas(agent_loc,beacon_loc):    
     return np.linalg.norm(agent_loc - beacon_loc)
@@ -82,8 +83,8 @@ class UWB:
     def pubsub(self):
         
         # get the ground truth topic and the publish topic
-        # gt_topic = f'/{self.namespace}/ground_truth/state'
-        gt_topic = f'/{self.namespace}/odometry/filtered'
+        gt_topic = f'/{self.namespace}/ground_truth/state'
+        # gt_topic = f'/{self.namespace}/odometry/filtered'
         pub_topic = f'/{self.namespace}/range'
         
         # logs
@@ -189,6 +190,12 @@ class UWB:
             
             # here the gaussian noise is added
             self.op.D = [d + np.random.normal(0, self.range_cov) for d in self.op.D]
+            
+            # manage the out of range: any element of D > RANGE is set to -1.0
+            for i in range(len(self.op.D)):
+                if self.op.D[i] > jr.RANGE:
+                    self.op.D[i] = -1.0
+                    
             
             # publish 
             self.uwb_pub.publish(self.op)

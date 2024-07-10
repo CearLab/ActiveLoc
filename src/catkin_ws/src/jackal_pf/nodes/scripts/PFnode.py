@@ -303,7 +303,7 @@ class PFnode:
                                                             resample_method = RESAMPLE_METHOD)
             
             # average the particles
-            self.mean, self.cov = calculate_mean_and_cov(self.particles)
+            self.mean, self.cov = calculate_mean_and_cov(self.particles)            
             
             # log
             self.metry_obj.write('mean', self.mean)
