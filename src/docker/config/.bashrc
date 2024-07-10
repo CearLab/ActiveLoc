@@ -110,3 +110,5 @@ export LD_LIBRARY_PATH=/opt/ros/noetic/lib:/usr/lib:/usr/local/lib:
 # setup noetic
 source /opt/ros/noetic/setup.bash
 
+# run zsh
+/usr/bin/zsh

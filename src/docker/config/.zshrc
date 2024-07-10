@@ -1,67 +1,23 @@
-# Sample Zsh configuration file optimized for development and containers.
-#
-# Roberto Masocco <robmasocco@gmail.com>
-# Alessandro Tenaglia <alessandro.tenaglia42@gmail.com>
-#
-# January 27, 2022
-#
-# Edit
-# Federico Oliva <federico.oliva.it@gmail.com>
-#
-# January 9, 2024
-
 # If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:/usr/local/bin:$PATH
+# export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
 
-# Uncomment the following line to use case-sensitive completion.
-CASE_SENSITIVE="true"
-
-# ignore pythn warnings as default
-export PYTHONWARNINGS="ignore"     
-
-# This is where command history will be saved
-if [[ -z "$BOARD" ]]; then
-  # Not in a container
-  export HISTFILE=~/.zsh_history
-else
-  # In a container: save it on the host
-  export HISTFILE=~/zsh_history/.zsh_history
-  if [[ ! -d ~/zsh_history ]]; then
-    mkdir -p ~/zsh_history
-  fi
-fi
-touch $HISTFILE
-
-# Gradle location
-export PATH=/opt/gradle/gradle-$GRADLE_VERSION/bin:$PATH
-
-# If this is a login shell just set the prompt, basic stuff and get out
-if [[ "$TERM" == "linux" ]]; then
-  export LANG=en_US.UTF-8
-  if [[ -n $SSH_CONNECTION ]]; then
-    export EDITOR='vim'
-  else
-    export EDITOR='nano'
-  fi
-  source ~/.aliases.sh
-  PROMPT='%B%F{red}%n@%M%f %F{yellow}%~%f %F{white}(%?%) $%f%b '
-  return
-fi
-
-# Path to your oh-my-zsh installation.
+# Path to your Oh My Zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
 # Set name of the theme to load --- if set to "random", it will
-# load a random theme each time oh-my-zsh is loaded, in which case,
+# load a random theme each time Oh My Zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="powerlevel10k/powerlevel10k"
+ZSH_THEME="avit"
 
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
 # a theme from this variable instead of looking in $ZSH/themes/
 # If set to an empty array, this variable will have no effect.
 # ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
+
+# Uncomment the following line to use case-sensitive completion.
+# CASE_SENSITIVE="true"
 
 # Uncomment the following line to use hyphen-insensitive completion.
 # Case-sensitive completion must be off. _ and - will be interchangeable.
@@ -70,7 +26,7 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Uncomment one of the following lines to change the auto-update behavior
 # zstyle ':omz:update' mode disabled  # disable automatic updates
 # zstyle ':omz:update' mode auto      # update automatically without asking
-zstyle ':omz:update' mode disabled  # just remind me to update when it's time
+# zstyle ':omz:update' mode reminder  # just remind me to update when it's time
 
 # Uncomment the following line to change how often to auto-update (in days).
 # zstyle ':omz:update' frequency 13
@@ -114,7 +70,7 @@ zstyle ':omz:update' mode disabled  # just remind me to update when it's time
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git git-extras git-flow colorize command-not-found common-aliases zsh-syntax-highlighting zsh-autosuggestions sudo colored-man-pages)
+plugins=(zsh-autosuggestions)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -123,41 +79,31 @@ source $ZSH/oh-my-zsh.sh
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
-export LANG=en_US.UTF-8
+# export LANG=en_US.UTF-8
 
 # Preferred editor for local and remote sessions
-if [[ -n $SSH_CONNECTION ]]; then
-  export EDITOR='vim'
-else
-  export EDITOR='nano'
-fi
+# if [[ -n $SSH_CONNECTION ]]; then
+#   export EDITOR='vim'
+# else
+#   export EDITOR='mvim'
+# fi
 
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"
 
-# Set personal aliases, overriding those provided by oh-my-zsh libs,
-# plugins, and themes. Aliases can be placed here, though oh-my-zsh
-# users are encouraged to define aliases within the ZSH_CUSTOM folder.
+# Set personal aliases, overriding those provided by Oh My Zsh libs,
+# plugins, and themes. Aliases can be placed here, though Oh My Zsh
+# users are encouraged to define aliases within a top-level file in
+# the $ZSH_CUSTOM folder, with .zsh extension. Examples:
+# - $ZSH_CUSTOM/aliases.zsh
+# - $ZSH_CUSTOM/macos.zsh
 # For a full list of active aliases, run `alias`.
 #
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
-unalias rm
-[[ ! -f ~/.aliases.sh ]] || source $HOME/.aliases.sh
 
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+# Bind ctrl+l to clear the terminal
+alias c="clear"
 
-# functions
-matlab() {
-    #do things with parameters like $1 such as
-    "/home/ros/MATLAB/R"$1"/bin/matlab"
-}
-
-# dynamic libraries
-export LD_LIBRARY_PATH=/opt/ros/noetic/lib:/usr/lib:/usr/local/lib:
-
-# setup ros noetic
 source /opt/ros/noetic/setup.zsh
-

@@ -27,6 +27,9 @@ from visualization_msgs.msg import Marker, MarkerArray
 # custom message import
 from jackal_range.msg import RD_recap as RD
 
+# UWB range
+RANGE = 100
+
 class JackalRange:
     # SERIAL BUFFER LENGTHS
     BUFSIZE_SET = 6
@@ -806,7 +809,7 @@ class JackalRange:
             marker_line.ns = "AN" + str(i) + "/line_markers"
             marker_line.id = i
             marker_line.type = Marker.LINE_STRIP
-            marker_line.action = Marker.ADD
+            marker_line.action = Marker.ADD            
             marker_line.scale.x = 0.01  # Line width
             marker_line.color.r = color[0]
             marker_line.color.g = color[1]
@@ -836,13 +839,28 @@ class JackalRange:
             pointUGV.z = pos[2]
             
             # debug
-            rospy.loginfo(pointUGV.z)
-
-            # Add points to the marker
-            marker_line.points.append(pointANC)
-            marker_line.points.append(pointUGV)   
+            rospy.loginfo(pointUGV.z)            
             
-            # append marker
+            # compute distance between the two points            
+            # Extract coordinates
+            x1, y1, z1 = pointANC.x, pointANC.y, pointANC.z
+            x2, y2, z2 = pointUGV.x, pointUGV.y, pointUGV.z
+            
+            # Compute Euclidean distance
+            d = np.sqrt((x2 - x1)**2 + (y2 - y1)**2 + (z2 - z1)**2)
+            
+            # append marker if it's within range
+            if d > RANGE:
+                pointANC.x = 0.0
+                pointANC.y = 0.0
+                pointANC.z = 0.0
+                pointUGV.x = 0.0
+                pointUGV.y = 0.0
+                pointUGV.z = 0.0
+                
+            marker_line.points.append(pointANC)
+            marker_line.points.append(pointUGV)                               
+                
             marker_array_line.markers.append(marker_line)   
         
 
