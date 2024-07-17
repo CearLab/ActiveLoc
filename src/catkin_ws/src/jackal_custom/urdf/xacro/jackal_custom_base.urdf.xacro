@@ -44,30 +44,6 @@
 
   <xacro:macro name="wheel" params="prefix *joint_pose">
 
-    <link name="${prefix}_wheel_link">
-      <visual>
-        <origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
-        <geometry>
-          <mesh filename="package://jackal_description/meshes/jackal-wheel.stl"/>
-        </geometry>
-        <material name="black" />
-      </visual>
-      <collision>
-        <origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
-        <geometry>
-          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
-        </geometry>
-      </collision>
-      <inertial>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <mass value="0.477"/>
-        <inertia
-          ixx="0.0013" ixy="0" ixz="0"
-          iyy="0.0024" iyz="0"
-          izz="0.0013"/>
-      </inertial>
-    </link>
-
     <gazebo reference="${prefix}_wheel_link">
       <material>Gazebo/DarkGrey</material>
       <selfCollide>false</selfCollide>
@@ -96,18 +72,42 @@
         <mechanicalReduction>1</mechanicalReduction>
       </actuator>
     </transmission>
+
+    <link name="${prefix}_wheel_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
+        <geometry>
+          <mesh filename="package://jackal_description/meshes/jackal-wheel.stl"/>
+        </geometry>
+        <material name="black" />
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.477"/>
+        <inertia
+          ixx="0.0013" ixy="0" ixz="0"
+          iyy="0.0024" iyz="0"
+          izz="0.0013"/>
+      </inertial>
+    </link>
   </xacro:macro>
 
-  <xacro:wheel prefix="front_left">
+  <xacro:wheel prefix="$(arg ns)front_left">
     <origin xyz="${wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
   </xacro:wheel>
-  <xacro:wheel prefix="front_right">
+  <xacro:wheel prefix="$(arg ns)front_right">
     <origin xyz="${wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
   </xacro:wheel>
-  <xacro:wheel prefix="rear_left">
+  <xacro:wheel prefix="$(arg ns)rear_left">
     <origin xyz="${-wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
   </xacro:wheel>
-  <xacro:wheel prefix="rear_right">
+  <xacro:wheel prefix="$(arg ns)rear_right">
     <origin xyz="${-wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
   </xacro:wheel>
   

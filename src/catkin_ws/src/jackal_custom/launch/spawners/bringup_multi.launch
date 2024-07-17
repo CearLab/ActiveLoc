@@ -111,5 +111,45 @@
     </include>    
     
   </group>
+
+  <!-- #################################################################### -->
+  <!-- BEGIN ROBOT 3 -->
+  <!-- #################################################################### -->
+  <group ns="UGV03">    
+
+    <!-- ANCHORS SERVER -->
+    <include file="$(find jackal_range)/launch/anchors_real.launch" >
+      <arg name="AX" value="$(arg AX)" />
+      <arg name="AY" value="$(arg AY)" />
+      <arg name="AZ" value="$(arg AZ)" />
+      <arg name="ns" value="UGV03/" />     
+      <arg name="real" value="$(arg real_UWB)" />  
+    </include>
+
+    <!-- spawn robot -->
+    <include file="$(find jackal_custom)/launch/spawners/robot.launch" >
+      <arg name="init_pose" value="-x -2.4 -y 1.5 -z 0 -R 0 -P 0 -Y 0" />
+      <arg name="robot_name"  value="Jack03" />
+      <arg name="joystick" value="true" />
+      <arg name="joy_dev" value="/dev/input/js0" />
+      <arg name="enable_ekf" value="true" /> 
+      <arg name="ns" value="UGV03/" />      
+      <arg name="real_UWB" value="$(arg real_UWB)" />
+      <arg name="real_robot" value="$(arg real_robot)" />
+    </include>
+
+    <!-- publish TF -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="MapToOdom" args="0 0 0 0 0 0 1 map UGV03/odom" />   
+
+    <!-- ANCHORS SERVER -->
+    <include file="$(find jackal_range)/launch/anchors_estimate.launch" > 
+      <arg name="AX" value="$(arg AX)" />
+      <arg name="AY" value="$(arg AY)" />
+      <arg name="AZ" value="$(arg AZ)" />
+      <arg name="ns" value="UGV03/" />     
+      <arg name="real" value="$(arg real_UWB)" />       
+    </include>    
+    
+  </group>
   
 </launch>

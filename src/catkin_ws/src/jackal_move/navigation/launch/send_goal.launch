@@ -2,8 +2,8 @@
   
   <!-- UGV01 fixed -->
   <node pkg="jackal_move" type="follower.py" respawn="false" name="reach_01" output="screen">        
-    <param name="server_name" type="string" value="UGV01/move_base" />           
-    <param name="goal_pos" type="string" value="4 4" />
+    <param name="server_name" type="string" value="UGV02/move_base" />           
+    <param name="goal_pos" type="string" value="-4 -4" />
     <param name="goal_ang" type="string" value="0 0 0.78" />
     <param name="mode" type="int" value="0" />
   </node>   

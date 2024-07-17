@@ -140,7 +140,7 @@ class PFnode:
         
         # define topic names
         rospy.loginfo('starting subscribers')
-        range_topic = f'/{self.namespace}/range'
+        range_topic = f'/{self.namespace}/Anchors/range'
         cmdveltopic = f'/{self.namespace}/cmd_vel'
         ctrlodomtopic = f'/{self.namespace}/jackal_velocity_controller/odom'
         
