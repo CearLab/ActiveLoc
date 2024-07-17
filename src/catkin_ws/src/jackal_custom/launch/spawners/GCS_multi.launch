@@ -19,6 +19,11 @@
       <arg name="ns" value="UGV01/" />      
     </include> 
 
+    <!-- DISTANCE VISUALIZATION MAS -->
+    <include file="$(find jackal_range)/launch/vis_line_MAS.launch" >
+      <arg name="ns" value="UGV01/" />      
+    </include>
+
   </group>
 
   <!-- BEGIN ROBOT 1 -->
@@ -27,6 +32,26 @@
     <!-- DISTANCE VISUALIZATION -->
     <include file="$(find jackal_range)/launch/vis_line.launch" >
       <arg name="ns" value="UGV02/" />      
+    </include>
+
+    <!-- DISTANCE VISUALIZATION MAS -->
+    <include file="$(find jackal_range)/launch/vis_line_MAS.launch" >
+      <arg name="ns" value="UGV02/" />      
+    </include> 
+
+  </group>
+
+  <!-- BEGIN ROBOT 1 -->
+  <group ns="UGV03">    
+
+    <!-- DISTANCE VISUALIZATION -->
+    <include file="$(find jackal_range)/launch/vis_line.launch" >
+      <arg name="ns" value="UGV03/" />      
+    </include>
+
+    <!-- DISTANCE VISUALIZATION MAS -->
+    <include file="$(find jackal_range)/launch/vis_line_MAS.launch" >
+      <arg name="ns" value="UGV03/" />      
     </include> 
 
   </group>

@@ -16,6 +16,7 @@ from collections import deque
 import tf_conversions
 import tf2_ros
 import colorsys
+import rosgraph
 
 # message import
 import geometry_msgs.msg
@@ -747,7 +748,7 @@ class JackalRange:
             pub.publish(marker_array)                        
 
     # I want to visualize in RVIZ a line connecting two points
-    def publish_line_marker(self,odom,params_name,topic, color):
+    def publish_line_marker(self, odom, params_name, topic, color):
         
         # timers
         self.timers()
@@ -761,9 +762,44 @@ class JackalRange:
         # spin
         rospy.spin()
         
+    def publish_line_agents(self, color, subtopic, pubtopic):
+        
+        # timers
+        self.timers()
+        
+        # general stuff init            
+        rate = rospy.Rate(self.RATE)
+        
+        # odometry subscriber
+        topic_name = '/' + self.namespace + subtopic
+        odom_sub = message_filters.Subscriber(topic_name, Odometry)        
+        rospy.logwarn('vis_line_MAS subscribers: '  + str(topic_name))
+        
+        # Line publisher
+        pub = rospy.Publisher(pubtopic, MarkerArray, queue_size=10)
+        
+        # now we address the inter agent distances
+        self.get_ros_namespaces()
+        
+        # get the subscribers    
+        if self.namespaces:  
+            inter_agents_sub = []
+            for i in range(len(self.namespaces)):                
+                sub_name = '/' + self.namespaces[i] + subtopic
+                rospy.logwarn('vis_line_MAS subscribers: '  + str(sub_name))
+                inter_agents_sub.append(message_filters.Subscriber(sub_name, Odometry))
+                
+            # subscribe and publish        
+            list_subscribers = [odom_sub] + inter_agents_sub            
+            ts = message_filters.ApproximateTimeSynchronizer(list_subscribers, queue_size=10, slop=0.1)
+            ts.registerCallback(self.vis_agents_callback, color, pub)
+            
+            # spin
+            rospy.spin()
+        
         
     # callback when odometry is received and publishing the line markers
-    def vis_line_callback(self,msg, params_name, topic, color):
+    def vis_line_callback(self, msg, params_name, topic, color):
         
         # Line publisher
         pub = rospy.Publisher(topic+"/line", MarkerArray, queue_size=10)
@@ -821,9 +857,6 @@ class JackalRange:
             marker_line.pose.orientation.z = 0
             marker_line.pose.orientation.w = 1
             
-            # debug
-            # rospy.logwarn(tmp_anchors_params[i])
-
             # Define anchor point
             pointANC = Point()
             pointANC.x = float(tmp_anchors_params[i][2])
@@ -837,10 +870,7 @@ class JackalRange:
             pointUGV.x = pos[0]
             pointUGV.y = pos[1]
             pointUGV.z = pos[2]
-            
-            # debug
-            rospy.loginfo(pointUGV.z)            
-            
+
             # compute distance between the two points            
             # Extract coordinates
             x1, y1, z1 = pointANC.x, pointANC.y, pointANC.z
@@ -861,12 +891,116 @@ class JackalRange:
             marker_line.points.append(pointANC)
             marker_line.points.append(pointUGV)                               
                 
-            marker_array_line.markers.append(marker_line)   
-        
-
+            marker_array_line.markers.append(marker_line)  
+            
         # Publish the marker
         pub.publish(marker_array_line)
         
+    def vis_agents_callback(self, *args):
+        
+        # check number of arguments
+        if self.namespaces:
+            expected_num_inputs = len(self.namespaces) + 3
+        else:
+            expected_num_inputs = 3
+            
+        if len(args) != expected_num_inputs:
+            raise ValueError(f"Expected {expected_num_inputs} inputs, got {len(args)}")
+        else:
+            rospy.logwarn_once('Ranges received!')    
+        
+        # color is the second last element of *args
+        color = args[-2]
+        
+        # convert color
+        # Convert the string to a list of floats        
+        color = np.asarray([float(x) for x in color.split()])        
+        
+        # see if you need to generate colors    
+        if color[0] == -1:
+            color_gen = 1
+        else:
+            color_gen = 0
+            color = tuple(color)
+            
+        # define marker_array with lines
+        marker_array_line = MarkerArray()
+        
+        # current odometry
+        pos_local = args[0]
+        
+        # the publishing topic is the last element
+        pub = args[-1]
+        
+        if self.namespaces:
+            for i in range(len(self.namespaces)):   
+                
+                # current MAS pos
+                pos_MAS = args[i+1]
+                
+                # define color of the line
+                if color_gen == 1:
+                    color = self.generate_color(i, len(self.namespaces))                    
+                
+                # define marker for line
+                marker_line = Marker()    
+                
+                marker_line.header.frame_id = "world"
+                marker_line.header.stamp = rospy.Time.now()
+                marker_line.ns = self.namespaces[i] + "/line_markers"
+                marker_line.id = i
+                marker_line.type = Marker.LINE_STRIP
+                marker_line.action = Marker.ADD            
+                marker_line.scale.x = 0.01  # Line width
+                marker_line.color.r = color[0]
+                marker_line.color.g = color[1]
+                marker_line.color.b = color[2]
+                marker_line.color.a = color[3]
+
+                marker_line.pose.orientation.x = 0
+                marker_line.pose.orientation.y = 0
+                marker_line.pose.orientation.z = 0
+                marker_line.pose.orientation.w = 1
+                
+                # Define anchor point
+                pointANC = Point()
+                pointANC.x = pos_local.pose.pose.position.x
+                pointANC.y = pos_local.pose.pose.position.y
+                pointANC.z = pos_local.pose.pose.position.z
+
+                # Define UGV point
+                pointUGV = Point()                
+                pointUGV.x = pos_MAS.pose.pose.position.x
+                pointUGV.y = pos_MAS.pose.pose.position.y
+                pointUGV.z = pos_MAS.pose.pose.position.z
+
+                # debug
+                rospy.loginfo(pointUGV.z)            
+
+                # compute distance between the two points            
+                # Extract coordinates
+                x1, y1, z1 = pointANC.x, pointANC.y, pointANC.z
+                x2, y2, z2 = pointUGV.x, pointUGV.y, pointUGV.z
+
+                # Compute Euclidean distance
+                d = np.sqrt((x2 - x1)**2 + (y2 - y1)**2 + (z2 - z1)**2)
+
+                # append marker if it's within range
+                if d > RANGE:
+                    pointANC.x = 0.0
+                    pointANC.y = 0.0
+                    pointANC.z = 0.0
+                    pointUGV.x = 0.0
+                    pointUGV.y = 0.0
+                    pointUGV.z = 0.0
+
+                marker_line.points.append(pointANC)
+                marker_line.points.append(pointUGV)                               
+
+                marker_array_line.markers.append(marker_line)
+            
+            # Publish the marker
+            pub.publish(marker_array_line)
         
     # ok this is an OCD method. I need the anchors to have incremental colors
     # INPUT
@@ -878,3 +1012,27 @@ class JackalRange:
         value = 1.0  # Full brightness
         rgb = colorsys.hsv_to_rgb(hue, saturation, value)
         return rgb + (1.0,)  # Return as (r, g, b, a) tuple with full opacity
+    
+    # get all the namespaces
+    def get_ros_namespaces(self):        
+        
+        # Get the list of all active nodes
+        master = rosgraph.Master('/rostopic')
+        node_names = master.getSystemState()[0]
+        node_names = [node[0] for sublist in node_names for node in sublist]
+        
+        # Extract namespaces from node names
+        namespaces = set()
+        for name in node_names:
+            # Split the node name by slashes to get all namespace levels            
+            parts = name.split('/')            
+            # Reconstruct namespace from parts and add to the set
+            if len(parts) > 1:
+                namespaces.add(parts[1])
+    
+        # return
+        namespaces = list({name for name in namespaces if name.startswith('UGV')})
+        if str(self.namespace) in namespaces:
+            namespaces.remove(str(self.namespace))
+        self.namespaces = namespaces
+        rospy.logwarn_once('Namespaces found: ' + str(namespaces))

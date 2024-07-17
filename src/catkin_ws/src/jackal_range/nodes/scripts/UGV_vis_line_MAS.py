@@ -12,7 +12,7 @@ if __name__ == '__main__':
     try:
         
         # ros::init() the node
-        rospy.init_node('Line_visualization', anonymous=True)
+        rospy.init_node('MAS_line_visualization', anonymous=True)
         rospy.Rate(10)
         
         # define class instance
@@ -21,14 +21,13 @@ if __name__ == '__main__':
         # node started
         rospy.loginfo('Visualize line in rviz')     
         
-        # get params
-        odom = rospy.get_param('~odom', '')        
-        params_name = rospy.get_param('~params_name', '')        
-        topic = rospy.get_param('~topic', '')        
+        # get params        
         color = rospy.get_param('~color', '')
+        subtopic = rospy.get_param('~subtopic', '')
+        pubtopic = rospy.get_param('~pubtopic', '')
         
         # call talker
-        jr_instance.publish_line_marker(odom,params_name,topic,color)
+        jr_instance.publish_line_agents(color,subtopic,pubtopic)
         
     except rospy.ROSInterruptException:
-        rospy.loginfo("Visualization failed")
+        rospy.loginfo("MAS visualization failed")
