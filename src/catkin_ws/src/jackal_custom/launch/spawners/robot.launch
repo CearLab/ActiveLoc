@@ -54,7 +54,7 @@
     <!-- UWB sim node -->    
     <group unless="$(arg real_UWB)"> 
         <include file="$(find jackal_range)/launch/UWB_sim.launch">
-            <arg name="ns" value="$(arg ns)" />        
+            <arg name="ns" value="$(arg ns)" />
         </include>    
     </group>    
 

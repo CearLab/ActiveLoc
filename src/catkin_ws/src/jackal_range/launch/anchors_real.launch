@@ -16,8 +16,7 @@
     <group if="$(arg real)">        
         <node pkg="jackal_range" name="anchors_server_real_real" type="anchors_server.py">
             <param name="anchors_pos" type="string" value="" />                    
-            <param name="topic" type="string" value="/$(arg ns)AnchorsMarkersReal" />
-            <param name="params_name" type="string" value="/$(arg ns)AnchorsInfoReal" />        
+            <param name="topic_name" type="string" value="/$(arg ns)AnchorsInfoReal" />
         </node>  
     </group>
 
@@ -25,8 +24,7 @@
     <group unless="$(arg real)">         
         <node pkg="jackal_range" name="anchors_server_real_sim" type="anchors_server.py">
             <param name="anchors_pos" type="string" value="+$(arg AX) +$(arg AY) +$(arg AZ) -$(arg AX) +$(arg AY) +$(arg AZ) -$(arg AX) -$(arg AY) +$(arg AZ) +$(arg AX) -$(arg AY) +$(arg AZ)" />        
-            <param name="topic" type="string" value="/$(arg ns)AnchorsMarkersReal" />
-            <param name="params_name" type="string" value="/$(arg ns)AnchorsInfoReal" />        
+            <param name="topic_name" type="string" value="/$(arg ns)AnchorsInfoReal" />
         </node>  
     </group>    
 

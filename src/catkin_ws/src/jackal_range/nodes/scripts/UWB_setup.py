@@ -2,9 +2,7 @@
 # license removed for brevity
 
 import rospy
-import sys
-import serial
-import range.jackal_range as jr
+import range.UWB_real as jr
 
 if __name__ == '__main__':        
     
@@ -13,11 +11,9 @@ if __name__ == '__main__':
         # ros::init() the node
         rospy.init_node('UWB_setup', anonymous=True)
         
-        # define class instance
-        jr_instance = jr.JackalRange()
-        
-        # node started
-        rospy.loginfo('UWB setup')                
+        # instance jackal_move
+        jr_instance = jr.UWB_real()
+        rate = rospy.Rate(jr_instance.RATE)
         
         # call talker
         jr_instance.talker_setup()

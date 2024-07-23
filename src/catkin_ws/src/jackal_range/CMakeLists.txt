@@ -50,6 +50,7 @@ catkin_python_setup()
 add_message_files(
   FILES
   RD_recap.msg  
+  AnchorsInfo.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -165,8 +166,6 @@ catkin_install_python(PROGRAMS
   nodes/scripts/UWB_read.py 
   nodes/scripts/UWB_sim.py
   nodes/scripts/anchors_server.py
-  nodes/scripts/UGV_vis_line.py
-  nodes/scripts/UGV_vis_line_MAS.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

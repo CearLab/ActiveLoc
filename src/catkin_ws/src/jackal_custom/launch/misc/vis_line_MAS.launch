@@ -4,14 +4,14 @@
     <arg name="ns" default="" /> 
 
     <!-- LINE VISUALIZATION - GROUND TRUTH -->
-    <node pkg="jackal_range" name="UGV_vis_line_GT_MAS" type="UGV_vis_line_MAS.py" >        
+    <node pkg="jackal_custom" name="UGV_vis_line_GT_MAS" type="UGV_vis_line_MAS.py" >        
         <param name="subtopic" type="string" value="/ground_truth/state" />
         <param name="pubtopic" type="string" value="/$(arg ns)/Agents/vis_line/GT" />
         <param name="color" type="string" value="0.0 1.0 0.0 1.0" />
     </node>  
 
     <!-- LINE VISUALIZATION - FROM EKF -->
-    <node pkg="jackal_range" name="UGV_vis_line_EKF_MAS" type="UGV_vis_line_MAS.py" >        
+    <node pkg="jackal_custom" name="UGV_vis_line_EKF_MAS" type="UGV_vis_line_MAS.py" >        
         <param name="subtopic" type="string" value="/odometry/filtered" />
         <param name="pubtopic" type="string" value="/$(arg ns)/Agents/vis_line/EKF" />
         <param name="color" type="string" value="1.0 0.0 0.0 1.0" />
