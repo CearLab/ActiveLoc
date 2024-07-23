@@ -4,18 +4,17 @@ import rospy
 import move.jackal_move as jm
 import nav_msgs.msg
 from geometry_msgs.msg import TransformStamped
-import tf
 
 if __name__ == '__main__':
     
     try:        
         
+        # instance jackal_move
+        jm_instance = jm.JackalMove()
+        
         # Initializes a rospy node 
         rospy.init_node('encoder_parser', anonymous=True)  
-        rate = rospy.Rate(10)
-          
-        # Create a TransformBroadcaster object
-        broadcaster = tf.TransformBroadcaster()     
+        rate = rospy.Rate(jm_instance.RATE)
         
         feedback_topic = rospy.get_param('~feedback_topic', '')
         publish_topic = rospy.get_param('~publish_topic', '')

@@ -2,10 +2,7 @@
 # license removed for brevity
 
 import rospy
-import sys
-import serial
-import numpy as np
-import range.jackal_range as jr
+from vis.jackal_vis import JackalVis
 
 if __name__ == '__main__':        
     
@@ -13,13 +10,10 @@ if __name__ == '__main__':
         
         # ros::init() the node
         rospy.init_node('Line_visualization', anonymous=True)
-        rospy.Rate(10)
         
-        # define class instance
-        jr_instance = jr.JackalRange()
-        
-        # node started
-        rospy.loginfo('Visualize line in rviz')     
+        # instance jackal_move
+        jvis_instance = JackalVis()
+        rospy.Rate(jvis_instance.RATE)
         
         # get params
         odom = rospy.get_param('~odom', '')        
@@ -28,7 +22,8 @@ if __name__ == '__main__':
         color = rospy.get_param('~color', '')
         
         # call talker
-        jr_instance.publish_line_marker(odom,params_name,topic,color)
+        jvis_instance.publish_line_marker(odom,params_name,topic,color)
+        rospy.spin()
         
     except rospy.ROSInterruptException:
         rospy.loginfo("Visualization failed")

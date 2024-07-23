@@ -32,7 +32,7 @@ class PFnode:
     # range init 
     rangesub = None
     current_range_msg = RD_recap()
-    last_range_msg_time = 0.                  
+    last_range_msg_time = 0.              
     ctrl_odom_msg_curr_range_time = None
     
     # cmd_vel init 
@@ -70,7 +70,7 @@ class PFnode:
         self.NUM_OF_PARTICLES = int(rospy.get_param('~N_particles', '')) 
         
         # Initialize the ROS node
-        rospy.loginfo('starting init')
+        rospy.logwarn_once('PF starting init')
         self.init_metry()
         self.init_variables()
         self.namespace_handler(NS_name)
@@ -78,7 +78,7 @@ class PFnode:
         self.publishers()
         self.define_models()
         self.init_timers()
-        rospy.loginfo('finished init')
+        rospy.logwarn_once('PF finished init')
 
     # init metry
     def init_metry(self):
@@ -237,7 +237,7 @@ class PFnode:
         for i in range(NUM_OF_BEACONS):
             initial_state[get_beacon_index(i)] = np.array([self.current_range_msg.A_POS[i*3 + 0], self.current_range_msg.A_POS[i*3 + 1]])
             set_beacon_height(self.current_range_msg.A_POS[i*3 + 2])
-            rospy.logwarn('beacon height read: ' + str(self.current_range_msg.A_POS[i*3 + 2]))
+            rospy.logwarn(self.namespace + ': beacon height read: ' + str(self.current_range_msg.A_POS[i*3 + 2]))
 
             self.particles[:,get_beacon_index(i)] = initial_state[get_beacon_index(i)]
         
@@ -252,6 +252,7 @@ class PFnode:
     
     def is_particle_filter_time(self):
         if self.current_range_msg.header.stamp.to_sec() <= self.last_range_msg_time:
+            rospy.loginfo(self.namespace +  ': timer issue in the PF!')
             return False
         if np.any(np.array(self.current_range_msg.D) < 0):
             rospy.logfatal('measurement rejected: range to one of the beacons is negative')
@@ -264,7 +265,7 @@ class PFnode:
     def timer_callback(self, event):
         
         # log first timer callback
-        rospy.loginfo_once('first timer callback, dt: %s', self.current_range_msg.header.stamp.to_sec() - self.last_range_msg_time)
+        rospy.logwarn_once('first timer callback, dt: %s', self.current_range_msg.header.stamp.to_sec() - self.last_range_msg_time)
         
         # if the range message is newer than the last range message time
         if self.is_particle_filter_time():

@@ -2,9 +2,7 @@
 # license removed for brevity
 
 import rospy
-import sys
-import serial
-import range.jackal_range as jr
+import range.UWB_server as jr
 
 if __name__ == '__main__':    
     
@@ -13,23 +11,16 @@ if __name__ == '__main__':
         # ros::init() the node
         rospy.init_node('Anchors_server', anonymous=True)
         
-        # define class instance
-        jr_instance = jr.JackalRange()
-        
-        # node started
-        rospy.loginfo('Anchors setup')     
-        
         # mode (0-move_base, 1-prop control)                
         anchors_pos = rospy.get_param('~anchors_pos', '')        
-        topic = rospy.get_param('~topic', '')
-        params_name = rospy.get_param('~params_name', '')
+        topic_name = rospy.get_param('~topic_name', '')
         
-        rospy.loginfo(anchors_pos)        
-        rospy.loginfo(topic)
-        rospy.loginfo(params_name)
+        # instance jackal_move
+        jr_instance = jr.UWB_server(topic_name, anchors_pos)
+        rate = rospy.Rate(jr_instance.RATE)
         
         # call talker
-        jr_instance.anchors_server(anchors_pos,topic,params_name)
+        rospy.spin()
         
     except rospy.ROSInterruptException:
-        rospy.loginfo("UWB_setup failed")
+        rospy.loginfo("Anchors server failed")
