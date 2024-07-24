@@ -226,6 +226,4 @@ class JackalMove(JackalRange):
         # Publish the odometry message
         pub.publish(data)
 
-        # rospy.logwarn('Encoder parsed: time '+ str(rospy.Time.now()))
-
         return 0
