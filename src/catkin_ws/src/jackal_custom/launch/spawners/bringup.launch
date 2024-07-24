@@ -15,7 +15,7 @@
   <arg name="real_UWB" default="true" /> 
 
   <!-- simulation time -->
-  <arg name="use_sim_time" default="true" />
+  <arg name="use_sim_time" default="false" />
 
   <!-- Launch Gazebo with the specified world -->
   <!-- this is run when the arg $real_robot is false -->

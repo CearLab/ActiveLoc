@@ -16,7 +16,6 @@ import geometry_msgs.msg
 import nav_msgs.msg
 
 from jackal_msgs.msg import Feedback
-from general.jackal_general import JackalGeneral
 from range.jackal_range import JackalRange
 
 class JackalMove(JackalRange):

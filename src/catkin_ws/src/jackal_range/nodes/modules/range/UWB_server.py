@@ -13,7 +13,6 @@ import message_filters
 # custom message import
 from jackal_range.msg import RD_recap as RD
 from jackal_range.msg import AnchorsInfo 
-from general.jackal_general import JackalGeneral
 from range.jackal_range import JackalRange
 
 
