@@ -3,7 +3,7 @@
   <arg name="enable_ekf" default="$(optenv ENABLE_EKF true)"/>
   <arg name="ns" default="" />  
   <arg name="joy_dev" default="/dev/input/js0" />
-  <arg name="ns_name" default="" />
+  <arg name="real_robot" default="" />
 
   <arg name="baselinkname" default="$(arg ns)base_link" />
   <arg name="odomlinkname" default="$(arg ns)odom" />
@@ -11,8 +11,17 @@
   <rosparam command="load" file="$(find jackal_move)/control/config/control.yaml" />
   <rosparam param="jackal_velocity_controller/base_frame_id" subst_value="True">$(arg baselinkname)</rosparam>
   <rosparam param="jackal_velocity_controller/odom_frame_id" subst_value="True">$(arg odomlinkname)</rosparam>
-  <rosparam param="jackal_velocity_controller/left_wheel" subst_value="True">['$(arg ns)front_left_wheel', '$(arg ns)rear_left_wheel']</rosparam>
-  <rosparam param="jackal_velocity_controller/right_wheel" subst_value="True">['$(arg ns)front_right_wheel', '$(arg ns)rear_right_wheel']</rosparam>
+
+  <!-- this I still need to understand why -->
+  <group if="$(arg real_robot)">
+    <rosparam param="jackal_velocity_controller/left_wheel" subst_value="True">['front_left_wheel', 'rear_left_wheel']</rosparam>
+    <rosparam param="jackal_velocity_controller/right_wheel" subst_value="True">['front_right_wheel', 'rear_right_wheel']</rosparam>
+  </group>
+  <group unless="$(arg real_robot)">
+    <rosparam param="jackal_velocity_controller/left_wheel" subst_value="True">['$(arg ns)front_left_wheel', '$(arg ns)rear_left_wheel']</rosparam>
+    <rosparam param="jackal_velocity_controller/right_wheel" subst_value="True">['$(arg ns)front_right_wheel', '$(arg ns)rear_right_wheel']</rosparam>
+  </group>
+
   <node name="controller_spawner" pkg="controller_manager" type="spawner" 
     args="jackal_joint_publisher jackal_velocity_controller" >
   </node>

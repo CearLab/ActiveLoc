@@ -62,6 +62,8 @@
         "./src/catkin_ws/src/jackal_move/nodes/modules",
         "./src/catkin_ws/src/jackal_pf/nodes/modules",
         "./src/catkin_ws/src/jackal_custom/nodes/modules/general",
+        "./src/catkin_ws/src/jackal_custom/nodes/modules",
+        "./src/catkin_ws/src/jackal_custom/nodes/modules",
         "./src/catkin_ws/src/jackal_custom/nodes/modules"
     ],
     "cmake.configureOnOpen": false,

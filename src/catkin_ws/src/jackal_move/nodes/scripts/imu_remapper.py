@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 
 import rospy
-import move.jackal_move as jm
+from move.jackal_move import JackalMove
 import sensor_msgs.msg
 
 if __name__ == '__main__':
     
-    try:    
-        
-        # instance jackal_move
-        jm_instance = jm.JackalMove()
+    try:
         
         # Initializes a rospy node 
-        rospy.init_node('imu_remapper', anonymous=True)  
+        rospy.init_node('imu_remapper', anonymous=True)
+        
+        # instance jackal_move
+        jm_instance = JackalMove()
         rate = rospy.Rate(jm_instance.RATE)
         
         feedback_topic = rospy.get_param('~subscribe_topic', '')
@@ -23,7 +23,7 @@ if __name__ == '__main__':
         odom_pub = rospy.Publisher(publish_topic, sensor_msgs.msg.Imu, queue_size=10)
 
         # Subscriber to the feedback topic
-        sub = rospy.Subscriber(feedback_topic, sensor_msgs.msg.Imu, lambda data: jm.imu_remapper(data, odom_pub, ns))
+        sub = rospy.Subscriber(feedback_topic, sensor_msgs.msg.Imu, lambda data: jm_instance.imu_remapper(data, odom_pub, ns))
 
         # loop
         rospy.spin()
