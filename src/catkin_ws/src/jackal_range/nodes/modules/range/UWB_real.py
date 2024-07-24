@@ -359,7 +359,7 @@ class UWB_real(JackalRange):
             TagID = sys.argv[3]
             
         # publisher
-        pub = rospy.Publisher('range', RD, queue_size=10)
+        pub = rospy.Publisher('Anchors/range', RD, queue_size=10)
 
         # start serial
         myserial = serial.Serial(SerialPort, BaudRate, timeout=0.5, 
@@ -407,7 +407,7 @@ class UWB_real(JackalRange):
         self.serialWrite(myserial, data, sleepLong, print_flag)        
         
         # signal
-        rospy.loginfo('Start publishing')
+        rospy.logwarn_once('Start publishing')
 
         # loop
         while not rospy.is_shutdown():          
@@ -437,8 +437,10 @@ class UWB_real(JackalRange):
                     
                         # update the param
                         tmp_anchors_params[index] = [NID[index], str(self.ID[index]), float(A[index][0]), float(A[index][1]), float(A[index][2])]
+                        tmp_tag_params[index] = [NID[index], str(self.ID[index]), D[index]]
                         
                     self.anchors_params = tmp_anchors_params
+                    self.tag_params = tmp_tag_params
                     
                     # now setup the publisher
                     msgD.header.stamp = rospy.Time.now()

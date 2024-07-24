@@ -12,7 +12,7 @@ if __name__ == '__main__':
         rospy.init_node('Line_visualization', anonymous=True)
         
         # get params
-        odom_topic = rospy.get_param('~odom_topic', '')
+        odom_topic = ''
         anchors_topic = rospy.get_param('~anchors_topic', '')
         pub_topic = rospy.get_param('~pub_topic', '')        
         color = rospy.get_param('~color', '')
@@ -22,7 +22,7 @@ if __name__ == '__main__':
         rospy.Rate(jvis_instance.RATE)
         
         # call talker
-        jvis_instance.publish_line_marker()
+        jvis_instance.publish_anchors_marker()
         rospy.spin()
         
     except rospy.ROSInterruptException:

@@ -11,45 +11,69 @@ import colorsys
 from geometry_msgs.msg import Point
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
+import message_filters
 
 # custom message import
 from jackal_range.msg import RD_recap as RD
+from jackal_range.msg import AnchorsInfo
 from general.jackal_general import JackalGeneral
 from range.jackal_range import JackalRange
 
 class JackalVis(JackalRange):
     
-    def __init__(self):
+    marker_array_line = MarkerArray()
+    marker_array_anchor = MarkerArray()
+    
+    def __init__(self, anchors_topic_name, odometry_topic_name, pub_topic, color):
+        
         super().__init__()
+        
+        self.sub_anchors_name = anchors_topic_name
+        self.sub_odometry_name = odometry_topic_name
+        self.pub_topic = pub_topic
+        self.color = np.asarray([float(x) for x in color.split()]) 
+        
+        # class constructor        
+        self.namespace_handler(None)
+        
+        # other stuff
+        rospy.sleep(2)
+        self.get_ros_namespaces()
 
-    def publish_line_marker(self, odom, params_name, topic, color):
-        sub = rospy.Subscriber(odom, Odometry, lambda msg: self.vis_line_callback(msg, params_name, topic, color))
+    def publish_line_marker(self):
         
-    def vis_line_callback(self, msg, params_name, topic, color):
+        # Publisher and subscriber local
+        self.uwb_pub_topic_markers = rospy.Publisher(self.pub_topic, MarkerArray, queue_size=10)
         
-        pub = rospy.Publisher(topic+"/line", MarkerArray, queue_size=10)
-        marker_array_line = MarkerArray()        
+        # get the ground truth topic and the publish topic
+        odometry_topic_local = self.sub_odometry_name
+        self.ground_truth_sub_local = message_filters.Subscriber(odometry_topic_local, Odometry)
+        anchors_topic_local =  self.sub_anchors_name
+        self.anchors_sub_local = message_filters.Subscriber(anchors_topic_local, AnchorsInfo)
         
-        try:
-            tmp_anchors_params = rospy.get_param(params_name)
-        except:
-            rospy.logfatal('Params not found! (JackVis)')
-            return
+        list_subscribers = [self.ground_truth_sub_local] + [self.anchors_sub_local]
         
-        N_A = len(tmp_anchors_params)
-        color = np.asarray([float(x) for x in color.split()])  
+        rospy.logwarn([str(tmp.topic) for tmp in list_subscribers])
+        ts = message_filters.ApproximateTimeSynchronizer(list_subscribers, queue_size=10, slop=0.1)
+        ts.registerCallback(self.vis_line_callback)
         
-        if color[0] == -1:
+    def vis_line_callback(self, *args):
+        
+        odom = args[0]
+        anchors = args[1]
+        
+        if self.color[0] == -1:
             color_gen = 1
         else:
             color_gen = 0
-            color = tuple(color)   
+            color = tuple(self.color)   
+            
+        self.marker_array_line = MarkerArray()
         
-        
-        for i in range(N_A):
+        for i in range(self.N_A):
             
             if color_gen == 1:
-                color = self.generate_color(i, N_A)     
+                color = self.generate_color(i, self.N_A)     
                 
             # set marker
             marker_line = Marker()    
@@ -70,12 +94,14 @@ class JackalVis(JackalRange):
             marker_line.pose.orientation.w = 1
             
             pointANC = Point()
-            pointANC.x = float(tmp_anchors_params[i][2])
-            pointANC.y = float(tmp_anchors_params[i][3])
-            pointANC.z = float(tmp_anchors_params[i][4])
+            pointANC.x = float(anchors.A_POS[3*i+0])
+            pointANC.y = float(anchors.A_POS[3*i+1])
+            pointANC.z = float(anchors.A_POS[3*i+2])
             
             pointUGV = Point()
-            pos = np.array([msg.pose.pose.position.x, msg.pose.pose.position.y, msg.pose.pose.position.z])
+            pos = np.array([odom.pose.pose.position.x, 
+                            odom.pose.pose.position.y, 
+                            odom.pose.pose.position.z])
             pos = self.DCM@(pos + self.trans)
             pointUGV.x = pos[0]
             pointUGV.y = pos[1]
@@ -95,8 +121,9 @@ class JackalVis(JackalRange):
                 
             marker_line.points.append(pointANC)
             marker_line.points.append(pointUGV)                               
-            marker_array_line.markers.append(marker_line)  
-        pub.publish(marker_array_line)
+            self.marker_array_line.markers.append(marker_line)  
+        
+        self.uwb_pub_topic_markers.publish(self.marker_array_line)
         
     def publish_line_agents(self, color, subtopic, pubtopic):
         
@@ -184,6 +211,65 @@ class JackalVis(JackalRange):
                 if d > self.RANGE:
                     marker_line.points.append(pointANC)
             pub.publish(marker_array_line)    
+    
+    def publish_anchors_marker(self):
+        
+        # Publisher and subscriber local
+        self.uwb_pub_topic_markers = rospy.Publisher(self.pub_topic, MarkerArray, queue_size=10)
+        
+        # get the ground truth topic and the publish topic
+        anchors_topic_local =  self.sub_anchors_name
+        self.anchors_sub_local = message_filters.Subscriber(anchors_topic_local, AnchorsInfo)
+        
+        list_subscribers = [self.anchors_sub_local]
+        
+        rospy.logwarn([str(tmp.topic) for tmp in list_subscribers])
+        ts = message_filters.ApproximateTimeSynchronizer(list_subscribers, queue_size=10, slop=0.1)
+        ts.registerCallback(self.vis_anchor_callback)
+    
+    def vis_anchor_callback(self, *args):
+        
+        anchors = args[0]
+        # rospy.logwarn(anchors)
+        
+        if self.color[0] == -1:
+            color_gen = 1
+        else:
+            color_gen = 0
+            color = tuple(self.color)   
+            
+        self.marker_array_anchor = MarkerArray()
+        
+        for i in range(self.N_A):
+            
+            if color_gen == 1:
+                color = self.generate_color(i, self.N_A)     
+                
+            # set marker
+            marker_anchor = Marker()    
+            marker_anchor.header.frame_id = "world"
+            marker_anchor.header.stamp = rospy.Time.now()
+            marker_anchor.ns = "AN" + str(i) + "/anchor_markers"
+            marker_anchor.id = i
+            marker_anchor.type = Marker.CUBE
+            marker_anchor.action = Marker.ADD            
+            marker_anchor.scale.x = 0.25
+            marker_anchor.scale.y = 0.25
+            marker_anchor.scale.z = 0.25
+            marker_anchor.color.r = color[0]
+            marker_anchor.color.g = color[1]
+            marker_anchor.color.b = color[2]
+            marker_anchor.color.a = color[3]
+            marker_anchor.pose.position.x = anchors.A_POS[3*i+0]
+            marker_anchor.pose.position.y = anchors.A_POS[3*i+1]
+            marker_anchor.pose.position.z = anchors.A_POS[3*i+2]
+            marker_anchor.pose.orientation.x = 0
+            marker_anchor.pose.orientation.y = 0
+            marker_anchor.pose.orientation.z = 0
+            marker_anchor.pose.orientation.w = 1
+            self.marker_array_anchor.markers.append(marker_anchor)  
+        
+        self.uwb_pub_topic_markers.publish(self.marker_array_anchor)
     
     def generate_color(self,index, total_markers):
             hue = index / float(total_markers)  # Vary the hue between 0 and 1

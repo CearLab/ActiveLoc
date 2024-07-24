@@ -8,6 +8,7 @@ import time
 import sys
 import numpy as np
 import re
+import message_filters
 
 # custom message import
 from jackal_range.msg import RD_recap as RD
@@ -35,6 +36,11 @@ class UWB_server(JackalRange):
             row[-3:] = anchors_pos[3*(i):3*(i+1)]
             self.anchors_params[i] = row
         
+        range_topic =  '/' + self.namespace + '/Anchors/range'
+        self.anchors_sub = message_filters.Subscriber(range_topic, RD)
+        ts = message_filters.ApproximateTimeSynchronizer([self.anchors_sub], queue_size=10, slop=0.1)
+        ts.registerCallback(self.setup_anchor_params)
+        
         self.anchors_topic = topic_name
         self.anchors_info_publisher = rospy.Publisher(self.anchors_topic, AnchorsInfo, queue_size=10)
         self.AnchorsInfoMsg = AnchorsInfo()
@@ -45,11 +51,21 @@ class UWB_server(JackalRange):
     def timer_callback(self, event):
         self.anchors_server()
         
+    def setup_anchor_params(self, msg):
+        for i in range(self.NUM_A):
+            row = self.anchors_params[i]
+            row[-3:] = msg.A_POS[3*i:3*(i+1)]
+            self.anchors_params[i] = row
+        
     def anchors_server(self):
         
         self.AnchorsInfoMsg.header.stamp = rospy.Time.now()
         self.AnchorsInfoMsg.N_ID = []
         self.AnchorsInfoMsg.A_ID = []
         self.AnchorsInfoMsg.NUM_A = len(self.anchors_params)
-        self.AnchorsInfoMsg.A_POS = np.concatenate([row[-3:] for row in self.anchors_params]).astype(float)
+        try:
+            self.AnchorsInfoMsg.A_POS = np.concatenate([row[-3:] for row in self.anchors_params]).astype(float)
+        except:
+            rospy.logwarn_once('No anchor positions')
+            return
         self.anchors_info_publisher.publish(self.AnchorsInfoMsg)
