@@ -1,0 +1,20 @@
+<launch>    
+
+    <!-- Configuration of Jackal which you would like to simulate. -->
+    <arg name="ns" default="" /> 
+
+    <!-- LINE VISUALIZATION - GROUND TRUTH -->
+    <node pkg="jackal_custom" name="UGV_vis_anchors_GT" type="UGV_vis_anchors.py" >
+        <param name="anchors_topic" type="string" value="/$(arg ns)AnchorsInfoReal" />
+        <param name="pub_topic" type="string" value="/$(arg ns)vis_anchors/real" />
+        <param name="color" type="string" value="0.0 1.0 0.0 0.5" />
+    </node>  
+
+    <!-- LINE VISUALIZATION - FROM EKF -->
+    <node pkg="jackal_custom" name="UGV_vis_anchors_EKF" type="UGV_vis_anchors.py" >
+        <param name="anchors_topic" type="string" value="/$(arg ns)AnchorsInfoEst" />
+        <param name="pub_topic" type="string" value="/$(arg ns)vis_anchors/est" />
+        <param name="color" type="string" value="1.0 0.0 0.0 0.5" />
+    </node>  
+
+</launch>

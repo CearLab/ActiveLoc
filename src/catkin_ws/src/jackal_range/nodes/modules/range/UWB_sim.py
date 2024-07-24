@@ -105,7 +105,7 @@ class UWB_sim(JackalRange):
                                 ]).T
             
             # local position
-            tag_pos_local = self.DCM_local@(agent_pos_local + self.trans_local)
+            tag_pos_local = self.DCM_local_tag@(agent_pos_local + self.trans_local)
             # distance from the anchors
             self.op.D = [self.calc_range_meas(tag_pos_local, np.array(self.op.A_POS[i*3:i*3+3])) for i in range(self.N_A)]
             
@@ -147,9 +147,9 @@ class UWB_sim(JackalRange):
                     
                     # compute transformation
                     try:
-                        tag_pos_MAS = self.DCM_MAS[i]@(agent_pos_MAS + self.trans_MAS[i])
-                    except:
-                        rospy.log_fatal('DCM_MAS: ' + self.DCM_MAS)
+                        tag_pos_MAS = self.DCM_local_tag_agents[i]@(agent_pos_MAS + self.trans_MAS[i])
+                    except Exception as e:
+                        rospy.logfatal('DCM_local_tag_agents: ' + str(e))
                     
                     # distance from the anchors
                     d = self.calc_range_meas(tag_pos_local, tag_pos_MAS)
@@ -212,13 +212,13 @@ class UWB_sim(JackalRange):
             
             # correct formatting
             matrix = tf_conversions.transformations.quaternion_matrix(rot)
-            self.DCM_local = matrix[:3,:3]
+            self.DCM_local_tag = matrix[:3,:3]
             self.trans_local = np.array(trans).T                        
             
             # now I need to check the same for all the self.namespaces                                    
             if self.namespaces:
                 
-                self.DCM_MAS = [np.zeros((3, 3)) for _ in range(len(self.namespaces))]
+                self.DCM_local_tag_agents = [np.zeros((3, 3)) for _ in range(len(self.namespaces))]
                 self.trans_MAS = [np.zeros((3, 1)) for _ in range(len(self.namespaces))]
             
                 for i in range(len(self.namespaces)):
@@ -249,7 +249,7 @@ class UWB_sim(JackalRange):
                     
                     # correct formatting
                     matrix = tf_conversions.transformations.quaternion_matrix(rot)
-                    self.DCM_MAS[i] = matrix[:3,:3]
+                    self.DCM_local_tag_agents[i] = matrix[:3,:3]
                     self.trans_MAS[i] = np.array(trans).T
                     
             # if you get here then you have all the transformations available

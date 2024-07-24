@@ -15,9 +15,14 @@
   <group ns="UGV01">
 
     <!-- DISTANCE VISUALIZATION -->
-    <!-- <include file="$(find jackal_custom)/launch/misc/vis_line.launch" >
+    <include file="$(find jackal_custom)/launch/misc/vis_line.launch" >
       <arg name="ns" value="UGV01/" />      
-    </include>  -->
+    </include> 
+
+    <!-- ANCHORS VISUALIZATION -->
+    <include file="$(find jackal_custom)/launch/misc/vis_anchors.launch" >
+      <arg name="ns" value="UGV01/" />      
+    </include> 
 
   </group>
 
