@@ -53,7 +53,7 @@ class JackalVis(JackalRange):
         
         list_subscribers = [self.ground_truth_sub_local] + [self.anchors_sub_local]
         
-        rospy.logwarn([str(tmp.topic) for tmp in list_subscribers])
+        rospy.logwarn(['Publish line anchors: ' + str(tmp.topic) for tmp in list_subscribers])
         ts = message_filters.ApproximateTimeSynchronizer(list_subscribers, queue_size=10, slop=0.1)
         ts.registerCallback(self.vis_line_callback)
         
@@ -125,58 +125,50 @@ class JackalVis(JackalRange):
         
         self.uwb_pub_topic_markers.publish(self.marker_array_line)
         
-    def publish_line_agents(self, color, subtopic, pubtopic):
+    def publish_line_agents(self):
         
-        topic_name = '/' + self.namespace + subtopic
-        odom_sub = message_filters.Subscriber(topic_name, Odometry)        
+        # Publisher and subscriber local
+        odometry_topic_local = '/' + self.namespace + self.sub_odometry_name
+        self.ground_truth_sub_local = message_filters.Subscriber(odometry_topic_local, Odometry)
         
-        rospy.logwarn('vis_line_MAS subscribers: '  + str(topic_name))
-        
-        pub = rospy.Publisher(pubtopic, MarkerArray, queue_size=10)
+        # get other agents
         self.get_ros_namespaces()
         
         if self.namespaces:  
             
             inter_agents_sub = []
+            pub_name = '/' + self.namespace + self.pub_topic
+            rospy.logwarn(self.namespace + ' MAS line publisher: ' + pub_name)
+            self.inter_agents_pub = rospy.Publisher(pub_name, MarkerArray, queue_size=10)
             
             for i in range(len(self.namespaces)):                
-                sub_name = '/' + self.namespaces[i] + subtopic
-                rospy.logwarn('vis_line_MAS subscribers: '  + str(sub_name))
+                sub_name = '/' + self.namespaces[i] + self.sub_odometry_name
                 inter_agents_sub.append(message_filters.Subscriber(sub_name, Odometry))
                 
-            list_subscribers = [odom_sub] + inter_agents_sub            
+            list_subscribers = [self.ground_truth_sub_local] + inter_agents_sub
+            rospy.logwarn(['Subscribe line MAS: ' + str(tmp.topic) for tmp in list_subscribers])
+            
             ts = message_filters.ApproximateTimeSynchronizer(list_subscribers, queue_size=10, slop=0.1)
-            ts.registerCallback(self.vis_agents_callback, color, pub)
+            ts.registerCallback(self.vis_agents_callback)
         
     def vis_agents_callback(self, *args):
         
-        if self.namespaces:
-            expected_num_inputs = len(self.namespaces) + 3
-        else:
-            expected_num_inputs = 3
-        if len(args) != expected_num_inputs:
-            raise ValueError(f"Expected {expected_num_inputs} inputs, got {len(args)}")
-        else:
-            rospy.logwarn_once('Ranges received!')    
-            
-        color = args[-2]
-        color = np.asarray([float(x) for x in color.split()])        
-        
-        if color[0] == -1:
+        if self.color[0] == -1:
             color_gen = 1
         else:
             color_gen = 0
-            color = tuple(color)
-            
-        marker_array_line = MarkerArray()
+            color = tuple(self.color)
+        
+        self.marker_array_line = MarkerArray()    
         pos_local = args[0]
-        pub = args[-1]
         
         if self.namespaces:
             for i in range(len(self.namespaces)):   
+                
                 pos_MAS = args[i+1]
                 if color_gen == 1:
                     color = self.generate_color(i, len(self.namespaces))                    
+                    
                 marker_line = Marker()    
                 marker_line.header.frame_id = "world"
                 marker_line.header.stamp = rospy.Time.now()
@@ -209,8 +201,18 @@ class JackalVis(JackalRange):
                 d = np.sqrt((x2 - x1)**2 + (y2 - y1)**2 + (z2 - z1)**2)
                 
                 if d > self.RANGE:
-                    marker_line.points.append(pointANC)
-            pub.publish(marker_array_line)    
+                    pointANC.x = 0.0
+                    pointANC.y = 0.0
+                    pointANC.z = 0.0
+                    pointUGV.x = 0.0
+                    pointUGV.y = 0.0
+                    pointUGV.z = 0.0
+                
+                marker_line.points.append(pointANC)
+                marker_line.points.append(pointUGV)
+                self.marker_array_line.markers.append(marker_line)
+
+            self.inter_agents_pub.publish(self.marker_array_line)
     
     def publish_anchors_marker(self):
         
@@ -223,7 +225,7 @@ class JackalVis(JackalRange):
         
         list_subscribers = [self.anchors_sub_local]
         
-        rospy.logwarn([str(tmp.topic) for tmp in list_subscribers])
+        rospy.logwarn(['Publish anchor server:' + str(tmp.topic) for tmp in list_subscribers])
         ts = message_filters.ApproximateTimeSynchronizer(list_subscribers, queue_size=10, slop=0.1)
         ts.registerCallback(self.vis_anchor_callback)
     
