@@ -19,10 +19,15 @@
       <arg name="ns" value="UGV01/" />      
     </include> 
 
-    <!-- DISTANCE VISUALIZATION MAS -->
+    <!-- ANCHORS VISUALIZATION -->
+    <include file="$(find jackal_custom)/launch/misc/vis_anchors.launch" >
+      <arg name="ns" value="UGV01/" />
+    </include> 
+
+    <!-- DISTANCE VISUALIZATION - MAS-->
     <include file="$(find jackal_custom)/launch/misc/vis_line_MAS.launch" >
-      <arg name="ns" value="UGV01/" />      
-    </include>
+      <arg name="ns" value="UGV02/" />      
+    </include> 
 
   </group>
 
@@ -30,14 +35,19 @@
   <group ns="UGV02">    
 
     <!-- DISTANCE VISUALIZATION -->
-    <!-- <include file="$(find jackal_custom)/launch/vis_line.launch" >
+    <include file="$(find jackal_custom)/launch/misc/vis_line.launch" >
       <arg name="ns" value="UGV02/" />      
-    </include> -->
+    </include> 
 
-    <!-- DISTANCE VISUALIZATION MAS -->
-    <!-- <include file="$(find jackal_custom)/launch/vis_line_MAS.launch" >
+    <!-- ANCHORS VISUALIZATION -->
+    <include file="$(find jackal_custom)/launch/misc/vis_anchors.launch" >
+      <arg name="ns" value="UGV02/" />
+    </include>
+
+    <!-- DISTANCE VISUALIZATION - MAS-->
+    <include file="$(find jackal_custom)/launch/misc/vis_line_MAS.launch" >
       <arg name="ns" value="UGV02/" />      
-    </include>  -->
+    </include> 
 
   </group>
 
@@ -45,14 +55,19 @@
   <group ns="UGV03">    
 
     <!-- DISTANCE VISUALIZATION -->
-    <!-- <include file="$(find jackal_custom)/launch/vis_line.launch" >
+    <include file="$(find jackal_custom)/launch/misc/vis_line.launch" >
       <arg name="ns" value="UGV03/" />      
-    </include> -->
+    </include> 
 
-    <!-- DISTANCE VISUALIZATION MAS -->
-    <!-- <include file="$(find jackal_custom)/launch/vis_line_MAS.launch" >
+    <!-- ANCHORS VISUALIZATION -->
+    <include file="$(find jackal_custom)/launch/misc/vis_anchors.launch" >
+      <arg name="ns" value="UGV03/" />
+    </include>
+
+    <!-- DISTANCE VISUALIZATION - MAS-->
+    <include file="$(find jackal_custom)/launch/misc/vis_line_MAS.launch" >
       <arg name="ns" value="UGV03/" />      
-    </include>  -->
+    </include> 
 
   </group>
 

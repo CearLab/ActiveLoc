@@ -14,8 +14,6 @@ Panels:
         - /UGV02EKF1/Covariance1
         - /UGV02EKF1/Covariance1/Position1
         - /UGV02PFest1/Covariance1
-        - /UGV01InterAgentsGT1/Namespaces1
-        - /UGV031/Links1
       Splitter Ratio: 0.7822349667549133
     Tree Height: 845
   - Class: rviz/Selection
@@ -137,6 +135,36 @@ Visualization Manager:
           Value: false
         UGV02/right_tag:
           Value: false
+        UGV03/base_link:
+          Value: true
+        UGV03/chassis_link:
+          Value: true
+        UGV03/front_fender_link:
+          Value: true
+        UGV03/front_left_wheel_link:
+          Value: true
+        UGV03/front_mount:
+          Value: true
+        UGV03/front_right_wheel_link:
+          Value: true
+        UGV03/imu_link:
+          Value: true
+        UGV03/mid_mount:
+          Value: true
+        UGV03/navsat_link:
+          Value: true
+        UGV03/odom:
+          Value: true
+        UGV03/rear_fender_link:
+          Value: true
+        UGV03/rear_left_wheel_link:
+          Value: true
+        UGV03/rear_mount:
+          Value: true
+        UGV03/rear_right_wheel_link:
+          Value: true
+        UGV03/right_tag:
+          Value: true
         map:
           Value: false
         world:
@@ -201,6 +229,32 @@ Visualization Manager:
                   UGV02/right_tag:
                     {}
                 UGV02/imu_link:
+                  {}
+            UGV03/odom:
+              UGV03/base_link:
+                UGV03/chassis_link:
+                  UGV03/front_fender_link:
+                    {}
+                  UGV03/front_left_wheel_link:
+                    {}
+                  UGV03/front_right_wheel_link:
+                    {}
+                  UGV03/mid_mount:
+                    UGV03/front_mount:
+                      {}
+                    UGV03/rear_mount:
+                      {}
+                  UGV03/navsat_link:
+                    {}
+                  UGV03/rear_fender_link:
+                    {}
+                  UGV03/rear_left_wheel_link:
+                    {}
+                  UGV03/rear_right_wheel_link:
+                    {}
+                  UGV03/right_tag:
+                    {}
+                UGV03/imu_link:
                   {}
       Update Interval: 0
       Value: true
@@ -402,23 +456,29 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /UGV01/AnchorsMarkersEstimate
+      Marker Topic: /UGV01/vis_anchors/est
       Name: UGV01AnchorsEstimate
       Namespaces:
-        {}
+        AN0/anchor_markers: true
+        AN1/anchor_markers: true
+        AN2/anchor_markers: true
+        AN3/anchor_markers: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /AnchorsMarkersReal
+      Marker Topic: /UGV01/vis_anchors/real
       Name: UGV01AnchorsMarkers
       Namespaces:
-        {}
+        AN0/anchor_markers: true
+        AN1/anchor_markers: true
+        AN2/anchor_markers: true
+        AN3/anchor_markers: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
       Enabled: false
-      Marker Topic: /UGV01/vis_line/ground_truth/line
+      Marker Topic: /UGV01/vis_line/ground_truth
       Name: UGV01VisLineGT
       Namespaces:
         {}
@@ -426,12 +486,30 @@ Visualization Manager:
       Value: false
     - Class: rviz/MarkerArray
       Enabled: false
-      Marker Topic: /UGV01/vis_line/ekf/line
+      Marker Topic: /UGV01/vis_line/ekf
       Name: UGV01VisLineEKF
       Namespaces:
         {}
       Queue Size: 0
       Value: false
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /UGV01/vis_line/MAS/ground_truth
+      Name: UGV01VisLineMASGT
+      Namespaces:
+        UGV02/line_markers: true
+        UGV03/line_markers: true
+      Queue Size: 0
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /UGV01/vis_line/MAS/ekf
+      Name: UGV01VisLineMASEKF
+      Namespaces:
+        UGV02/line_markers: true
+        UGV03/line_markers: true
+      Queue Size: 0
+      Value: true
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
@@ -629,24 +707,24 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /UGV02/AnchorsMarkersEstimate
+      Enabled: false
+      Marker Topic: /UGV02/vis_anchors/est
       Name: UGV02AnchorsEstimate
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /UGV02/AnchorsMarkersReal
+      Enabled: false
+      Marker Topic: /UGV02/vis_anchors/real
       Name: UGV02AnchorsMarkers
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: false
-      Marker Topic: /UGV02/vis_line/ground_truth/line
+      Marker Topic: /UGV02/vis_line/ground_truth
       Name: UGV02VisLineGT
       Namespaces:
         {}
@@ -654,7 +732,7 @@ Visualization Manager:
       Value: false
     - Class: rviz/MarkerArray
       Enabled: false
-      Marker Topic: /UGV02/vis_line/ekf/line
+      Marker Topic: /UGV02/vis_line/ekf
       Name: UGV02VisLineEKF
       Namespaces:
         {}
@@ -662,46 +740,113 @@ Visualization Manager:
       Value: false
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /UGV01/Agents/vis_line/GT
-      Name: UGV01InterAgentsGT
+      Marker Topic: /UGV02/vis_line/MAS/ground_truth
+      Name: UGV02VisLineMASGT
       Namespaces:
-        {}
-      Queue Size: 100
+        UGV01/line_markers: true
+        UGV03/line_markers: true
+      Queue Size: 0
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /UGV01/Agents/vis_line/EKF
-      Name: UGV01InterAgentsEKF
+      Marker Topic: /UGV02/vis_line/MAS/ekf
+      Name: UGV02VisLineMASEKF
       Namespaces:
-        {}
-      Queue Size: 100
+        UGV01/line_markers: true
+        UGV03/line_markers: true
+      Queue Size: 0
       Value: true
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        UGV03/base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        UGV03/chassis_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UGV03/front_fender_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UGV03/front_left_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UGV03/front_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        UGV03/front_right_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UGV03/imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        UGV03/mid_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        UGV03/navsat_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UGV03/rear_fender_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UGV03/rear_left_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UGV03/rear_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        UGV03/rear_right_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        UGV03/right_tag:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
       Name: UGV03
       Robot Description: UGV03/robot_description
       TF Prefix: ""
       Update Interval: 0
-      Value: false
+      Value: true
       Visual Enabled: true
     - Alpha: 0.10000000149011612
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: false
-      Enabled: false
+      Enabled: true
       Name: UGV03Map
       Topic: /UGV03/move_base/global_costmap/costmap
       Unreliable: false
       Use Timestamp: false
-      Value: false
+      Value: true
     - Angle Tolerance: 0.10000000149011612
       Class: rviz/Odometry
       Covariance:
@@ -718,9 +863,9 @@ Visualization Manager:
           Color: 204; 51; 204
           Scale: 1
           Value: true
-        Value: false
-      Enabled: false
-      Keep: 1
+        Value: true
+      Enabled: true
+      Keep: 100
       Name: UGV03GT
       Position Tolerance: 0.10000000149011612
       Queue Size: 10
@@ -736,7 +881,7 @@ Visualization Manager:
         Value: Arrow
       Topic: /UGV03/ground_truth/state
       Unreliable: false
-      Value: false
+      Value: true
     - Angle Tolerance: 0.10000000149011612
       Class: rviz/Odometry
       Covariance:
@@ -754,7 +899,7 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: true
-      Enabled: false
+      Enabled: true
       Keep: 1
       Name: UGV03EKF
       Position Tolerance: 0.10000000149011612
@@ -769,9 +914,9 @@ Visualization Manager:
         Shaft Length: 1
         Shaft Radius: 0.05000000074505806
         Value: Arrow
-      Topic: UGV03/odometry/filtered
+      Topic: /UGV03/odometry/filtered
       Unreliable: false
-      Value: false
+      Value: true
     - Angle Tolerance: 0.10000000149011612
       Class: rviz/Odometry
       Covariance:
@@ -789,7 +934,7 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: true
-      Enabled: false
+      Enabled: true
       Keep: 1
       Name: UGV03PFest
       Position Tolerance: 0.10000000149011612
@@ -806,10 +951,10 @@ Visualization Manager:
         Value: Arrow
       Topic: /UGV03/PFest
       Unreliable: false
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
       Enabled: false
-      Marker Topic: /UGV03/AnchorsMarkersEstimate
+      Marker Topic: /UGV03/vis_anchors/est
       Name: UGV03AnchorsEstimate
       Namespaces:
         {}
@@ -817,7 +962,7 @@ Visualization Manager:
       Value: false
     - Class: rviz/MarkerArray
       Enabled: false
-      Marker Topic: /UGV03/AnchorsMarkersReal
+      Marker Topic: /UGV03/vis_anchors/real
       Name: UGV03AnchorsMarkers
       Namespaces:
         {}
@@ -825,7 +970,7 @@ Visualization Manager:
       Value: false
     - Class: rviz/MarkerArray
       Enabled: false
-      Marker Topic: /UGV03/vis_line/ground_truth/line
+      Marker Topic: /UGV03/vis_line/ground_truth
       Name: UGV03VisLineGT
       Namespaces:
         {}
@@ -833,28 +978,30 @@ Visualization Manager:
       Value: false
     - Class: rviz/MarkerArray
       Enabled: false
-      Marker Topic: /UGV03/vis_line/ekf/line
+      Marker Topic: /UGV03/vis_line/ekf
       Name: UGV03VisLineEKF
       Namespaces:
         {}
       Queue Size: 100
       Value: false
     - Class: rviz/MarkerArray
-      Enabled: false
-      Marker Topic: /UGV03/Agents/vis_line/GT
-      Name: UGV03InterAgentsGT
+      Enabled: true
+      Marker Topic: /UGV03/vis_line/MAS/ground_truth
+      Name: UGV03VisLineMASGT
       Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
+        UGV01/line_markers: true
+        UGV02/line_markers: true
+      Queue Size: 0
+      Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
-      Marker Topic: /UGV03/Agents/vis_line/EKF
-      Name: UGV03InterAgentsEKF
+      Enabled: true
+      Marker Topic: /UGV03/vis_line/MAS/ekf
+      Name: UGV03VisLineMASEKF
       Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
+        UGV01/line_markers: true
+        UGV02/line_markers: true
+      Queue Size: 0
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -899,9 +1046,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6253977417945862
+      Pitch: 0.5353977084159851
       Target Frame: <Fixed Frame>
-      Yaw: 2.620394229888916
+      Yaw: 2.630394220352173
     Saved: ~
 Window Geometry:
   Displays:
