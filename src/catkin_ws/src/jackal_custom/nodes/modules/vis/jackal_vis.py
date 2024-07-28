@@ -12,6 +12,8 @@ from geometry_msgs.msg import Point
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
 import message_filters
+import tf2_ros
+import tf_conversions
 
 # custom message import
 from jackal_range.msg import RD_recap as RD
@@ -102,10 +104,10 @@ class JackalVis(JackalRange):
             pos = np.array([odom.pose.pose.position.x, 
                             odom.pose.pose.position.y, 
                             odom.pose.pose.position.z])
-            pos = self.DCM@(pos + self.trans)
-            pointUGV.x = pos[0]
-            pointUGV.y = pos[1]
-            pointUGV.z = pos[2]
+            pos_tmp = self.DCM_local_tag@(pos + self.trans_local)
+            pointUGV.x = pos_tmp[0]
+            pointUGV.y = pos_tmp[1]
+            pointUGV.z = pos_tmp[2]
             
             x1, y1, z1 = pointANC.x, pointANC.y, pointANC.z
             x2, y2, z2 = pointUGV.x, pointUGV.y, pointUGV.z
@@ -161,11 +163,22 @@ class JackalVis(JackalRange):
         
         self.marker_array_line = MarkerArray()    
         pos_local = args[0]
+        pos_local_arr = np.array((pos_local.pose.pose.position.x, pos_local.pose.pose.position.y, pos_local.pose.pose.position.z))
+        pos_local_tmp = self.DCM_local_tag@(pos_local_arr + self.trans_local)
+        pos_local.pose.pose.position.x = pos_local_tmp[0]
+        pos_local.pose.pose.position.y = pos_local_tmp[1]
+        pos_local.pose.pose.position.z = pos_local_tmp[2]
         
         if self.namespaces:
             for i in range(len(self.namespaces)):   
                 
                 pos_MAS = args[i+1]
+                pos_MAS_arr = np.array((pos_MAS.pose.pose.position.x, pos_MAS.pose.pose.position.y, pos_MAS.pose.pose.position.z))
+                pos_MAS_tmp = self.DCM_local_tag_agents[i]@(pos_MAS_arr + self.trans_MAS[i])
+                pos_MAS.pose.pose.position.x = pos_MAS_tmp[0]
+                pos_MAS.pose.pose.position.y = pos_MAS_tmp[1]
+                pos_MAS.pose.pose.position.z = pos_MAS_tmp[2]
+                
                 if color_gen == 1:
                     color = self.generate_color(i, len(self.namespaces))                    
                     
@@ -279,3 +292,93 @@ class JackalVis(JackalRange):
             value = 1.0  # Full brightness
             rgb = colorsys.hsv_to_rgb(hue, saturation, value)
             return rgb + (1.0,)  # Return as (r, g, b, a) tuple with full opacity
+        
+    # callback for the transform
+    def timer_callback_tf(self, event):
+            
+        # define frames of the transformation for the local frame
+        target_frame = f"{self.namespace}/base_link"
+        source_frame = f"{self.namespace}/right_tag"
+        
+        #  log once
+        rospy.logwarn_once('source_frame: {}'.format(source_frame))
+        rospy.logwarn_once('target_frame: {}'.format(target_frame))
+        
+        # wait for the transformation
+        try:          
+            
+            # Define target time for the transformation
+            target_time = rospy.Time.now() - rospy.Duration(1/self.RATE)  # 1 seconds ago  
+            
+            # Lookup the transform, allowing extrapolation
+            transform = self.tf_buffer.lookup_transform(
+                target_frame,  # target frame
+                source_frame,  # source frame
+                target_time,     # time at which you want the transform
+                rospy.Duration(1/self.RATE)  # timeout for looking up the transform
+            )    
+            
+            # assign the transformation
+            trans = np.array((  transform.transform.translation.x, 
+                                transform.transform.translation.y, 
+                                transform.transform.translation.z))
+            rot = np.array((    transform.transform.rotation.x,
+                                transform.transform.rotation.y,
+                                transform.transform.rotation.z,
+                                transform.transform.rotation.w))
+            
+            # log
+            rospy.loginfo_once("Transform found: translation %s, rotation %s", str(trans), str(rot))
+            
+            # correct formatting
+            matrix = tf_conversions.transformations.quaternion_matrix(rot)
+            self.DCM_local_tag = matrix[:3,:3]
+            self.trans_local = np.array(trans).T
+            
+            # now I need to check the same for all the self.namespaces                                    
+            if self.namespaces:
+                
+                self.DCM_local_tag_agents = [np.zeros((3, 3)) for _ in range(len(self.namespaces))]
+                self.trans_MAS = [np.zeros((3, 1)) for _ in range(len(self.namespaces))]
+            
+                for i in range(len(self.namespaces)):
+
+                    # define frames of the transformation for the local frame
+                    target_frame = f"{self.namespaces[i]}/base_link"
+                    source_frame = f"{self.namespaces[i]}/right_tag"
+                    
+                    # Define target time for the transformation
+                    target_time = rospy.Time.now() - rospy.Duration(1/self.RATE)  # 1 seconds ago  
+                    
+                    # Lookup the transform, allowing extrapolation
+                    transform = self.tf_buffer.lookup_transform(
+                        target_frame,  # target frame
+                        source_frame,  # source frame
+                        target_time,     # time at which you want the transform
+                        rospy.Duration(1/self.RATE)  # timeout for looking up the transform
+                    )    
+
+                    # assign the transformation
+                    trans = np.array((  transform.transform.translation.x, 
+                                        transform.transform.translation.y, 
+                                        transform.transform.translation.z))
+                    rot = np.array((    transform.transform.rotation.x,
+                                        transform.transform.rotation.y,
+                                        transform.transform.rotation.z,
+                                        transform.transform.rotation.w))
+                    
+                    # correct formatting
+                    matrix = tf_conversions.transformations.quaternion_matrix(rot)
+                    self.DCM_local_tag_agents[i] = matrix[:3,:3]
+                    self.trans_MAS[i] = np.array(trans).T
+                    
+            # if you get here then you have all the transformations available
+            self.tf_available = True
+            
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:            
+            rospy.sleep(0.1)
+            self.tf_available = False
+            rospy.logwarn("Transformation error raised: %s", e)
+    
+    def timer_callback(self, event):
+        pass

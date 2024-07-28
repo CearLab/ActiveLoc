@@ -12,6 +12,8 @@ from jackal_range.msg import RD_recap
 from geometry_msgs.msg import PointStamped, Twist, Pose, Point, Quaternion, Vector3
 from nav_msgs.msg import Odometry
 from PFutils.pfMetry import pfmetry
+import tf2_ros
+import tf_conversions
 
 # global vars
 print(sys.argv)
@@ -29,6 +31,7 @@ class PFnode:
     
     # init namespace
     namespace = None
+    tf_available = False
 
     # range init 
     rangesub = None
@@ -95,7 +98,10 @@ class PFnode:
     # init timers
     def init_timers(self):
         rospy.loginfo('starting set timers')
+        self.tf_buffer = tf2_ros.Buffer(cache_time=rospy.Duration(10.0))  # 10 seconds cache time
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
         self.main_timer = rospy.Timer(rospy.Duration(1/RATE), self.timer_callback)
+        self.tf_timer = rospy.Timer(rospy.Duration(1/RATE), self.timer_callback_tf)
         rospy.loginfo('finished set timers')
         
     # PF model definition
@@ -243,7 +249,7 @@ class PFnode:
             self.particles[:,get_beacon_index(i)] = initial_state[get_beacon_index(i)]
         
         # add gaussian noise to the particles (process noise)
-        # ? how shuld we initialize the particles? shoud it really be a gaussian noise? or maybe a uniform noise? 
+        # ? how should we initialize the particles? should it really be a gaussian noise? or maybe a uniform noise? 
         self.particles[:,get_agent_index(0)] += np.random.normal(initial_state[get_agent_index(0)], INITIAL_PARTICLES_VARIANCE, (self.NUM_OF_PARTICLES, STATE_SIZE_2D))
         
         # log
@@ -314,8 +320,11 @@ class PFnode:
             # set data
             self.op.header.stamp = rospy.Time.now()
             self.op.header.frame_id = self.namespace + '/odom'
-            self.op.child_frame_id = self.namespace + '/base_link'
-            self.op.pose.pose.position = Point(self.mean[0], self.mean[1], 0.)
+            self.op.child_frame_id = self.namespace + '/right_tag'
+            # local position
+            tag_pos_local = np.array((self.mean[0], self.mean[1], 0.))
+            agent_pos_local = self.DCM_local_tag@(tag_pos_local + self.trans_local)
+            self.op.pose.pose.position = Point(agent_pos_local[0], agent_pos_local[1], np.abs(agent_pos_local[2]))
             self.op.pose.pose.orientation = Quaternion(0., 0., 0., 1.)
             self.op.pose.covariance[0:2] = self.cov[0:2].tolist()
             self.op.pose.covariance[2:4] = self.cov[TOTAL_STATE_SIZE:TOTAL_STATE_SIZE + 2].tolist()    
@@ -327,6 +336,54 @@ class PFnode:
             # publish and log
             self.publisher.publish(self.op)
             rospy.loginfo_once('finished first PF step')
+            
+    # callback for the transform
+    def timer_callback_tf(self, event):
+            
+        # define frames of the transformation for the local frame
+        target_frame = f"{self.namespace}/right_tag"
+        source_frame = f"{self.namespace}/base_link"
+        
+        #  log once
+        rospy.logwarn_once('source_frame: {}'.format(source_frame))
+        rospy.logwarn_once('target_frame: {}'.format(target_frame))
+        
+        # wait for the transformation
+        try:          
+            
+            # Define target time for the transformation
+            target_time = rospy.Time.now() - rospy.Duration(1/RATE)  # 1 seconds ago  
+            
+            # Lookup the transform, allowing extrapolation
+            transform = self.tf_buffer.lookup_transform(
+                target_frame,  # target frame
+                source_frame,  # source frame
+                target_time,     # time at which you want the transform
+                rospy.Duration(1/RATE)  # timeout for looking up the transform
+            )    
+            
+            # assign the transformation
+            trans = np.array((  transform.transform.translation.x, 
+                                transform.transform.translation.y, 
+                                transform.transform.translation.z))
+            rot = np.array((    transform.transform.rotation.x,
+                                transform.transform.rotation.y,
+                                transform.transform.rotation.z,
+                                transform.transform.rotation.w))
+            
+            # log
+            rospy.loginfo_once("Transform found: translation %s, rotation %s", str(trans), str(rot))
+            
+            # correct formatting
+            matrix = tf_conversions.transformations.quaternion_matrix(rot)
+            self.DCM_local_tag = matrix[:3,:3]
+            self.trans_local = np.array(trans).T
+            self.tf_available = True
+            
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:            
+            rospy.sleep(0.1)
+            self.tf_available = False
+            rospy.logwarn("Transformation error raised: %s", e)
             
     # run the node
     def run(self):

@@ -29,8 +29,8 @@ class JackalGeneral:
         tmp_trans = np.array([0.0, 0.0, 0.0])
         tmp_rot = np.array([0.0, 0.0, 0.0, 1.0])   
         tmp_matrix = tf_conversions.transformations.quaternion_matrix(tmp_rot)
-        self.DCM = tmp_matrix[:3,:3]
-        self.trans = np.array(tmp_trans).T
+        self.DCM_local_tag = tmp_matrix[:3,:3]
+        self.trans_local = np.array(tmp_trans).T
 
     # define timers
     def timers(self):
