@@ -239,6 +239,14 @@
     $ sudo apt install ros-noetic-roscpp-tutorials
     $ sudo apt install ros-noetic-tf2-web-republisher
     $ sudo apt install ros-noetic-rosbridge-suite
+    $ sudo apt install ros-noetic-tf-conversions
+
+# update pip, numpy, scipy
+
+    $ python3 -m pip install --upgrade pip 
+    $ pip3 install --upgrade numpy  
+    $ pip3 install --upgrade scipy
+    
 
 # Let's get to work. Now we create a ros workspace
 

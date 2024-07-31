@@ -60,7 +60,7 @@ services:
         "trap 'exit 0' TERM; sleep infinity & wait"
       ]
     volumes:
-     
+
       - /sys:/sys - /dev:/dev
       - ~/.Xauthority:/home/ros/.Xauthority:rw
       - ~/.ssh:/home/ros/.ssh
@@ -74,7 +74,7 @@ services:
         target: /home/ros/workspace
 
   # dev setup - noetic - nvidia
-  ros-noetic-dev-nvidia:
+  ros-noetic-dev-activeloc-nvidia:
     build:
       context: .
       network: host
@@ -82,8 +82,7 @@ services:
       args:
         TARGET: nvidia
     image: cearlab/activeloc:ros-noetic-dev-nvidia
-    container_name: aciveloc-nvidia
-    runtime: nvidia
+    container_name: aciveloc-dev-nvidia
     environment:
       TERM: xterm-256color
       DISPLAY:

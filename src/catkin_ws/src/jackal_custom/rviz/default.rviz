@@ -67,12 +67,12 @@ Visualization Manager:
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: false
-      Enabled: true
+      Enabled: false
       Name: Map01
       Topic: /UGV01/move_base/global_costmap/costmap
       Unreliable: false
       Use Timestamp: false
-      Value: true
+      Value: false
     - Class: rviz/TF
       Enabled: true
       Filter (blacklist): ""
@@ -86,11 +86,7 @@ Visualization Manager:
           Value: false
         UGV01/front_fender_link:
           Value: false
-        UGV01/front_left_wheel_link:
-          Value: false
         UGV01/front_mount:
-          Value: false
-        UGV01/front_right_wheel_link:
           Value: false
         UGV01/imu_link:
           Value: false
@@ -102,16 +98,20 @@ Visualization Manager:
           Value: false
         UGV01/rear_fender_link:
           Value: false
-        UGV01/rear_left_wheel_link:
-          Value: false
         UGV01/rear_mount:
-          Value: false
-        UGV01/rear_right_wheel_link:
           Value: false
         UGV01/right_tag:
           Value: false
+        front_left_wheel_link:
+          Value: true
+        front_right_wheel_link:
+          Value: true
         map:
           Value: false
+        rear_left_wheel_link:
+          Value: true
+        rear_right_wheel_link:
+          Value: true
         world:
           Value: false
       Marker Alpha: 1
@@ -128,10 +128,6 @@ Visualization Manager:
                 UGV01/chassis_link:
                   UGV01/front_fender_link:
                     {}
-                  UGV01/front_left_wheel_link:
-                    {}
-                  UGV01/front_right_wheel_link:
-                    {}
                   UGV01/mid_mount:
                     UGV01/front_mount:
                       {}
@@ -141,11 +137,15 @@ Visualization Manager:
                     {}
                   UGV01/rear_fender_link:
                     {}
-                  UGV01/rear_left_wheel_link:
-                    {}
-                  UGV01/rear_right_wheel_link:
-                    {}
                   UGV01/right_tag:
+                    {}
+                  front_left_wheel_link:
+                    {}
+                  front_right_wheel_link:
+                    {}
+                  rear_left_wheel_link:
+                    {}
+                  rear_right_wheel_link:
                     {}
                 UGV01/imu_link:
                   {}
@@ -154,83 +154,18 @@ Visualization Manager:
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: true
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        UGV01/base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV01/chassis_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV01/front_fender_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV01/front_left_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV01/front_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV01/front_right_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV01/imu_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV01/mid_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV01/navsat_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV01/rear_fender_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV01/rear_left_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV01/rear_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        UGV01/rear_right_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        UGV01/right_tag:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
       Name: UGV01
       Robot Description: UGV01/robot_description
       TF Prefix: ""
       Update Interval: 0
-      Value: true
+      Value: false
       Visual Enabled: true
     - Angle Tolerance: 0.10000000149011612
       Class: rviz/Odometry
@@ -364,10 +299,7 @@ Visualization Manager:
       Marker Topic: /UGV01/vis_line/ground_truth
       Name: UGV01VisLineGT
       Namespaces:
-        AN0/line_markers: true
-        AN1/line_markers: true
-        AN2/line_markers: true
-        AN3/line_markers: true
+        {}
       Queue Size: 0
       Value: true
     - Class: rviz/MarkerArray
@@ -409,7 +341,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 19.775175094604492
+      Distance: 12.064395904541016
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -417,17 +349,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 1.6232919692993164
-        Y: -1.1449625492095947
-        Z: -1.454342246055603
+        X: 3.858309507369995
+        Y: 1.2930063009262085
+        Z: -1.2468587160110474
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5353984236717224
+      Pitch: 0.685398280620575
       Target Frame: <Fixed Frame>
-      Yaw: 2.3753907680511475
+      Yaw: 3.3053910732269287
     Saved: ~
 Window Geometry:
   Displays:
