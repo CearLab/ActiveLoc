@@ -10,6 +10,22 @@
     
     $ sudo apt install gedit
 
+# ZSH (you will thank me)
+    $ sudo apt install zsh
+    $ git clone git@github.com:zsh-users/zsh-autosuggestions.git ~/.zsh/zsh-autosuggestions
+
+# then add the following to your /bashrc
+
+    $ /usr/bin/zsh
+
+# and this to your .zshrc
+
+    $ alias c="clear"
+    $ alias exit="exit && exit"
+    $ source /opt/ros/noetic/setup.zsh
+    $ source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
+
+
 # SSH SERVER
 # The GCS will be the server for the rosmaster.
 
