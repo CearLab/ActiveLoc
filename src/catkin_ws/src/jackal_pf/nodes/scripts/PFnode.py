@@ -320,7 +320,7 @@ class PFnode:
             # set data
             self.op.header.stamp = rospy.Time.now()
             self.op.header.frame_id = self.namespace + '/odom'
-            self.op.child_frame_id = self.namespace + '/right_tag'
+            self.op.child_frame_id = self.namespace + '/base_link'
             # local position
             tag_pos_local = np.array((self.mean[0], self.mean[1], 0.))
             agent_pos_local = self.DCM_local_tag@(tag_pos_local + self.trans_local)
