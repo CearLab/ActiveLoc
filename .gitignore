@@ -2,6 +2,7 @@
 
 # specific files
 doc/code/SetupJackal.md
+src/setup/scripts/setup_client.sh
 
 # directories
 src/setup/lib
@@ -10,6 +11,9 @@ src/setup/CERES
 src/catkin_ws/build
 src/catkin_ws/devel
 src/catkin_ws/src/matlab_msg_gen_ros1
+libfreenect/
+PF/results
+PF/processing
 fig/
 res/
 doc/
