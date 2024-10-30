@@ -82,7 +82,67 @@ services:
       args:
         TARGET: nvidia
     image: cearlab/activeloc:ros-noetic-dev-nvidia
-    container_name: aciveloc-dev-nvidia
+    container_name: activeloc-dev-nvidia
+    environment:
+      TERM: xterm-256color
+      DISPLAY:
+      SHELL: /usr/bin/zsh
+      BOARD: $USER
+    privileged: true
+    cap_add:
+      - SYS_PTRACE
+    user: ros
+    stdin_open: false
+    tty: true
+    working_dir: /home/ros/workspace
+    command:
+      [
+        "/bin/bash",
+        "-c",
+        "trap 'exit 0' TERM; sleep infinity & wait"
+      ]
+    network_mode: host
+    volumes:
+      - /dev:/dev
+      - /sys:/sys
+      - ~/.Xauthority:/home/ros/.Xauthority:rw
+      - ~/.ssh:/home/ros/.ssh
+      - ./config/.aliases.sh:/home/ros/.aliases.sh:rw
+      - ./config/.p10k.zsh:/home/ros/.p10k.zsh:rw
+      - ./config/.zshrc:/home/ros/.zshrc:rw
+      - ./config/.bashrc:/home/ros/.bashrc:rw
+      - /etc/localtime:/etc/localtime:ro
+      - type: bind
+        source: ../../
+        target: /home/ros/workspace
+
+  # base setup - noetic - zed
+  ros-noetic-base-zed:
+    build:
+      context: .
+      network: host
+      dockerfile: Dockerfile.noetic.x86.base.zed
+    image: cearlab/activeloc:ros-noetic-base-zed
+    container_name: ros-noetic-base-zed
+    tty: true
+    working_dir: /home/ros/workspace
+    command:
+      [
+        "/bin/bash",
+        "-c",
+        "trap 'exit 0' TERM; sleep infinity & wait"
+      ]
+
+  # dev setup - noetic - zed
+  ros-noetic-dev-activeloc-zed:
+    build:
+      context: .
+      network: host
+      dockerfile: Dockerfile.noetic.x86.dev.zed
+      args:
+        TARGET: nvidia
+    image: cearlab/activeloc:ros-noetic-dev-zed
+    container_name: activeloc-dev-zed
     environment:
       TERM: xterm-256color
       DISPLAY:
