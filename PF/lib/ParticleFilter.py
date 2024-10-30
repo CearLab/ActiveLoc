@@ -187,6 +187,14 @@ def normal_model_pdf(x, mu, cov):
         float: The PDF value at the given input value(s).
     """
     
+    # handle for the case where everything is a scalar
+    if np.isscalar(x) and np.isscalar(mu):
+        #check that the covariance matrix is a scalar
+        if not np.isscalar(cov):
+            raise ValueError(f"cov should be a scalar, but got cov={cov}")
+        # Calculate the PDF value
+        return stats.multivariate_normal(mean=mu, cov=cov).pdf(x)
+    #handle the case where x is a scalar
     # Check that x and mu have the same dimensions
     if x.shape != mu.shape:
         raise ValueError(f"x and mu must have the same shape, but got x.shape={x.shape} and mu.shape={mu.shape}")
@@ -198,10 +206,13 @@ def normal_model_pdf(x, mu, cov):
     # Check that covariance matrix is symmetric
     if not np.allclose(cov, cov.T):
         raise ValueError("Covariance matrix is not symmetric")
-
+    # print(f'x={x}, mu={mu}, cov={cov}')
     # Create the multivariate normal distribution object
     rv = stats.multivariate_normal(mean=mu, cov=cov)
-
+    
+    pdf_values = rv.pdf(x)
+    # normlize the pdf values
+    
     # Calculate and return the PDF value
     return rv.pdf(x)
 
