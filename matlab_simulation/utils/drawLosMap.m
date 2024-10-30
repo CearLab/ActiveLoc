@@ -20,7 +20,7 @@ function h = drawLosMap(los_table,varargin)
         if numel(varargin) >= 3 && ~isempty(varargin{3})
             width = varargin{3};
         else
-            width = 1.5;
+            width = 0.5;
         end
     end
     

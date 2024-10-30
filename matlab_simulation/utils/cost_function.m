@@ -44,121 +44,65 @@ function J = cost_function(x,p)
     JR = -min(e);
     % JR = 1/(min(e));        
 
-    % is connected
-    % A = calcAdjacencyMatrix(los_table,agents_list);
-    % [allConn, A] = agentsOpt{1}.checkConnectivity(A);           
-
-    % get agents_pos
-    % agents_pos = agents_list(:,2:3);
-    % sigma = std(agents_pos,1);
-    % sigmacost = sigma*sigma';
-    % JS = 1/(1+sigmacost);
-    if ~isempty(los_table)
-
-        % init
-        JS = 0;        
-
-        % init                                
-        SXYtmp = 0;
-        S2tmp = 0;
-        S2T1 = 0;
-        S2T2 = 0;        
-
-        % cycle over all the agents
-        for a=1:m
-
-            % init possible deltas
-            LOCb = [];
-            POSb = [];
-
-            % get position of single agent
-            LOCa = agents_list(a,2:3);
-
-            % now inner cycle
-            % I'm not removing a~=b because the diff is zero anyways
-            for b=1:m
-                
-                % now cycle over the LOS tab                
-
-                % find if the link does exist
-                flagA = los_table(:,3:4) == [a b];
-                flagB = los_table(:,3:4) == [b a];
-                posA = find(flagA(:,1).*flagA(:,2) == 1);
-                posB = find(flagB(:,1).*flagB(:,2) == 1);      
-                flag = min([posA posB]); 
-
-                % assign
-                if ~isempty(flag)
-                    LOCb(b,:) = LOCa - agents_list(b,2:3);   
-                    POSb(b,:) = agents_list(b,2:3);
-                end                                
-                
-            end
-
-            if ~isempty(LOCb)
-
-                % mean in the neighbors                       
-                NNeighs = nnz(LOCb(:,1))+1;                
-                muNeighs = sum(POSb)/NNeighs;                
-
-                % difference in neihcbors
-                DIFFb = sum(LOCb);
-
-                % compute terms
-                S2T1 = S2T1 + muNeighs.*(muNeighs - LOCa);                                            
-                S2T2 = S2T2 + LOCa.*DIFFb/NNeighs;    
-
-                % compute covariance
-                S2tmp = S2tmp + (LOCa - muNeighs).^2;  
-                SXYtmp = SXYtmp + prod(LOCa - muNeighs);                                   
-
-            end
-                        
-        end        
-
-        % variances terms        
-        % S2 = (S2T1 + S2T2)/m;
-        S2 = S2tmp/m;
-        SX2 = S2(1);
-        SY2 = S2(2);
-        
-        % symmetry term                   
-        SXY = SXYtmp/m;        
-
-        % correlation
-        rho2 = SXY^2/(SX2*SY2);
-
-        % just for fun
-        Rover = R'*R;
-        tr = trace(Rover);
-
-        % set objectives
-        JSA = 1/tr;
-        JSB = rho2;        
-
-        a = 0;
-        Ta = manager.WS.Ta;
-        Tb = manager.WS.Tb;
-        JS = (a*Ta*JSA + (1-a)*Tb*JSB);  
-
-        JS = JSB;
-
-        % store
-        manager.WS.JSA = JSA;
-        manager.WS.JSB = JSB;
-    else
-        JS = 0;
-    end        
-
     % Jtest
     Rover = R'*R;
     tr = trace(Rover);
     JT = -tr;
+
+    % eq. (30)
+
+    % getNeighbors
+    for i=1:size(agents_list,1)
+        agentsOpt{i}.getNeighbors;
+    end
+
+    % mean
+    mu_x = mean(agents_list(:,2));
+    mu_y = mean(agents_list(:,3));
+
+    % terms computation
+    for i=1:size(agents_list,1)
+
+        % neighborhood cardinality
+        Ni(i) = size(agentsOpt{i}.neigh.ID,1);
+
+        % term 1
+        T1_x(i) = Ni(i)*(agents_list(i,2)-mu_x)^2;
+        T1_y(i) = Ni(i)*(agents_list(i,3)-mu_y)^2;
+
+        % term 2
+        T2_x(i) = 0;
+        T2_y(i) = 0;
+        for j=1:size(agentsOpt{i}.neigh.ID,1)
+            T2_x(i) = T2_x(i) + (agents_list(agentsOpt{i}.neigh.ID(j),2) - mu_x)^2;
+            T2_y(i) = T2_y(i) + (agents_list(agentsOpt{i}.neigh.ID(j),3) - mu_y)^2;
+        end
+
+        % term 3        
+        T3_x(i) = 0;
+        T3_y(i) = 0;
+        for j=1:size(agentsOpt{i}.neigh.ID,1)
+            T3_x(i) = T3_x(i) + agents_list(agentsOpt{i}.neigh.ID(j),2);
+            T3_y(i) = T3_y(i) + agents_list(agentsOpt{i}.neigh.ID(j),3);
+        end
+        T3_x(i) = -2*(agents_list(i,2)-mu_x)*(T3_x(i) - Ni(i)*mu_x);
+        T3_y(i) = -2*(agents_list(i,3)-mu_y)*(T3_y(i) - Ni(i)*mu_y);
+
+    end
+
+    % store
+    manager.WS.T1_x = T1_x;
+    manager.WS.T1_y = T1_y;
+    manager.WS.T2_x = T2_x;
+    manager.WS.T2_y = T2_y;
+    manager.WS.T3_x = T3_x;
+    manager.WS.T3_y = T3_y;
     
 
     % normalize
     % minterm = min(JD,JR);    
-    J = 1*JR + 0*JS + 0*JT;
+    % J = 1*JR + 0*JT;
+    J = -(0*sum(T1_x) + 0*sum(T1_y) + 0*sum(T2_x) + 0*sum(T2_y) + 1*sum(T3_x) + 1*sum(T3_y));    
 
     if isempty(J)
         J = Inf;

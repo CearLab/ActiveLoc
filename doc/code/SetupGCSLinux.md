@@ -259,14 +259,4 @@
     $ sudo chown -R ros:developers ./catkin_ws
     $ sudo chmod -R 774 ./catkin_ws
 
-# Now we add a ros submodule for the UWB messages
-# GO TO LOCAL PROMPT
-
-    $ git submodule add https://github.com/valentinbarral/rosmsgs src/gtec/rosmsgs
-
-# Now rename the following files
-
-    $ mv catkin_ws/src/jackal_custom/package.xml catkin_ws/src/jackal_custom/package.xml.old
-    $ mv catkin_ws/src/UWB_driver/package.xml catkin_ws/src/ackal_op/package.xml.old
-
 

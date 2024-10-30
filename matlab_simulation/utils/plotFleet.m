@@ -42,9 +42,9 @@ function f1 = plotFleet(f1,gifFile,flag,delay,repeat,agents_pos_original)
         %      'LineWidth',1.5);
 
         % leader FOV
-        pos = agents{team{1}.leader.agent_number}.location + [-3.5 -3.5; 7 7]; 
-        pos = [pos(1,:) pos(2,:)];
-        rectangle('Position',pos,'Curvature',[1 1],'FaceColor',[0 .5 0 0.3],'LineWidth',2);        
+        center = agents{team{1}.leader.agent_number}.location;
+        circle(center(1),center(2),3);        
+        axis square
 
         % plot originals
         if ~isempty(agents_pos_original)
@@ -63,9 +63,10 @@ function f1 = plotFleet(f1,gifFile,flag,delay,repeat,agents_pos_original)
         % plot estimations
         h2 = plot(agents_pos_est(:,1),agents_pos_est(:,2), 'bo', 'MarkerSize',14,'LineWidth',3);
         
-        % draw los map for UWB
-        [los_UWB,~] = calcLosMap(agents,'UWB');
+        % draw los map for UWB        
+        [los_UWB,~] = calcLosMap(agents,'UWB');                
         h3 = drawLosMap(los_UWB,f1,9);
+        
     
         % draw los map for CAM
         [los_CAM,~] = calcLosMap(agents,'CAM');
@@ -80,4 +81,12 @@ function f1 = plotFleet(f1,gifFile,flag,delay,repeat,agents_pos_original)
 
     end
 
+end
+
+function h = circle(x,y,r)
+    hold on
+    th = 0:pi/50:2*pi;
+    xunit = r * cos(th) + x;
+    yunit = r * sin(th) + y;
+    h = plot(xunit, yunit, 'Color',[0 .5 0 0.3], 'LineWidth',2);    
 end
