@@ -15,6 +15,11 @@ from PFutils.pfMetry import pfmetry
 import tf2_ros
 import tf_conversions
 
+# point cloud
+from sensor_msgs.msg import PointCloud2
+import std_msgs.msg
+import sensor_msgs.point_cloud2 as pcl2
+
 # global vars
 print(sys.argv)
 # sampling method
@@ -61,6 +66,7 @@ class PFnode:
     
     # assign odometry message
     op = Odometry()
+    particles_msg = PointCloud2()
     
 
     
@@ -72,6 +78,9 @@ class PFnode:
         
         NS_name = rospy.get_param('~NS_name', '')   # ? why we call this here and not in the handler?
         self.NUM_OF_PARTICLES = int(rospy.get_param('~N_particles', '')) 
+        
+        # indices for the invalid measurements
+        self._invalid_indices = []
         
         # Initialize the ROS node
         rospy.logwarn_once('PF starting init')
@@ -174,6 +183,10 @@ class PFnode:
         
         # init publishers
         self.publisher = rospy.Publisher(pfest_topic, Odometry, queue_size=10)
+        
+        particles_topic = f'/{self.namespace}/PFparticles'
+        self.publisher_particles = rospy.Publisher(particles_topic, PointCloud2, queue_size=10)
+        
         rospy.loginfo('finished subscribers')
         
     # handle the RD_recap message
@@ -259,15 +272,20 @@ class PFnode:
     
     def is_particle_filter_time(self):
         if self.current_range_msg.header.stamp.to_sec() <= self.last_range_msg_time:
-            rospy.loginfo(self.namespace +  ': timer issue in the PF!')
+            rospy.logwarn_once(self.namespace +  ': timer issue in the PF!')
             return False
         if np.any(np.array(self.current_range_msg.D) < 0):
-            rospy.logfatal('measurement rejected: range to one of the beacons is negative')
-            return False
+            rospy.logwarn_once('measurement rejected: range to one of the beacons is negative')
+            # find indices of the negative measurements
+            self._invalid_indices = [i for i, x in enumerate(self.current_range_msg.D) if x < 0]
+            return True
         if np.any(np.array(self.current_range_msg.A_POS) == -999.):
             rospy.logfatal('measurement rejected: one of the beacons is not in the map')
             return False
+        # when all is good, there are no indices
+        self._invalid_indices = []
         return True
+    
     # timer callback
     def timer_callback(self, event):
         
@@ -302,6 +320,14 @@ class PFnode:
             self.mean = np.zeros(TOTAL_STATE_SIZE)
             self.cov = np.zeros((TOTAL_STATE_SIZE, TOTAL_STATE_SIZE))
             
+            # replace the cov of _invalid_indices with a high value
+            self.cov_measurement = np.diag([SIGMA_MEASUREMENT**2 for i in range(RANGE_MEASUREMENT_SIZE)])
+            for i in self._invalid_indices:
+                self.cov_measurement[i,i] = 1000
+            
+            # log the covariance matrix
+            # rospy.logwarn('covariance matrix: %s', self.cov_measurement)
+            
             # call the PF
             self.particles = PF.single_step_particle_filter(self.particles,
                                                             self.u,
@@ -335,6 +361,17 @@ class PFnode:
             
             # publish and log
             self.publisher.publish(self.op)
+            
+            # publish the particles as PintCloud
+            head = std_msgs.msg.Header()
+            head.stamp = rospy.Time.now()
+            head.frame_id = self.namespace + '/odom'
+            particles_2d = np.zeros((self.NUM_OF_PARTICLES, 3))
+            particles_2d[:,:2] = self.particles[:,:2]          
+            particles_2d[:,2] = np.abs(agent_pos_local[2])  
+            self.particles_msg = pcl2.create_cloud_xyz32(head, particles_2d.tolist())               
+            self.publisher_particles.publish(self.particles_msg)
+                  
             rospy.loginfo_once('finished first PF step')
             
     # callback for the transform

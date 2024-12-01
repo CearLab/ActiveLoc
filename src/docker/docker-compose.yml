@@ -23,12 +23,7 @@ services:
     container_name: ros-noetic-base
     tty: true
     working_dir: /home/ros/workspace
-    command:
-      [
-        "/bin/bash",
-        "-c",
-        "trap 'exit 0' TERM; sleep infinity & wait"
-      ]
+    command: [ "/bin/bash", "-c", "trap 'exit 0' TERM; sleep infinity & wait" ]
 
   # dev setup - noetic - default
   ros-noetic-dev-activeloc:
@@ -53,14 +48,8 @@ services:
     stdin_open: false
     tty: true
     working_dir: /home/ros/workspace
-    command:
-      [
-        "/bin/bash",
-        "-c",
-        "trap 'exit 0' TERM; sleep infinity & wait"
-      ]
+    command: [ "/bin/bash", "-c", "trap 'exit 0' TERM; sleep infinity & wait" ]
     volumes:
-
       - /sys:/sys - /dev:/dev
       - ~/.Xauthority:/home/ros/.Xauthority:rw
       - ~/.ssh:/home/ros/.ssh
@@ -95,12 +84,7 @@ services:
     stdin_open: false
     tty: true
     working_dir: /home/ros/workspace
-    command:
-      [
-        "/bin/bash",
-        "-c",
-        "trap 'exit 0' TERM; sleep infinity & wait"
-      ]
+    command: [ "/bin/bash", "-c", "trap 'exit 0' TERM; sleep infinity & wait" ]
     network_mode: host
     volumes:
       - /dev:/dev
@@ -126,12 +110,7 @@ services:
     container_name: ros-noetic-base-zed
     tty: true
     working_dir: /home/ros/workspace
-    command:
-      [
-        "/bin/bash",
-        "-c",
-        "trap 'exit 0' TERM; sleep infinity & wait"
-      ]
+    command: [ "/bin/bash", "-c", "trap 'exit 0' TERM; sleep infinity & wait" ]
 
   # dev setup - noetic - zed
   ros-noetic-dev-activeloc-zed:
@@ -155,12 +134,7 @@ services:
     stdin_open: false
     tty: true
     working_dir: /home/ros/workspace
-    command:
-      [
-        "/bin/bash",
-        "-c",
-        "trap 'exit 0' TERM; sleep infinity & wait"
-      ]
+    command: [ "/bin/bash", "-c", "trap 'exit 0' TERM; sleep infinity & wait" ]
     network_mode: host
     volumes:
       - /dev:/dev

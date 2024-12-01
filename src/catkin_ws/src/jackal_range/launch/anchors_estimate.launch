@@ -23,7 +23,8 @@
     <!-- this is run when the arg $real is false -->
     <group unless="$(arg real)">         
         <node pkg="jackal_range" name="anchors_server_est_sim" type="anchors_server.py">
-            <param name="anchors_pos" type="string" value="+$(arg AX) +$(arg AY) +$(arg AZ) -$(arg AX) +$(arg AY) +$(arg AZ) -$(arg AX) -$(arg AY) +$(arg AZ) +$(arg AX) -$(arg AY) +$(arg AZ)" />
+            <!-- <param name="anchors_pos" type="string" value="+$(arg AX) +$(arg AY) +$(arg AZ) -$(arg AX) +$(arg AY) +$(arg AZ) -$(arg AX) -$(arg AY) +$(arg AZ) +$(arg AX) -$(arg AY) +$(arg AZ)" /> -->
+            <param name="anchors_pos" type="string" value="0 0 +$(arg AZ) 4 0 +$(arg AZ) 0 4 +$(arg AZ) 0 -4 +$(arg AZ)" />
             <param name="topic_name" type="string" value="/$(arg ns)AnchorsInfoEst" />        
         </node>  
     </group>    

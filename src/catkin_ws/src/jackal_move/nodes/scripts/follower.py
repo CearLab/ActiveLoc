@@ -21,10 +21,9 @@ if __name__ == '__main__':
         
         # Get command line arguments
         # static goal
-        if jm_instance.mode == 0:
-            jm_instance.leader_topic = ''
-            jm_instance.server_name = rospy.get_param('~server_name', '')
-            jm_instance.odom_name = 'map'    
+        if jm_instance.mode == 0:            
+            jm_instance.server_name = rospy.get_param('~server_name', '')            
+            jm_instance.odom_name = rospy.get_param('~odom_name', '')              
             jm_instance.p_goal = rospy.get_param('~goal_pos', '')
             jm_instance.a_goal = rospy.get_param('~goal_ang', '')
         # moving target

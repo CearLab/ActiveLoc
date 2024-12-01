@@ -8,6 +8,7 @@
         <param name="subscribe_topic" type="string" value="/$(arg ns)imu/data" />                    
         <param name="publish_topic" type="string" value="/$(arg ns)imu/data/remap" />
         <param name="ns" type="string" value="$(arg ns)" />     
+        <param name="ImuSigma" type="string" value="0.0 0.0" />
     </node>
 
 </launch>
