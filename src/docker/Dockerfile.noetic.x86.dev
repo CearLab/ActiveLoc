@@ -4,7 +4,7 @@
 #
 # Federico Oliva <federico.oliva.it@gmail.com>
 #
-# January 9, 2024
+# January 9, 20241
 
 # BUILD THIS WITH:
 # --build-arg USER_UID=$UID (if default 1000 causes problems)
@@ -121,6 +121,7 @@ RUN useradd -s /bin/bash --uid $USER_UID -m ros && \
     echo ros ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/ros && \
     chmod 0440 /etc/sudoers.d/ros
 ENV HOME=/home/ros
+ENV USER=ros
 RUN chsh -s /usr/bin/zsh ros
 
 # Add developers group to share permissions
