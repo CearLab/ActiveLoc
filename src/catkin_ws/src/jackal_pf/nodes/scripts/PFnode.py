@@ -78,6 +78,9 @@ class PFnode:
     ambiguity_flag = False
     pending_ambiguity_resolve = False
     pending_ambiguity_raised = False
+    static = False
+    static_counter = 0
+    last_nonstatic_time = 0
     # class constructor
     def __init__(self):   
         
@@ -172,7 +175,7 @@ class PFnode:
         
         # init subscribers
         self.rangesub = rospy.Subscriber(range_topic, RD_recap, self.rangeMsgHandler)
-        self.cmdvelsub = rospy.Subscriber(cmdveltopic, Twist, self.velCmdHandler) #NOT IN USE
+        self.cmdvelsub = rospy.Subscriber(cmdveltopic, Twist, self.velCmdHandler) # NOT IN USE
         self.ctrlodomsub = rospy.Subscriber(ctrlodomtopic, Odometry, self.controllerOdomHandler)
         
         # log
@@ -242,6 +245,25 @@ class PFnode:
         
         # set data
         self.current_controller_odom_msg = data
+        # get the current time
+        time_now = rospy.get_time()
+        # check if we are static using velocity
+        if np.abs(self.current_controller_odom_msg.twist.twist.linear.x) < 0.1 and np.abs(self.current_controller_odom_msg.twist.twist.linear.y) < 0.1:
+            self.static_counter += 1
+            # rospy.logwarn('static counter: %s', self.static_counter)
+        else:
+            if self.static:
+                rospy.logwarn('resetting static counter')
+            self.static_counter = 0
+            self.static = False
+            self.last_nonstatic_time = time_now
+        
+        if self.static_counter > 10 and time_now - self.last_nonstatic_time > 5:
+            if not self.static:
+                rospy.logwarn('static detected')
+            self.static = True
+        
+
 
     # PF init particles
     def initialize_particles(self):
@@ -381,14 +403,14 @@ class PFnode:
             self.particles_msg = pcl2.create_cloud_xyz32(head, particles_2d.tolist())               
             self.publisher_particles.publish(self.particles_msg)
 
-            if self.pending_ambiguity_raised:
+            if self.pending_ambiguity_raised and self.static:
                 rospy.logwarn('ambiguity raised, trying to run gradient resampling')
                 #get the first beacon the is valid
                 for i in range(NUM_OF_BEACONS):
                     if i not in self._invalid_indices:
                         beacon_id = i
                         break
-                GradientResamplingUtiles.main(  x = self.mean,
+                self.particles = GradientResamplingUtiles.main(  x_orig = self.mean,
                                                 z = self.z,
                                                 agent_id = 0,
                                                 beacon_id = beacon_id,
@@ -396,7 +418,7 @@ class PFnode:
                                                 measurements_likelihood_function = self.measurements_likelihood,
                                                 sigma_measurement = SIGMA_MEASUREMENT,
                                                 step_size = 0.05,
-                                                do_debug = True)
+                                                do_debug = False)
                 self.pending_ambiguity_raised = False
                 rospy.logwarn('finished gradient resampling')
             
