@@ -37,8 +37,8 @@ class GradientResamplingUtiles():
         prev_move_direction = None
         if do_debug:
             agent_position_log = np.zeros((number_of_step, 2))
-            measurements_likelihood_log = np.zeros(number_of_step)
             move_direction_log = np.zeros((number_of_step, 2))
+        measurements_likelihood_log = np.zeros(number_of_step)
         local_maxima_indices = []
         maxima_positions = []
         maxima_likelihoods = []
@@ -66,8 +66,8 @@ class GradientResamplingUtiles():
                 maxima_likelihoods.append(last_likelihood)
             if do_debug:
                 agent_position_log[i] = current_position
-                measurements_likelihood_log[i] = current_likelihood
                 move_direction_log[i] = move_direction
+            measurements_likelihood_log[i] = current_likelihood
             
         debug_data = None
         if do_debug:
@@ -79,7 +79,7 @@ class GradientResamplingUtiles():
                 'maxima_positions': maxima_positions,
                 'maxima_likelihoods': maxima_likelihoods
             }
-        rospy.logwarn(f"maxima_positions: {maxima_positions} maxima_likelihoods: {maxima_likelihoods}")
+        rospy.logwarn(f"maxima_positions: {maxima_positions} \n maxima_likelihoods: {maxima_likelihoods}")
         return maxima_positions, maxima_likelihoods, debug_data
         
     
@@ -146,7 +146,7 @@ class GradientResamplingUtiles():
             
             translation[0:2] = positions[i] - original_position
             #make sure that translation is padding with zeros according to the state size
-            
+            rospy.logwarn(f"original_position: {original_position}")
             rospy.logwarn(f"translation: {translation}")
             new_particle = grouped_particles[i] + translation
             new_particles.append(new_particle)
@@ -160,8 +160,9 @@ class GradientResamplingUtiles():
         return num_of_steps
 
     @staticmethod
-    def main(x, z, agent_id, beacon_id, particles, measurements_likelihood_function, sigma_measurement = 0.1, step_size = 0.1, number_of_step = None, do_debug = False):
+    def main(x_orig, z, agent_id, beacon_id, particles, measurements_likelihood_function, sigma_measurement = 0.1, step_size = 0.1, number_of_step = None, do_debug = False):
         # rospy.logwarn(f"x: {x} \n z: {z} \n agent_id: {agent_id} \n beacon_id: {beacon_id} \n sigma_measurement: {sigma_measurement} \n step_size: {step_size} \n number_of_step: {number_of_step} \n do_debug: {do_debug}")
+        x = np.copy(x_orig)
         range = z[agent_id*NUM_OF_BEACONS + beacon_id]
         if number_of_step is None:
             number_of_step = GradientResamplingUtiles.calc_step_size_using_circle_radius(range, step_size)
@@ -169,8 +170,9 @@ class GradientResamplingUtiles():
         maxima_positions, maxima_indeces, debug_data = GradientResamplingUtiles.start_travel_along_gradient(x, z, agent_id, beacon_id, measurements_likelihood_function, sigma_measurement, step_size, number_of_step, do_debug)
         # rospy.logwarn(f"maxima_positions: {maxima_positions}")
         # rospy.logwarn(f"maxima_indeces: {maxima_indeces}")
-        GradientResamplingUtiles.print_debugdata_to_files(debug_data)
-        new_particles = GradientResamplingUtiles.resampling_in_local_maxima(maxima_positions, particles, x[get_agent_index(agent_id)])
+        if do_debug:
+            GradientResamplingUtiles.print_debugdata_to_files(debug_data)
+        new_particles = GradientResamplingUtiles.resampling_in_local_maxima(maxima_positions, particles, x_orig[get_agent_index(agent_id)])
         return new_particles
     
     @staticmethod
