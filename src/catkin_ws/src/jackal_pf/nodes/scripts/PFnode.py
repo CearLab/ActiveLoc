@@ -7,6 +7,7 @@ from std_msgs.msg import String
 from PFlib import ParticleFilter as PF
 from PFutils.stats import calculate_mean_and_cov
 from PFlib.stateManger import *
+from PFlib.GradientResampling import GradientResamplingUtiles
 import sys
 from jackal_range.msg import RD_recap
 from geometry_msgs.msg import PointStamped, Twist, Pose, Point, Quaternion, Vector3
@@ -68,11 +69,15 @@ class PFnode:
     op = Odometry()
     particles_msg = PointCloud2()
     
+    pf_busy = False
 
     
     # ? what we want do with the metry?
     metry_obj = None
     
+    ambiguity_flag = False
+    pending_ambiguity_resolve = False
+    pending_ambiguity_raised = False
     # class constructor
     def __init__(self):   
         
@@ -271,6 +276,9 @@ class PFnode:
         
     
     def is_particle_filter_time(self):
+        if self.pf_busy:
+            rospy.logwarn_once('PF is busy')
+            return False
         if self.current_range_msg.header.stamp.to_sec() <= self.last_range_msg_time:
             rospy.logwarn_once(self.namespace +  ': timer issue in the PF!')
             return False
@@ -291,9 +299,10 @@ class PFnode:
         
         # log first timer callback
         rospy.logwarn_once('first timer callback, dt: %s', self.current_range_msg.header.stamp.to_sec() - self.last_range_msg_time)
-        
+        self.ambiguity_handler()
         # if the range message is newer than the last range message time
         if self.is_particle_filter_time():
+            self.pf_busy = True
             
             # log
             rospy.loginfo_once('starting first PF step')
@@ -371,7 +380,27 @@ class PFnode:
             particles_2d[:,2] = np.abs(agent_pos_local[2])  
             self.particles_msg = pcl2.create_cloud_xyz32(head, particles_2d.tolist())               
             self.publisher_particles.publish(self.particles_msg)
-                  
+
+            if self.pending_ambiguity_raised:
+                rospy.logwarn('ambiguity raised, trying to run gradient resampling')
+                #get the first beacon the is valid
+                for i in range(NUM_OF_BEACONS):
+                    if i not in self._invalid_indices:
+                        beacon_id = i
+                        break
+                GradientResamplingUtiles.main(  x = self.mean,
+                                                z = self.z,
+                                                agent_id = 0,
+                                                beacon_id = beacon_id,
+                                                particles = self.particles,
+                                                measurements_likelihood_function = self.measurements_likelihood,
+                                                sigma_measurement = SIGMA_MEASUREMENT,
+                                                step_size = 0.05,
+                                                do_debug = True)
+                self.pending_ambiguity_raised = False
+                rospy.logwarn('finished gradient resampling')
+            
+            self.pf_busy = False
             rospy.loginfo_once('finished first PF step')
             
     # callback for the transform
@@ -421,7 +450,30 @@ class PFnode:
             rospy.sleep(0.1)
             self.tf_available = False
             rospy.logwarn("Transformation error raised: %s", e)
+    
+    
+    def ambiguity_handler(self):
+        last_ambiguity_flag = self.ambiguity_flag
+        self.ambiguity_flag = False
+        # check how many beacons are invalid
+        n_invalid = len(self._invalid_indices)
+        #get the number of valid beacons
+        n_valid = NUM_OF_BEACONS - n_invalid
+        if n_valid < 3:
+            self.ambiguity_flag = True
+            rospy.logwarn_once('ambiguity detected')
+        if last_ambiguity_flag != self.ambiguity_flag:
+            rospy.logwarn('ambiguity flag changed: %s', self.ambiguity_flag)
+        if last_ambiguity_flag == True and self.ambiguity_flag == False:
+            self.pending_ambiguity_resolve = True
+            rospy.logwarn('ambiguity resolved')
+        if last_ambiguity_flag == False and self.ambiguity_flag == True:
+            self.pending_ambiguity_raised = True
+            rospy.logwarn('ambiguity detected')
             
+    
+        
+    
     # run the node
     def run(self):
         rospy.spin()
