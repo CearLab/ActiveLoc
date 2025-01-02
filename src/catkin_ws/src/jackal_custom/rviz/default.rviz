@@ -4,6 +4,7 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Grid1
         - /TF_tree1/Frames1
         - /UGV01EKF1/Shape1
         - /UGV01EKF1/Covariance1
@@ -61,7 +62,7 @@ Visualization Manager:
         Y: 0
         Z: 0
       Plane: XY
-      Plane Cell Count: 18
+      Plane Cell Count: 22
       Reference Frame: <Fixed Frame>
       Value: true
     - Alpha: 0.10000000149011612
@@ -220,6 +221,7 @@ Visualization Manager:
         AN0/anchor_markers: true
         AN1/anchor_markers: true
         AN2/anchor_markers: true
+        AN3/anchor_markers: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -230,6 +232,7 @@ Visualization Manager:
         AN0/anchor_markers: true
         AN1/anchor_markers: true
         AN2/anchor_markers: true
+        AN3/anchor_markers: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -240,6 +243,7 @@ Visualization Manager:
         AN0/line_markers: true
         AN1/line_markers: true
         AN2/line_markers: true
+        AN3/line_markers: true
       Queue Size: 0
       Value: true
     - Class: rviz/MarkerArray
@@ -306,7 +310,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 23.544296264648438
+      Distance: 29.581140518188477
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -322,9 +326,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.0003989934921265
+      Pitch: 0.5203996300697327
       Target Frame: <Fixed Frame>
-      Yaw: 2.880375385284424
+      Yaw: 2.7003705501556396
     Saved: ~
 Window Geometry:
   Displays:
