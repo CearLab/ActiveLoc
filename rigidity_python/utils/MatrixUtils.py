@@ -11,7 +11,7 @@ def CalcAdjacencyMatrix(graph: nx.Graph):
     """
     return nx.adjacency_matrix(graph).toarray()
 
-def calcDistanceMatrix(graph: nx.Graph):
+def CalcDistanceMatrix(graph: nx.Graph):
     """
     Calculate the distance matrix of a given graph
     :param graph: networkx graph
@@ -31,7 +31,7 @@ def calcDistanceMatrix(graph: nx.Graph):
     
     return distance_matrix
 
-def calcIncidenceMatrix(graph: nx.Graph):
+def CalcIncidenceMatrix(graph: nx.Graph):
     """
     Calculate the incidence matrix of a given graph
     :param graph: networkx graph
@@ -39,7 +39,7 @@ def calcIncidenceMatrix(graph: nx.Graph):
     """
     return nx.incidence_matrix(graph).toarray()
 
-def calcRigitdyMatrix(graph: nx.Graph):
+def CalcRigidityMatrix(graph: nx.Graph):
     """
     Calculate the rigidity matrix of a given graph
     :param graph: networkx graph
@@ -84,14 +84,14 @@ def checkKconnectivity(graph: nx.Graph, k):
     """
     return nx.is_k_edge_connected(graph, k)
 
-def isRidged(graph: nx.Graph):
+def isRigid(graph: nx.Graph):
     """
     Check if the graph is ridged
     :param graph: networkx graph
     :return: bool
     """
     _TOL = 1e-10
-    ridgidty_matrix = calcRigitdyMatrix(graph)
+    ridgidty_matrix = CalcRigidityMatrix(graph)
     
     eigvals = np.linalg.eigvals(ridgidty_matrix.T @ ridgidty_matrix)
     # ! i think there is some mistake here, the graph from the test should not be ridged

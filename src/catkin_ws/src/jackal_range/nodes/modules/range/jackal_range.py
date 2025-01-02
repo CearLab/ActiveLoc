@@ -28,7 +28,7 @@ class JackalRange(JackalGeneral):
           ]
     
     # range
-    RANGE = 6
+    RANGE = 10
     
     # general anchors_params with anchor positions
     anchors_params = [
