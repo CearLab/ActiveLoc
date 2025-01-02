@@ -27,7 +27,10 @@ class JackalMove(JackalRange):
     odom_name = ''
     p_goal = ''
     a_goal = ''
-    mode = 0
+    finished = False
+    first_parse = True
+    last_time = None
+    mode = 0 # 1 = follow, 0 = movebase
     
     def __init__(self):
         
@@ -41,21 +44,22 @@ class JackalMove(JackalRange):
         rospy.loginfo("Synchronization")
 
         # from string to array
-        if self.mode == 0:
+        if self.mode == 0 and self.first_parse:
             self.p_goal = np.asarray([float(num) for num in self.p_goal.split()])
             self.a_goal = np.asarray([float(num) for num in self.a_goal.split()])
             # Convert Euler angles to quaternion
             self.quaternion = tft.quaternion_from_euler(self.a_goal[0], self.a_goal[1], self.a_goal[2])
             self.odom_msg = nav_msgs.msg.Odometry()
             rospy.loginfo(self.p_goal)
-            rospy.loginfo(self.a_goal)                
+            rospy.loginfo(self.a_goal)
+            self.first_parse = False                
         
         # current pos
         pos_sub = message_filters.Subscriber(self.odom_name, nav_msgs.msg.Odometry)
         # moving target
         if self.mode == 1:
             ref_sub = message_filters.Subscriber(self.leader_topic, nav_msgs.msg.Odometry)     
-            rospy.loginfo('leader topic: ' + self.leader_topic)   
+            rospy.loginfo('leader topic: ' + self.leader_topic)
 
         # Synchronize the messages
         if self.mode == 0:
@@ -64,13 +68,32 @@ class JackalMove(JackalRange):
             ts = message_filters.ApproximateTimeSynchronizer([pos_sub, ref_sub], queue_size=10, slop=0.1)
             
         ts.registerCallback(self.ugv_control, pub)
-        rospy.spin()
+        rate = rospy.Rate(10)  # 10 Hz
+        while not rospy.is_shutdown():
+            # Check some condition to stop spinning
+            if self.finished:
+                rospy.loginfo("Condition met, stopping the spin.")
+                return 1
+            rate.sleep()
+        
+        
+        
 
         return 0
 
+    def update_position_goal(self, position):
+        self.p_goal = [0.0, 0.0]
+        self.p_goal[0] = position[0]
+        self.p_goal[1] = position[1]
+        self.finished = False
+        rospy.logwarn("Goal updated: " + str(self.p_goal))
+        
     def ugv_control(self, pos, ref, pub):   
         
-        # rospy.loginfo('Control')                         
+        #enforced the rate using return when the diff between the current system time the the last callback is too small
+        if self.last_time is not None:
+            if rospy.Time.now().to_sec() - self.last_time < (1 / self.RANGE):
+                return 0
         
         # create message
         cmd = geometry_msgs.msg.Twist()
@@ -93,7 +116,7 @@ class JackalMove(JackalRange):
         # position error
         ex = x_goal - x
         ey = y_goal - y
-
+        
         # distance and angle to goal
         ed = math.sqrt(ex ** 2 + ey ** 2)        
         theta_goal_final = 0        
@@ -105,7 +128,7 @@ class JackalMove(JackalRange):
         K3b = 0.2
         thresh_pos = 0.1
         thresh_ang = 0.05        
-
+        self.last_time = rospy.Time.now().to_sec()
         # compute control
         if abs(ed) >= thresh_pos:
             
@@ -147,7 +170,8 @@ class JackalMove(JackalRange):
                     return 0
                 else:
                     rospy.logwarn_once('Target reached. Stopping the node.')
-                    subprocess.check_call(['rosnode', 'kill', rospy.get_name()])
+                    self.finished = True
+                    # subprocess.check_call(['rosnode', 'kill', rospy.get_name()])
                     return 1
 
         
