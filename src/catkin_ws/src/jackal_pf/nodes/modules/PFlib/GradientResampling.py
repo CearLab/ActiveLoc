@@ -38,10 +38,12 @@ class GradientResamplingUtiles():
         if do_debug:
             agent_position_log = np.zeros((number_of_step, 2))
             move_direction_log = np.zeros((number_of_step, 2))
-        measurements_likelihood_log = np.zeros(number_of_step)
+            measurements_likelihood_log = np.zeros(number_of_step)
         local_maxima_indices = []
         maxima_positions = []
         maxima_likelihoods = []
+        last_likelihood = -np.inf
+        two_last_likelihood = -np.inf
         for i in range(number_of_step):
             _, grad_normlized = GradientResamplingUtiles.single_measurement_gradient_calculation(current_position,
                                                                                                 beacon_position,
@@ -57,18 +59,21 @@ class GradientResamplingUtiles():
             x[get_agent_index(agent_id)] = current_position
             current_likelihood = GradientResamplingUtiles.get_likelihood(z, x, measurements_likelihood_function)
             #cheack if the last position was local maxima
-            rospy.logwarn(f"current_position: {current_position} \n current_likelihood: {current_likelihood} \n last_position: {last_position}")
-            last_likelihood = measurements_likelihood_log[i-1] if i > 0 else -np.inf
-            two_last_likelihood = measurements_likelihood_log[i-2] if i > 1 else -np.inf
+            # rospy.logwarn(f"current_position: {current_position} \n current_likelihood: {current_likelihood} \n last_position: {last_position}")
+            #log each 10 steps
+            if i % 100 == 0:
+                rospy.logdebug(f"step: {i} \n current_position: {current_position} \n current_likelihood: {current_likelihood} \n last_position: {last_position}")
             if current_likelihood < last_likelihood and last_likelihood > two_last_likelihood:
                 local_maxima_indices.append(i-1)
                 maxima_positions.append(last_position)
                 maxima_likelihoods.append(last_likelihood)
+                rospy.loginfo(f"found local maxima at step: {i-1} \n position: {last_position} \n likelihood: {last_likelihood}")
             if do_debug:
                 agent_position_log[i] = current_position
                 move_direction_log[i] = move_direction
-            measurements_likelihood_log[i] = current_likelihood
-            
+                measurements_likelihood_log[i] = current_likelihood
+            two_last_likelihood = last_likelihood
+            last_likelihood = current_likelihood
         debug_data = None
         if do_debug:
             debug_data = {
@@ -79,7 +84,7 @@ class GradientResamplingUtiles():
                 'maxima_positions': maxima_positions,
                 'maxima_likelihoods': maxima_likelihoods
             }
-        rospy.logwarn(f"maxima_positions: {maxima_positions} \n maxima_likelihoods: {maxima_likelihoods}")
+        rospy.loginfo(f"finshed gradient resampling \n number of maxima: {len(local_maxima_indices)} \n maxima_positions: {maxima_positions} \n maxima_likelihoods: {maxima_likelihoods}")
         return maxima_positions, maxima_likelihoods, debug_data
         
     
@@ -139,6 +144,8 @@ class GradientResamplingUtiles():
     def resampling_in_local_maxima(positions, particle, original_position):
         #split the partical of num_of_positions
         num_of_positions = len(positions)
+        if num_of_positions < 2:
+            return particle
         grouped_particles = np.array_split(particle, num_of_positions)
         new_particles = []
         for i in range(num_of_positions):
@@ -146,8 +153,8 @@ class GradientResamplingUtiles():
             
             translation[0:2] = positions[i] - original_position
             #make sure that translation is padding with zeros according to the state size
-            rospy.logwarn(f"original_position: {original_position}")
-            rospy.logwarn(f"translation: {translation}")
+            rospy.logdebug(f"original_position: {original_position}")
+            rospy.logdebug(f"translation: {translation}")
             new_particle = grouped_particles[i] + translation
             new_particles.append(new_particle)
         return np.concatenate(new_particles, axis=0)
@@ -170,16 +177,16 @@ class GradientResamplingUtiles():
         maxima_positions, maxima_indeces, debug_data = GradientResamplingUtiles.start_travel_along_gradient(x, z, agent_id, beacon_id, measurements_likelihood_function, sigma_measurement, step_size, number_of_step, do_debug)
         # rospy.logwarn(f"maxima_positions: {maxima_positions}")
         # rospy.logwarn(f"maxima_indeces: {maxima_indeces}")
+        new_particles = GradientResamplingUtiles.resampling_in_local_maxima(maxima_positions, particles, x_orig[get_agent_index(agent_id)])
+        if do_debug:
+            debug_data['new_particles'] = new_particles
         if do_debug:
             GradientResamplingUtiles.print_debugdata_to_files(debug_data)
-        new_particles = GradientResamplingUtiles.resampling_in_local_maxima(maxima_positions, particles, x_orig[get_agent_index(agent_id)])
         return new_particles
     
     @staticmethod
-    def print_debugdata_to_files(debug_data):
-        #log the pwd
-        
-        ros_log_dir = os.getenv("ROS_LOG_DIR", os.path.expanduser("~/.ros/log"))
+    def print_debugdata_to_files(debug_data):        
+        ros_log_dir = os.getenv("ROS_LOG_DIR", os.path.expanduser("~/.ros/log/latest"))
         folder_to_save = os.path.join(ros_log_dir, "gradient_resampling")
         #create the folder if it dosent exist
         os.makedirs(folder_to_save, exist_ok=True)
@@ -189,3 +196,5 @@ class GradientResamplingUtiles():
         np.savetxt(f'{folder_to_save}/maxima_indices.csv', debug_data['maxima_indices'], delimiter=',')
         np.savetxt(f'{folder_to_save}/maxima_positions.csv', debug_data['maxima_positions'], delimiter=',')
         np.savetxt(f'{folder_to_save}/maxima_likelihoods.csv', debug_data['maxima_likelihoods'], delimiter=',')
+        np.savetxt(f'{folder_to_save}/new_particles.csv', debug_data['new_particles'], delimiter=',')
+ 
