@@ -15,6 +15,7 @@ from nav_msgs.msg import Odometry
 from PFutils.pfMetry import pfmetry
 import tf2_ros
 import tf_conversions
+from sklearn.mixture import GaussianMixture
 
 # point cloud
 from sensor_msgs.msg import PointCloud2
@@ -33,6 +34,10 @@ HEIGHT = 2
 # variance for the initial spread of the particles
 INITIAL_PARTICLES_VARIANCE = 4
 
+AMBIGUITY_ALGO_INTERNAL_RATE = 5
+
+VERY_LARGE_COVARIANCE = 1000
+MIN_OUTOUT_COVARIANCE = 0.5*0.5
 class PFnode:
     
     # init namespace
@@ -70,6 +75,9 @@ class PFnode:
     particles_msg = PointCloud2()
     
     pf_busy = False
+    
+    mean = np.zeros(TOTAL_STATE_SIZE)
+    cov = np.zeros((TOTAL_STATE_SIZE, TOTAL_STATE_SIZE))
 
     
     # ? what we want do with the metry?
@@ -81,12 +89,17 @@ class PFnode:
     static = False
     static_counter = 0
     last_nonstatic_time = 0
+    ambiguity_algo_last_run = 0
+    current_range_msg_time = 0
+    run_ambiguity_algo = False
+    last_gmm_checkup = 0
     # class constructor
     def __init__(self):   
         
         NS_name = rospy.get_param('~NS_name', '')   # ? why we call this here and not in the handler?
         self.NUM_OF_PARTICLES = int(rospy.get_param('~N_particles', '')) 
-        
+        #set logger level to info
+        rospy.set_param("/rosconsole/logger_levels/PFlib", "DEBUG")  # Specific namespace
         # indices for the invalid measurements
         self._invalid_indices = []
         
@@ -318,114 +331,69 @@ class PFnode:
     
     # timer callback
     def timer_callback(self, event):
-        
         # log first timer callback
-        rospy.logwarn_once('first timer callback, dt: %s', self.current_range_msg.header.stamp.to_sec() - self.last_range_msg_time)
-        self.ambiguity_handler()
+        self.current_range_msg_time = self.current_range_msg.header.stamp.to_sec()
+        rospy.logwarn_once('first timer callback, dt: %s', self.current_range_msg_time - self.last_range_msg_time)
+        self.ambiguity_logic()
         # if the range message is newer than the last range message time
         if self.is_particle_filter_time():
             self.pf_busy = True
-            
-            # log
-            rospy.loginfo_once('starting first PF step')
-            
-            # set particles
-            self.metry_obj.write('particles', self.particles)
-            self.metry_obj.write('u', self.u)
-            self.metry_obj.write('z', self.z)
-            self.last_range_msg_time = self.current_range_msg.header.stamp.to_sec()
-            
-            # get last XY position and current one
-            last_odom_xy = np.array([self.last_controller_odom_msg.pose.pose.position.x, self.last_controller_odom_msg.pose.pose.position.y])
-            current_odom_xy = np.array([self.ctrl_odom_msg_curr_range_time.pose.pose.position.x, self.ctrl_odom_msg_curr_range_time.pose.pose.position.y])
-            
-            # set odom time as the range time
-            self.last_controller_odom_msg = self.ctrl_odom_msg_curr_range_time
-            # control is difference between current and last odom
-            self.u[get_agent_index(0)] = np.array([current_odom_xy - last_odom_xy])
-            # self.u = np.nan_to_num(self.u, nan=0.0)
-            # measure is the range measurement
-            self.z = np.array(self.current_range_msg.D).T
-            
-            # init mean anc cov
-            self.mean = np.zeros(TOTAL_STATE_SIZE)
-            self.cov = np.zeros((TOTAL_STATE_SIZE, TOTAL_STATE_SIZE))
-            
-            # replace the cov of _invalid_indices with a high value
-            self.cov_measurement = np.diag([SIGMA_MEASUREMENT**2 for i in range(RANGE_MEASUREMENT_SIZE)])
-            for i in self._invalid_indices:
-                self.cov_measurement[i,i] = 1000
-            
-            # log the covariance matrix
-            # rospy.logwarn('covariance matrix: %s', self.cov_measurement)
-            
-            # call the PF
-            self.particles = PF.single_step_particle_filter(self.particles,
-                                                            self.u,
-                                                            self.z,
-                                                            self.propagate_state_function,
-                                                            self.measurements_likelihood,
-                                                            resample_method = RESAMPLE_METHOD)
-            
-            # average the particles
-            self.mean, self.cov = calculate_mean_and_cov(self.particles)            
-            
-            # log
-            self.metry_obj.write('mean', self.mean)
-            self.metry_obj.write('cov', self.cov)
-            
-            # set data
-            self.op.header.stamp = rospy.Time.now()
-            self.op.header.frame_id = self.namespace + '/odom'
-            self.op.child_frame_id = self.namespace + '/base_link'
-            # local position
-            tag_pos_local = np.array((self.mean[0], self.mean[1], 0.))
-            agent_pos_local = self.DCM_local_tag@(tag_pos_local + self.trans_local)
-            self.op.pose.pose.position = Point(agent_pos_local[0], agent_pos_local[1], np.abs(agent_pos_local[2]))
-            self.op.pose.pose.orientation = Quaternion(0., 0., 0., 1.)
-            self.op.pose.covariance[0:2] = self.cov[0:2].tolist()
-            self.op.pose.covariance[2:4] = self.cov[TOTAL_STATE_SIZE:TOTAL_STATE_SIZE + 2].tolist()    
-            self.op.pose.covariance[0] += 0.5*0.5          
-            self.op.pose.covariance[3] += 0.5*0.5  
-            self.op.twist.twist.linear = Vector3(self.u[0], self.u[1], 0.)
-            self.op.twist.twist.angular = Vector3(0., 0., 0.)
-            
-            # publish and log
-            self.publisher.publish(self.op)
-            
-            # publish the particles as PintCloud
-            head = std_msgs.msg.Header()
-            head.stamp = rospy.Time.now()
-            head.frame_id = self.namespace + '/odom'
-            particles_2d = np.zeros((self.NUM_OF_PARTICLES, 3))
-            particles_2d[:,:2] = self.particles[:,:2]          
-            particles_2d[:,2] = np.abs(agent_pos_local[2])  
-            self.particles_msg = pcl2.create_cloud_xyz32(head, particles_2d.tolist())               
-            self.publisher_particles.publish(self.particles_msg)
-
-            if self.pending_ambiguity_raised and self.static:
-                rospy.logwarn('ambiguity raised, trying to run gradient resampling')
-                #get the first beacon the is valid
-                for i in range(NUM_OF_BEACONS):
-                    if i not in self._invalid_indices:
-                        beacon_id = i
-                        break
-                self.particles = GradientResamplingUtiles.main(  x_orig = self.mean,
-                                                z = self.z,
-                                                agent_id = 0,
-                                                beacon_id = beacon_id,
-                                                particles = self.particles,
-                                                measurements_likelihood_function = self.measurements_likelihood,
-                                                sigma_measurement = SIGMA_MEASUREMENT,
-                                                step_size = 0.05,
-                                                do_debug = False)
-                self.pending_ambiguity_raised = False
-                rospy.logwarn('finished gradient resampling')
-            
+            self.pf_algo()
+            self.output_publisher()
+            self.ambiguity_algo()
             self.pf_busy = False
             rospy.loginfo_once('finished first PF step')
-            
-    # callback for the transform
+    
+    def pf_algo(self):
+        
+        # set particles
+        self.metry_obj.write('particles', self.particles)
+        self.metry_obj.write('u', self.u)
+        # rospy.logwarn('u: %s', self.u)
+        self.metry_obj.write('z', self.z)
+        self.last_range_msg_time = self.current_range_msg_time
+        
+        # get last XY position and current one
+        last_odom_xy = np.array([self.last_controller_odom_msg.pose.pose.position.x, self.last_controller_odom_msg.pose.pose.position.y])
+        current_odom_xy = np.array([self.ctrl_odom_msg_curr_range_time.pose.pose.position.x, self.ctrl_odom_msg_curr_range_time.pose.pose.position.y])
+        
+        # set odom time as the range time
+        self.last_controller_odom_msg = self.ctrl_odom_msg_curr_range_time
+        # control is difference between current and last odom
+        self.u[get_agent_index(0)] = np.array([current_odom_xy - last_odom_xy])
+        # self.u = np.nan_to_num(self.u, nan=0.0)
+        # measure is the range measurement
+        self.z = np.array(self.current_range_msg.D).T
+        
+        # init mean anc cov
+        self.mean = np.zeros(TOTAL_STATE_SIZE)
+        self.cov = np.zeros((TOTAL_STATE_SIZE, TOTAL_STATE_SIZE))
+        
+        # replace the cov of _invalid_indices with a high value
+        self.cov_measurement = np.diag([SIGMA_MEASUREMENT**2 for i in range(RANGE_MEASUREMENT_SIZE)])
+        for i in self._invalid_indices:
+            self.cov_measurement[i,i] = VERY_LARGE_COVARIANCE
+        
+        # log the covariance matrix
+        # rospy.logwarn('covariance matrix: %s', self.cov_measurement)
+        
+        # call the PF
+        self.particles = PF.single_step_particle_filter(self.particles,
+                                                        self.u,
+                                                        self.z,
+                                                        self.propagate_state_function,
+                                                        self.measurements_likelihood,
+                                                        resample_method = RESAMPLE_METHOD)
+        
+        # average the particles
+        self.mean, self.cov = calculate_mean_and_cov(self.particles)            
+        # if self.ambiguity_flag:
+        #     self.mean[0:2] = self.majuority_position
+        # log
+        self.metry_obj.write('mean', self.mean)
+        self.metry_obj.write('cov', self.cov)
+
+# callback for the transform
     def timer_callback_tf(self, event):
             
         # define frames of the transformation for the local frame
@@ -474,13 +442,15 @@ class PFnode:
             rospy.logwarn("Transformation error raised: %s", e)
     
     
-    def ambiguity_handler(self):
+    def ambiguity_logic(self):
         last_ambiguity_flag = self.ambiguity_flag
         self.ambiguity_flag = False
+        self.run_ambiguity_algo = False
         # check how many beacons are invalid
         n_invalid = len(self._invalid_indices)
         #get the number of valid beacons
         n_valid = NUM_OF_BEACONS - n_invalid
+        self.majuority_position = self.mean[0:2]
         if n_valid < 3:
             self.ambiguity_flag = True
             rospy.logwarn_once('ambiguity detected')
@@ -492,10 +462,108 @@ class PFnode:
         if last_ambiguity_flag == False and self.ambiguity_flag == True:
             self.pending_ambiguity_raised = True
             rospy.logwarn('ambiguity detected')
+        if self.pending_ambiguity_raised:
+            self.run_ambiguity_algo = True
+        if self.ambiguity_flag and (self.current_range_msg_time - self.last_gmm_checkup) > AMBIGUITY_ALGO_INTERNAL_RATE:
+            self.last_gmm_checkup = self.current_range_msg_time
+            #run GMM to check if there is enugh population
+            new_positions, _, weights, kl = PFnode.GMM(self.particles)
+            #find wich position is the majority
+            majuority_population = 0 if weights[0] > weights[1] else 1
+            if weights[majuority_population] > 0.7 or kl < 20:
+                self.run_ambiguity_algo = True
+                self.majuority_position = new_positions[majuority_population]
+                rospy.logwarn('there is not enugh population, running ambiguity algo')
+            else:
+                self.run_ambiguity_algo = False
+                rospy.logwarn('there is enugh population, not running ambiguity algo')
+            if self.current_range_msg_time - self.ambiguity_algo_last_run > 3*AMBIGUITY_ALGO_INTERNAL_RATE:
+                self.run_ambiguity_algo = True
+                rospy.logwarn('running ambiguity algo after 3*AMBIGUITY_ALGO_INTERNAL_RATE')
+                
+                
+    def ambiguity_algo(self):
+        if self.run_ambiguity_algo:# and self.static:
+            rospy.logwarn('ambiguity raised, trying to run gradient resampling')
+            #get the first beacon the is valid
+            beacon_id = None
+            for i in range(NUM_OF_BEACONS):
+                if i not in self._invalid_indices:
+                    beacon_id = i
+                    break
+            if beacon_id is not None:
+                rospy.logwarn('mean: %s', self.mean)
+                self.particles = GradientResamplingUtiles.main(  x_orig = self.mean,
+                                                z = self.z,
+                                                agent_id = 0,
+                                                beacon_id = beacon_id,
+                                                particles = self.particles,
+                                                measurements_likelihood_function = self.measurements_likelihood,
+                                                sigma_measurement = SIGMA_MEASUREMENT,
+                                                step_size = 0.05,
+                                                do_debug = False)
+                self.pending_ambiguity_raised = False
+                self.ambiguity_algo_last_run = self.current_range_msg_time
+                rospy.logwarn('finished gradient resampling')
+            else:
+                rospy.logwarn('no valid beacons, cannot run gradient resampling')
+
+    def output_publisher(self):
+            # set data
+            self.op.header.stamp = rospy.Time.now()
+            self.op.header.frame_id = self.namespace + '/odom'
+            self.op.child_frame_id = self.namespace + '/base_link'
+            # local position
+            tag_pos_local = np.array((self.mean[0], self.mean[1], 0.))
+            agent_pos_local = self.DCM_local_tag@(tag_pos_local + self.trans_local)
+            self.op.pose.pose.position = Point(agent_pos_local[0], agent_pos_local[1], np.abs(agent_pos_local[2]))
+            self.op.pose.pose.orientation = Quaternion(0., 0., 0., 1.)
+            self.op.pose.covariance[0:2] = self.cov[0:2].tolist()
+            self.op.pose.covariance[2:4] = self.cov[TOTAL_STATE_SIZE:TOTAL_STATE_SIZE + 2].tolist()    
+            self.op.pose.covariance[0] += MIN_OUTOUT_COVARIANCE          
+            self.op.pose.covariance[3] += MIN_OUTOUT_COVARIANCE  
+            self.op.twist.twist.linear = Vector3(self.u[0], self.u[1], 0.)
+            self.op.twist.twist.angular = Vector3(0., 0., 0.)
             
-    
+            # publish and log
+            if (NUM_OF_BEACONS - len(self._invalid_indices)) < 2: #inflate the covariance if we have less than 2 beacons 
+                self.op.pose.covariance[0] += VERY_LARGE_COVARIANCE
+                self.op.pose.covariance[3] += VERY_LARGE_COVARIANCE
+                rospy.logwarn('not enough beacons, inflating covariance')
+            self.publisher.publish(self.op)
+            
+            # publish the particles as PintCloud
+            head = std_msgs.msg.Header()
+            head.stamp = rospy.Time.now()
+            head.frame_id = self.namespace + '/odom'
+            particles_2d = np.zeros((self.NUM_OF_PARTICLES, 3))
+            particles_2d[:,:2] = self.particles[:,:2]          
+            particles_2d[:,2] = np.abs(agent_pos_local[2])  
+            self.particles_msg = pcl2.create_cloud_xyz32(head, particles_2d.tolist())               
+            self.publisher_particles.publish(self.particles_msg)
+
+    @staticmethod
+    def GMM(particles: np.array):
+        rospy.logwarn('start GMM')
+        gmm = GaussianMixture(n_components=2)
+        gmm.fit(particles[:, 0:2])
+        new_positions = gmm.means_
+        covariances = gmm.covariances_
+        weights = gmm.weights_
+        rospy.logwarn(f'done GMM \n new_positions: {new_positions} \n covariances: {covariances} \n weights: {weights}')
         
-    
+        d = new_positions[0].shape[0]
+        # Compute the terms
+        cov2_inv = np.linalg.inv(covariances[1])
+        trace_term = np.trace(cov2_inv @ covariances[0])
+        mean_diff = new_positions[1] - new_positions[0]
+        mean_term = mean_diff.T @ cov2_inv @ mean_diff
+        log_det_term = np.log(np.linalg.det(covariances[1]) / np.linalg.det(covariances[0]))
+        # KL divergence
+        kl = 0.5 * (trace_term + mean_term - d + log_det_term)
+        rospy.logwarn(f'KL divergence: {kl}')
+        return new_positions, covariances, weights,kl
+
     # run the node
     def run(self):
         rospy.spin()
@@ -504,7 +572,7 @@ class PFnode:
 if __name__ == '__main__':
     
     try:
-        rospy.init_node('pf')
+        rospy.init_node('pf', log_level=rospy.INFO)
         rospy.loginfo('+++++++++++++++ node started +++++++++++++++++')
         
         # init
