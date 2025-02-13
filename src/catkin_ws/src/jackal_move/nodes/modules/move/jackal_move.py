@@ -30,13 +30,15 @@ class JackalMove(JackalRange):
     finished = False
     first_parse = True
     last_time = None
-    mode = 0 # 1 = follow, 0 = movebase
+    mode = 0 # 1 = follow, 0 = movebase    
     
     def __init__(self):
         
         # inheriting
         super().__init__()
-
+        self.ei = 0.0
+        self.etheta_i = 0.0
+        self.iter = 0
     def follow(self):
         
         # publish
@@ -97,6 +99,14 @@ class JackalMove(JackalRange):
         
         # create message
         cmd = geometry_msgs.msg.Twist()
+        
+        # integral error
+        self.iter += 1
+        
+        # integral reset
+        if self.iter % 1000 == 0:
+            self.ei = 0.0 
+            self.etheta_i = 0.0
 
         # current pos and orientation
         x = pos.pose.pose.position.x
@@ -112,67 +122,49 @@ class JackalMove(JackalRange):
         else:
             x_goal = self.p_goal[0]
             y_goal = self.p_goal[1]
+            
+        # gains   
+        Kpos = 0.1
+        Kpos_i = 0.01
+        Ktheta = 1.5            
+        Ktheta_i = 0.1
+        thresh_pos = 0.05           
 
         # position error
         ex = x_goal - x
         ey = y_goal - y
         
         # distance and angle to goal
-        ed = math.sqrt(ex ** 2 + ey ** 2)        
-        theta_goal_final = 0        
-        vmax = 0.3
-        gtg_scaling = 0.5
-
-        # gains   
-        K1 = 10     
-        K3b = 0.2
-        thresh_pos = 0.1
-        thresh_ang = 0.05        
+        ed = np.linalg.norm(np.array((ex, ey)))
+        self.ei =+ ed
+        
+        theta_goal = math.atan2(ey, ex)  # Desired heading
+        etheta = math.atan2(math.sin(theta_goal - theta), math.cos(theta_goal - theta))
+        self.etheta_i += etheta  
+        
         self.last_time = rospy.Time.now().to_sec()
+        
         # compute control
         if abs(ed) >= thresh_pos:
             
             rospy.logwarn_once('Distance control')
-            
-            e = np.array([ex, ey])
-            K = vmax / (1 + gtg_scaling * ed)  # Gain decreases as bot gets closer to goal
-            v_x = np.linalg.norm(K * e)   # Velocity decreases as bot gets closer to goal
-            theta_goal = math.atan2(e[1], e[0])  # Desired heading
-            omega_z = K1*math.atan2(math.sin(theta_goal - theta), math.cos(theta_goal - theta))     # Only P part of a PID controller to give omega as per desired heading
+                                    
+            v_x = np.linalg.norm(Kpos * ed + Kpos_i * self.ei)                        
+            omega_z = Ktheta*etheta + Ktheta_i*self.etheta_i 
             
             # populate message
             cmd.linear.x = v_x
             cmd.angular.z = omega_z
-
-            # debug
-            # rospy.loginfo("Debug: publish on server")
+                        
             pub.publish(cmd)
 
             return 0
-        else:                
-                e_theta = theta_goal_final - theta
-                
-                if abs(e_theta) >= thresh_ang and 0:
-                    rospy.logwarn_once('Angular control')    
-                    
-                    # control
-                    v_x = 0
-                    omega_z = K3b*math.atan2(math.sin(e_theta), math.cos(e_theta))
-                    
-                    # populate message
-                    cmd.linear.x = v_x
-                    cmd.angular.z = omega_z
-        
-                    # debug
-                    # rospy.loginfo("Debug: publish on server")
-                    pub.publish(cmd)
-    
-                    return 0
-                else:
-                    rospy.logwarn_once('Target reached. Stopping the node.')
-                    self.finished = True
-                    # subprocess.check_call(['rosnode', 'kill', rospy.get_name()])
-                    return 1
+        else:                                                
+            
+            rospy.logwarn_once('Target reached. Stopping the node.')
+            self.finished = True
+            # subprocess.check_call(['rosnode', 'kill', rospy.get_name()])
+            return 1
 
         
 
