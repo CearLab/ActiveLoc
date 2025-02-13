@@ -1,6 +1,6 @@
 <launch>      
-  <arg name="X" default="3"/>
-  <arg name="Y" default="3"/>
+  <arg name="X" default="2.4"/>
+  <arg name="Y" default="1.5"/>
   <!-- UGV01 fixed -->
   <node pkg="jackal_move" type="follower.py" respawn="false" name="follow_01" output="screen">
     <param name="mode" type="int" value="0" />
