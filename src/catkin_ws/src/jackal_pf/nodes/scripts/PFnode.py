@@ -34,7 +34,9 @@ HEIGHT = 2
 # variance for the initial spread of the particles
 INITIAL_PARTICLES_VARIANCE = 4
 
-AMBIGUITY_ALGO_INTERNAL_RATE = 5
+AMBIGUITY_ALGO_INTERNAL_RATE = 3
+KL_THRESHOLD = 20
+WEIGHT_THRESHOLD = 0.7
 
 VERY_LARGE_COVARIANCE = 1000
 MIN_OUTOUT_COVARIANCE = 0.5*0.5
@@ -93,6 +95,15 @@ class PFnode:
     current_range_msg_time = 0
     run_ambiguity_algo = False
     last_gmm_checkup = 0
+    solution_voter = np.zeros((2,1))
+    solution_voter_cov = np.zeros((2,2))
+    solution_op = np.zeros((3,1))
+    solution_op_cov_xx = 0
+    solution_op_cov_yy = 0
+    solution_op_cov_xy = 0
+    should_we_publish = False
+    unbalanced_or_too_close_population = False
+    just_run_ambiguity_algo = False
     # class constructor
     def __init__(self):   
         
@@ -276,8 +287,6 @@ class PFnode:
                 rospy.logwarn('static detected')
             self.static = True
         
-
-
     # PF init particles
     def initialize_particles(self):
         
@@ -334,13 +343,17 @@ class PFnode:
         # log first timer callback
         self.current_range_msg_time = self.current_range_msg.header.stamp.to_sec()
         rospy.logwarn_once('first timer callback, dt: %s', self.current_range_msg_time - self.last_range_msg_time)
+        self.should_we_publish = True
+        self.just_run_ambiguity_algo = False
         self.ambiguity_logic()
         # if the range message is newer than the last range message time
         if self.is_particle_filter_time():
             self.pf_busy = True
             self.pf_algo()
-            self.output_publisher()
             self.ambiguity_algo()
+            self.GMM_and_kl_handler()
+            self.solution_setter()
+            self.output_publisher()
             self.pf_busy = False
             rospy.loginfo_once('finished first PF step')
     
@@ -451,6 +464,7 @@ class PFnode:
         #get the number of valid beacons
         n_valid = NUM_OF_BEACONS - n_invalid
         self.majuority_position = self.mean[0:2]
+        
         if n_valid < 3:
             self.ambiguity_flag = True
             rospy.logwarn_once('ambiguity detected')
@@ -460,30 +474,37 @@ class PFnode:
             self.pending_ambiguity_resolve = True
             rospy.logwarn('ambiguity resolved')
         if last_ambiguity_flag == False and self.ambiguity_flag == True:
+            self.solution_voter = self.mean[0:2]
+            self.solution_voter_cov[0,0] = self.cov[0]
+            self.solution_voter_cov[1,1] = self.cov[TOTAL_STATE_SIZE + 1]
+            self.solution_voter_cov[0,1] = self.cov[1]
+            self.solution_voter_cov[1,0] = self.cov[1]
             self.pending_ambiguity_raised = True
+            self.should_we_publish = False
             rospy.logwarn('ambiguity detected')
+        if not self.ambiguity_flag:
+            return
         if self.pending_ambiguity_raised:
             self.run_ambiguity_algo = True
-        if self.ambiguity_flag and (self.current_range_msg_time - self.last_gmm_checkup) > AMBIGUITY_ALGO_INTERNAL_RATE:
-            self.last_gmm_checkup = self.current_range_msg_time
-            #run GMM to check if there is enugh population
-            new_positions, _, weights, kl = PFnode.GMM(self.particles)
-            #find wich position is the majority
-            majuority_population = 0 if weights[0] > weights[1] else 1
-            if weights[majuority_population] > 0.7 or kl < 20:
-                self.run_ambiguity_algo = True
-                self.majuority_position = new_positions[majuority_population]
-                rospy.logwarn('there is not enugh population, running ambiguity algo')
-            else:
-                self.run_ambiguity_algo = False
-                rospy.logwarn('there is enugh population, not running ambiguity algo')
-            if self.current_range_msg_time - self.ambiguity_algo_last_run > 3*AMBIGUITY_ALGO_INTERNAL_RATE:
-                self.run_ambiguity_algo = True
-                rospy.logwarn('running ambiguity algo after 3*AMBIGUITY_ALGO_INTERNAL_RATE')
+        if self.unbalanced_or_too_close_population:
+            self.run_ambiguity_algo = True
+            self.unbalanced_or_too_close_population = False
+        if self.run_ambiguity_algo:
+            x = np.random.normal(self.solution_voter[0], self.solution_voter_cov[0,0], self.NUM_OF_PARTICLES)
+            y = np.random.normal(self.solution_voter[1], self.solution_voter_cov[1,1], self.NUM_OF_PARTICLES)
+            self.particles[:,0] = x
+            self.particles[:,1] = y
+                
+        if self.current_range_msg_time - self.ambiguity_algo_last_run > 3*AMBIGUITY_ALGO_INTERNAL_RATE:
+            return
+            self.run_ambiguity_algo = True
+            rospy.logwarn('running ambiguity algo after 3*AMBIGUITY_ALGO_INTERNAL_RATE')
+
                 
                 
     def ambiguity_algo(self):
         if self.run_ambiguity_algo:# and self.static:
+            self.just_run_ambiguity_algo = True
             rospy.logwarn('ambiguity raised, trying to run gradient resampling')
             #get the first beacon the is valid
             beacon_id = None
@@ -493,7 +514,9 @@ class PFnode:
                     break
             if beacon_id is not None:
                 rospy.logwarn('mean: %s', self.mean)
-                self.particles = GradientResamplingUtiles.main(  x_orig = self.mean,
+                tmp_mean = self.mean.copy()
+                tmp_mean[0:2] = self.solution_voter
+                self.particles = GradientResamplingUtiles.main(tmp_mean,  #x_orig = self.mean,
                                                 z = self.z,
                                                 agent_id = 0,
                                                 beacon_id = beacon_id,
@@ -510,18 +533,31 @@ class PFnode:
 
     def output_publisher(self):
             # set data
+            head = std_msgs.msg.Header()
+            head.stamp = rospy.Time.now()
+            head.frame_id = self.namespace + '/odom'
+            particles_2d = np.zeros((self.NUM_OF_PARTICLES, 3))
+            particles_2d[:,:2] = self.particles[:,:2]          
+            particles_2d[:,2] = np.abs(self.solution_op[2])  
+            self.particles_msg = pcl2.create_cloud_xyz32(head, particles_2d.tolist())               
+            self.publisher_particles.publish(self.particles_msg)
+            
+            if not self.should_we_publish: 
+                return
+                
             self.op.header.stamp = rospy.Time.now()
             self.op.header.frame_id = self.namespace + '/odom'
             self.op.child_frame_id = self.namespace + '/base_link'
             # local position
-            tag_pos_local = np.array((self.mean[0], self.mean[1], 0.))
-            agent_pos_local = self.DCM_local_tag@(tag_pos_local + self.trans_local)
-            self.op.pose.pose.position = Point(agent_pos_local[0], agent_pos_local[1], np.abs(agent_pos_local[2]))
+            # tag_pos_local = np.array((self.mean[0], self.mean[1], 0.))
+            # agent_pos_local = self.DCM_local_tag@(tag_pos_local + self.trans_local)
+            self.op.pose.pose.position = Point(self.solution_op[0], self.solution_op[1], np.abs(self.solution_op[2]))
             self.op.pose.pose.orientation = Quaternion(0., 0., 0., 1.)
-            self.op.pose.covariance[0:2] = self.cov[0:2].tolist()
-            self.op.pose.covariance[2:4] = self.cov[TOTAL_STATE_SIZE:TOTAL_STATE_SIZE + 2].tolist()    
-            self.op.pose.covariance[0] += MIN_OUTOUT_COVARIANCE          
-            self.op.pose.covariance[3] += MIN_OUTOUT_COVARIANCE  
+            self.op.pose.covariance[0] = self.solution_op_cov_xx + MIN_OUTOUT_COVARIANCE
+            self.op.pose.covariance[3] = self.solution_op_cov_yy + MIN_OUTOUT_COVARIANCE
+            self.op.pose.covariance[1] = self.op.pose.covariance[2] = self.solution_op_cov_xy
+            # self.op.pose.covariance[0:2] = self.cov[0:2].tolist()
+            # self.op.pose.covariance[2:4] = self.cov[TOTAL_STATE_SIZE:TOTAL_STATE_SIZE + 2].tolist()    
             self.op.twist.twist.linear = Vector3(self.u[0], self.u[1], 0.)
             self.op.twist.twist.angular = Vector3(0., 0., 0.)
             
@@ -533,14 +569,55 @@ class PFnode:
             self.publisher.publish(self.op)
             
             # publish the particles as PintCloud
-            head = std_msgs.msg.Header()
-            head.stamp = rospy.Time.now()
-            head.frame_id = self.namespace + '/odom'
-            particles_2d = np.zeros((self.NUM_OF_PARTICLES, 3))
-            particles_2d[:,:2] = self.particles[:,:2]          
-            particles_2d[:,2] = np.abs(agent_pos_local[2])  
-            self.particles_msg = pcl2.create_cloud_xyz32(head, particles_2d.tolist())               
-            self.publisher_particles.publish(self.particles_msg)
+
+    def solution_setter(self):
+        tag_pos_local = np.array((self.mean[0], self.mean[1], 0.))
+        agent_pos_local = self.DCM_local_tag@(tag_pos_local + self.trans_local)
+        self.solution_op[2] = np.abs(agent_pos_local[2])
+        if not self.ambiguity_flag:
+            self.solution_op[0] = agent_pos_local[0]
+            self.solution_op[1] = agent_pos_local[1]
+            self.solution_op_cov_xx = self.cov[0]
+            self.solution_op_cov_yy = self.cov[TOTAL_STATE_SIZE + 1]
+            self.solution_op_cov_xy = self.cov[1]
+        else:
+            self.solution_op[0] = self.solution_voter[0]
+            self.solution_op[1] = self.solution_voter[1]
+            self.solution_op_cov_xx = self.solution_voter_cov[0,0]
+            self.solution_op_cov_yy = self.solution_voter_cov[1,1]
+            self.solution_op_cov_xy = self.solution_voter_cov[1,0]
+            
+            
+    def GMM_and_kl_handler(self):
+        if not self.ambiguity_flag or self.just_run_ambiguity_algo:
+            return
+        self.should_we_publish = False
+        if (self.current_range_msg_time - self.last_gmm_checkup) > AMBIGUITY_ALGO_INTERNAL_RATE:
+            self.should_we_publish = True
+            self.last_gmm_checkup = self.current_range_msg_time
+            #run GMM to check if there is enugh population
+            new_positions, covariances, weights, kl = PFnode.GMM(self.particles)
+            #find wich position is the majority
+            majuority_population = 0 if weights[0] > weights[1] else 1
+            if weights[majuority_population] > WEIGHT_THRESHOLD or kl < KL_THRESHOLD:
+                self.unbalanced_or_too_close_population = True
+                rospy.logwarn('there is not enugh population, running ambiguity algo, KL: %s, MaxwEIGHT: %s', kl, weights[majuority_population])
+            else:
+                self.unbalanced_or_too_close_population = False
+                rospy.logwarn('there is enugh population, not running ambiguity algo')
+            #take the closest one to the voter
+            kl1 = PFnode.KL(self.solution_voter, self.solution_voter_cov, new_positions[0], covariances[0])
+            kl2 = PFnode.KL(self.solution_voter, self.solution_voter_cov, new_positions[1], covariances[1])
+            if kl1 <= kl2:
+                self.solution_voter = new_positions[0]
+                self.solution_voter_cov = covariances[0]
+                rospy.logwarn('solution voter changed to 0')
+                rospy.logwarn('solution voter is: %s', self.solution_voter)
+            else:
+                self.solution_voter = new_positions[1]
+                self.solution_voter_cov = covariances[1]
+                rospy.logwarn('solution voter changed to 1')
+                rospy.logwarn('solution voter is: %s', self.solution_voter)
 
     @staticmethod
     def GMM(particles: np.array):
@@ -552,17 +629,32 @@ class PFnode:
         weights = gmm.weights_
         rospy.logwarn(f'done GMM \n new_positions: {new_positions} \n covariances: {covariances} \n weights: {weights}')
         
-        d = new_positions[0].shape[0]
+        kl = PFnode.KL(new_positions[0], covariances[0], new_positions[1], covariances[1])
+        # d = new_positions[0].shape[0]
+        # # Compute the terms
+        # cov2_inv = np.linalg.inv(covariances[1])
+        # trace_term = np.trace(cov2_inv @ covariances[0])
+        # mean_diff = new_positions[1] - new_positions[0]
+        # mean_term = mean_diff.T @ cov2_inv @ mean_diff
+        # log_det_term = np.log(np.linalg.det(covariances[1]) / np.linalg.det(covariances[0]))
+        # # KL divergence
+        # kl = 0.5 * (trace_term + mean_term - d + log_det_term)
+        # rospy.logwarn(f'KL divergence: {kl}')
+        return new_positions, covariances, weights,kl
+    
+    @staticmethod
+    def KL(mean1,cov1,mean2,cov2):
+        d = mean1.shape[0]
         # Compute the terms
-        cov2_inv = np.linalg.inv(covariances[1])
-        trace_term = np.trace(cov2_inv @ covariances[0])
-        mean_diff = new_positions[1] - new_positions[0]
+        cov2_inv = np.linalg.inv(cov2)
+        trace_term = np.trace(cov2_inv @ cov1)
+        mean_diff = mean2 - mean1
         mean_term = mean_diff.T @ cov2_inv @ mean_diff
-        log_det_term = np.log(np.linalg.det(covariances[1]) / np.linalg.det(covariances[0]))
+        log_det_term = np.log(np.linalg.det(cov2) / np.linalg.det(cov1))
         # KL divergence
         kl = 0.5 * (trace_term + mean_term - d + log_det_term)
-        rospy.logwarn(f'KL divergence: {kl}')
-        return new_positions, covariances, weights,kl
+        return kl
+
 
     # run the node
     def run(self):
