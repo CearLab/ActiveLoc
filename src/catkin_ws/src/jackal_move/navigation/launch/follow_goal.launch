@@ -1,14 +1,14 @@
 <launch>      
-  <arg name="X" default="6"/>
-  <arg name="Y" default="6"/>
+  <arg name="X" default="2.4"/>
+  <arg name="Y" default="1.5"/>
   <!-- UGV01 fixed -->
   <node pkg="jackal_move" type="follower.py" respawn="false" name="follow_01" output="screen">
     <param name="mode" type="int" value="0" />
     <param name="goal_pos" type="string" value="$(arg X) $(arg Y)" />
     <param name="goal_ang" type="string" value="0 0 0" />
     <param name="leader_topic" type="string" value="UGV01/odometry/target" />
-    <!-- <param name="odom_name" type="string" value="UGV01/odometry/filtered" />   -->
-    <param name="odom_name" type="string" value="UGV01/ground_truth/state" />  
+    <param name="odom_name" type="string" value="UGV01/odometry/filtered" />  
+    <!-- <param name="odom_name" type="string" value="UGV01/ground_truth/state" />   -->
     <param name="server_name" type="string" value="UGV01/cmd_vel" />                  
   </node>   
 
