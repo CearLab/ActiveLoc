@@ -382,9 +382,22 @@ class UWB_real(JackalRange):
         # reset
         rospy.logwarn('Tag rebooting') 
         data = 'reset\x0D'
-        self.serialWrite(myserial, data, sleepLong, print_flag)    
-        rospy.sleep(5) 
-        rospy.logwarn('Tag rebooted')
+        self.serialWrite(myserial, data, sleepLong, print_flag)
+        
+        # Wait for the reset to complete with a timeout of 10 seconds
+        timeout = 10
+        start_time = rospy.Time.now()
+        while (rospy.Time.now() - start_time).to_sec() < timeout:
+            response = myserial.readline().decode().strip()
+            if len(response) > 0:
+                rospy.logwarn('Reset complete')
+                rospy.sleep(1) 
+                rospy.logwarn('Tag rebooted')
+            break
+            rospy.sleep(0.1)
+        else:
+            rospy.logwarn('Reset timeout')
+            
         myserial = serial.Serial(SerialPort, BaudRate, timeout=0.5, 
         parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE,  bytesize=serial.EIGHTBITS)  
         # flush buffers
@@ -464,7 +477,7 @@ class UWB_real(JackalRange):
                     msgD.A_POS = A_POS
                     msgD.T_ID = TagID
                     msgD.D = [row[2] for row in tmp_tag_params]
-                    rospy.logwarn_once(f"first range msg:{msgD}")
+                    # rospy.logwarn_once(f"first range msg:{msgD}")
                     pub.publish(msgD)
                 
                 
