@@ -2,6 +2,8 @@ import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from shapely.geometry import Point
+from shapely.ops import unary_union
 import plotly.graph_objs as go
 
 def create_graph():
@@ -57,13 +59,19 @@ def get_laplacian_matrix(graph):
     return nx.laplacian_matrix(graph).todense()
 
 def get_algebraic_connectivity(graph):
-    return nx.algebraic_connectivity(graph,normalized=True)    
+    return nx.algebraic_connectivity(graph,normalized=False)    
 
 def get_vertex_connectivity(graph):
     return nx.node_connectivity(graph)
 
 def get_edge_connectivity(graph):
     return nx.edge_connectivity(graph)
+
+def get_density(graph):
+    return nx.density(graph)
+
+def get_edge_relation(graph):
+    return 2 * get_edge_connectivity(graph) * (1 - np.cos(np.pi / graph.number_of_nodes()))
 
 def get_rigidity_matrix(graph):
     n = graph.number_of_nodes()
@@ -87,7 +95,7 @@ def get_rigidity_matrix(graph):
 
 def is_rigid(graph):
     R, RR, eigenvalues, eigenvectors = get_rigidity_matrix(graph)
-    return eigenvalues[3] > 1e-10
+    return eigenvalues[3] > 1e-10, eigenvalues[3]
 
 def measure_energy(graph):
     E_measure = 0
@@ -103,10 +111,17 @@ def measure_energy(graph):
         E_measure += wij*(distance** 2)
     return E_measure
 
-def get_spreadiness(graph):
+def get_dispersion(graph):
     L = get_laplacian_matrix(graph)
     x = np.array([graph.nodes[node]['pos'][0] for node in graph.nodes])
     y = np.array([graph.nodes[node]['pos'][1] for node in graph.nodes])
     spread_x = np.sqrt(np.dot(x, np.dot(L, x.transpose())))
     spread_y = np.sqrt(np.dot(y, np.dot(L, y.transpose())))
-    return np.sqrt(spread_x**2 + spread_y**2)
+    return np.sqrt(spread_x**2 + spread_y**2)    
+
+def get_coverage(graph,max_radius=1):
+    circles = [Point(graph.nodes[node]['pos']).buffer(max_radius) for node in graph.nodes]
+    union = unary_union(circles)
+    
+    return union.area
+    

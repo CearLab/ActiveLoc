@@ -2,7 +2,7 @@ import FrameworkLib as FL
 import numpy as np
 
 class Objective:
-    def __init__(self, N_agents, max_dist, threshold, box_margin):
+    def __init__(self, N_agents, max_dist, threshold, box_margin,alpha):
         self.N_agents = N_agents
         self.max_dist = max_dist
         self.threshold = threshold
@@ -10,57 +10,29 @@ class Objective:
         self.G = []
         self.p0 = []
         self.p = []
+        self.map_radius = 1
+        self.init = True
+        self.alpha = alpha
 
     def __call__(self, trial):
     
         pos = []
         for i in range(2*self.N_agents):
             pos.append(trial.suggest_uniform('pos'+str(i), 0, self.box_margin))
-        pos = np.array(pos).reshape(self.N_agents, 2)
-        self.p = pos
+        pos_M = np.array(pos).reshape(self.N_agents, 2)        
+        
+        # Store the constraints as user attributes so that they can be restored after optimization.
+        C_box, EGVL_rig = self.constraint_function(pos)
+        trial.set_user_attr("constraint", (C_box, EGVL_rig))    
         
         # pass to graph
-        G = FL.generate_graph(pos,self.max_dist)
-            
-        # get edge_relation
-        edge_relation = 2 * FL.get_edge_connectivity(G) * (1 - np.cos(np.pi / self.N_agents))
+        self.G = FL.generate_graph(pos_M,self.max_dist)                    
         
         # get algebraic connectivity
-        algebraic_connectivity = FL.get_algebraic_connectivity(G)
-        
-        # Compute the Laplacian matrix
-        L = FL.get_laplacian_matrix(G)
-        # get spreadiness
-        x = np.asarray([pos[i][0] for i in range(len(pos))])
-        y = np.asarray([pos[i][1] for i in range(len(pos))])
-        spread_x = np.sqrt(np.dot(x, np.dot(L, x.transpose())))
-        spread_y = np.sqrt(np.dot(y, np.dot(L, y.transpose())))
-        spreadiness_norm = np.sqrt(spread_x**2 + spread_y**2)
-        
-        # Constraints which are considered feasible if less than or equal to zero.
-        # eigenvalues[3] is the rigidity value and should be greater than threshold
-        R, RR, EGVL, EGVT = FL.get_rigidity_matrix(G)
-        EGVL_rig = np.real(EGVL[3])
-        C_EGVL = self.threshold - EGVL_rig
-        
-        # check each node is in the box
-        for i in range(self.N_agents):
-            if pos[i][0] < 0 or pos[i][0] > self.box_margin or pos[i][1] < 0 or pos[i][1] > self.box_margin:
-                C_box = 1
-            else:
-                C_box = -1
-                
-        # Store the constraints as user attributes so that they can be restored after optimization.
-        trial.set_user_attr("constraint", (C_EGVL, C_box))
-        
-        cost_S = 0  *   spreadiness_norm
-        cost_E = 10 *   algebraic_connectivity
-        
-        alpha = 0
-        cost = alpha * cost_S + (1 - alpha) * cost_E
-        
-        # return the cost function
-        # return cost_E,cost_E
+        # algebraic_connectivity = FL.get_algebraic_connectivity(self.G)
+        edge_relation = FL.get_edge_relation(self.G)        
+        coverage = FL.get_coverage(self.G, self.map_radius)                                  
+        cost = self.alpha*edge_relation + (1 - self.alpha)*coverage        
         return cost
 
     def constraints(trial):
@@ -74,27 +46,21 @@ class Objective:
         
         # pass to graph
         self.G = FL.generate_graph(pos_M,self.max_dist)
-            
-        # get edge_relation
-        edge_relation = 2 * FL.get_edge_connectivity(self.G) * (1 - np.cos(np.pi / self.N_agents))
         
         # get algebraic connectivity
-        algebraic_connectivity = FL.get_algebraic_connectivity(self.G)
+        # algebraic_connectivity = FL.get_algebraic_connectivity(self.G)
+        edge_relation = FL.get_edge_relation(self.G)
         
-        # Compute the Laplacian matrix
-        L = FL.get_laplacian_matrix(self.G)
-        # get spreadiness
-        x = pos[0::2]
-        y = pos[1::2]
-        spread_x = np.sqrt(np.dot(x, np.dot(L, x.transpose())))
-        spread_y = np.sqrt(np.dot(y, np.dot(L, y.transpose())))
-        spreadiness_norm = np.sqrt(spread_x**2 + spread_y**2)
+        spreadiness = FL.get_spreadiness(self.G, self.map_radius)
         
-        cost_S = 0  *   spreadiness_norm
-        cost_E = 10 *   algebraic_connectivity
+        # energy = FL.measure_energy(self.G)
+        
+        cost_S = spreadiness
+        cost_E = edge_relation
         
         alpha = 0
         cost = alpha/cost_S + (1 - alpha)/cost_E
+        cost = -edge_relation
         return cost
     
     def constraint_function(self, x):
@@ -115,10 +81,10 @@ class Objective:
         # constrain inside box_margin
         C_box = -100
         for i in range(self.N_agents):
-            if pos[i][0] < 0 or pos[i][0] > self.box_margin or pos[i][1] < 0 or pos[i][1] > self.box_margin:
+            if pos_M[i][0] < 0 or pos_M[i][0] > self.box_margin or pos_M[i][1] < 0 or pos_M[i][1] > self.box_margin:
                 C_box = 100
                 break            
                 
                 
-        return max(C_EGVL,C_box)
+        return C_box,C_EGVL
     
