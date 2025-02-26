@@ -95,7 +95,13 @@ def get_rigidity_matrix(graph):
 
 def is_rigid(graph):
     R, RR, eigenvalues, eigenvectors = get_rigidity_matrix(graph)
-    return eigenvalues[3] > 1e-10, eigenvalues[3]
+    return np.real(eigenvalues[3]) > 1e-10, np.real(eigenvalues[3])
+
+def get_singular_values(graph):
+    R, RR, eigenvalues, eigenvectors = get_rigidity_matrix(graph)
+    sing_vals = np.sqrt(np.real(eigenvalues))
+    condition_number = sing_vals[-1] / sing_vals[-2]
+    return sing_vals, condition_number
 
 def measure_energy(graph):
     E_measure = 0

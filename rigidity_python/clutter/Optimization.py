@@ -5,11 +5,15 @@ class Objective:
     def __init__(self, N_agents, max_dist, threshold, box_margin,alpha):
         self.N_agents = N_agents
         self.max_dist = max_dist
-        self.threshold = threshold
-        self.box_margin = box_margin
+        self.threshold = threshold        
+        if len(box_margin) == 1:       
+            self.box_margin = np.ones((N_agents,2))
+            self.box_margin[:,0] = 0
+            self.box_margin[:,1] = box_margin
+        else:
+            self.box_margin = box_margin
         self.G = []
-        self.p0 = []
-        self.p = []
+        self.pos_fix = []
         self.map_radius = 1
         self.init = True
         self.alpha = alpha
@@ -22,8 +26,8 @@ class Objective:
         pos_M = np.array(pos).reshape(self.N_agents, 2)        
         
         # Store the constraints as user attributes so that they can be restored after optimization.
-        C_box, EGVL_rig = self.constraint_function(pos)
-        trial.set_user_attr("constraint", (C_box, EGVL_rig))    
+        EGVL_rig = self.constraint_function(pos)
+        trial.set_user_attr("constraint", (EGVL_rig,EGVL_rig))    
         
         # pass to graph
         self.G = FL.generate_graph(pos_M,self.max_dist)                    
@@ -38,35 +42,33 @@ class Objective:
     def constraints(trial):
         return trial.user_attrs["constraint"]
     
-    def objective_function(self, x):
+    def objective_function(self, trial):
         
         # manage positions
-        pos = np.hstack((x, self.p[len(x):]))
+        pos = self.pos_fix
+        nparams = 2*self.N_agents-len(self.pos_fix)
+        pos_move = np.zeros(nparams)
+        for i in range(nparams):
+            pos_move[i] = trial.suggest_uniform('pos'+str(i), self.box_margin[2*i], self.box_margin[2*i+1])
+        pos = np.hstack((pos, pos_move))
         pos_M = pos.reshape(self.N_agents, 2)
+        
+        # Store the constraints as user attributes so that they can be restored after optimization.
+        EGVL_rig = self.constraint_function(pos_move)
+        trial.set_user_attr("constraint", (EGVL_rig,EGVL_rig))    
         
         # pass to graph
         self.G = FL.generate_graph(pos_M,self.max_dist)
         
-        # get algebraic connectivity
-        # algebraic_connectivity = FL.get_algebraic_connectivity(self.G)
-        edge_relation = FL.get_edge_relation(self.G)
-        
-        spreadiness = FL.get_spreadiness(self.G, self.map_radius)
-        
-        # energy = FL.measure_energy(self.G)
-        
-        cost_S = spreadiness
-        cost_E = edge_relation
-        
-        alpha = 0
-        cost = alpha/cost_S + (1 - alpha)/cost_E
-        cost = -edge_relation
+        edge_relation = FL.get_edge_relation(self.G)        
+        coverage = FL.get_coverage(self.G, self.map_radius)                                  
+        cost = self.alpha*edge_relation + (1 - self.alpha)*coverage        
         return cost
     
     def constraint_function(self, x):
         
         # manage positions
-        pos = np.hstack((x, self.p[len(x):]))
+        pos = np.hstack((self.pos_fix, x))
         pos_M = pos.reshape(self.N_agents, 2)
         
         # pass to graph
@@ -77,14 +79,8 @@ class Objective:
         R, RR, EGVL, EGVT = FL.get_rigidity_matrix(self.G)
         EGVL_rig = np.real(EGVL[3])
         C_EGVL = self.threshold - EGVL_rig
-        
-        # constrain inside box_margin
-        C_box = -100
-        for i in range(self.N_agents):
-            if pos_M[i][0] < 0 or pos_M[i][0] > self.box_margin or pos_M[i][1] < 0 or pos_M[i][1] > self.box_margin:
-                C_box = 100
-                break            
+        if np.isnan(C_EGVL):
+            C_EGVL = 100  # Assign a high value to indicate infeasibility         
                 
-                
-        return C_box,C_EGVL
+        return C_EGVL
     
