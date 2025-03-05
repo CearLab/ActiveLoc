@@ -34,7 +34,13 @@ classdef Agent < handle
         localized
 
         % moved
-        moved
+        moved        
+
+        % batch_len
+        batchLen
+        batchCount
+        agent_counter
+        agents_added
 
     end
 
@@ -68,6 +74,11 @@ classdef Agent < handle
             obj.localized = localized;
             obj.moved = moved;
 
+            obj.batchLen = 0;
+            obj.batchCount = 0;
+            obj.agent_counter = 0;
+            obj.agents_added = [];
+
         end
 
         % get the neighborhood
@@ -87,7 +98,7 @@ classdef Agent < handle
             [los_UWB,~] = calcLosMap(agents,'UWB');
             [los_CAM,~] = calcLosMap(agents,'CAM');
             los_table = [los_UWB; los_CAM];
-            
+                        
             % get the neighborhood of agent
             sel_ID = obj.agent_number;
             % (CAM only)
@@ -120,11 +131,16 @@ classdef Agent < handle
             end
             
             % get position of the neighbors
-            for i=1:size(Neigh,1)
-                Neigh(i,3:4) = agents{Neigh(i,1)}.location;
-                Neigh(i,6:7) = agents{Neigh(i,1)}.location_est;
+            agent_numbers = [];
+            for i=1:length(agents)
+                agent_numbers = [agent_numbers agents{i}.agent_number];
             end
-
+            for i=1:size(Neigh,1)
+                pos = find(agent_numbers == Neigh(i,1));
+                Neigh(i,3:4) = agents{pos}.location;
+                Neigh(i,6:7) = agents{pos}.location_est;
+            end                     
+            
             % set neighbors
             obj.neigh.ID = [Neigh(:,1) Neigh(:,8)];
             obj.neigh.D = [Neigh(:,2) Neigh(:,8)];            
@@ -191,8 +207,14 @@ classdef Agent < handle
                 % find agents within range
                 pos = find(obj.neigh.ID(:,2) == 2);
 
+                agent_numbers = [];
+                for i=1:length(agents)
+                    agent_numbers = [agent_numbers agents{i}.agent_number];
+                end
+
                 for ag = 1:numel(pos)
-                    neighagent = agents{obj.neigh.ID(pos(ag),1)};
+                    pos_agent = find(agent_numbers == obj.neigh.ID(pos(ag)));
+                    neighagent = agents{pos_agent};
                     neighagent.location_est = neighagent.location;
                     neighagent.localized = 1;
                     neighagent.neigh.improveList = [];
@@ -202,7 +224,7 @@ classdef Agent < handle
 
                 % if you have the team leader in your CAM neighbors you are
                 % localized (do not remove, because if you are in the CAM
-                % but you have <3 IDloc, you set yourself as not localized)
+                % but you have <3 IDloc, you set yourself as not localized)                
                 if find(obj.neigh.ID(:,1)==IDleader) & find(obj.neigh.ID(:,2)==2)
                     % here I know directly the position (should do with the bearing and stuff but for now...)
                     obj.location_est = obj.location;
@@ -211,10 +233,16 @@ classdef Agent < handle
                     return;
                 end
 
+                agent_numbers = [];
+                for i=1:length(agents)
+                    agent_numbers = [agent_numbers agents{i}.agent_number];
+                end
+
                 % check if neighbors are localized
                 IDloc = [];
                 for i=1:size(obj.neigh.ID,1)
-                    if agents{obj.neigh.ID(i)}.localized
+                    pos_agent = find(agent_numbers == obj.neigh.ID(i,1));
+                    if agents{pos_agent}.localized
                         IDloc = [IDloc, i];                    
                     end
                 end
@@ -314,7 +342,11 @@ classdef Agent < handle
                 if kconn && isRedundant                    
                     D = obj.neigh.Dmeas(IDloc,1);
                     P = obj.neigh.Pest(IDloc,1:2);
+                    try
                     obj.trilaterate(D,P);
+                    catch
+                    obj.trilaterate(D,P);
+                    end
                     obj.localized = 1;
                 else           
                     obj.localized = 0;   
@@ -349,7 +381,7 @@ classdef Agent < handle
         end        
 
         % decide where to go
-        function movePolicy(obj)            
+        function movePolicy(obj) 
 
             % not moved yet
             obj.moved = 0;            
@@ -360,16 +392,7 @@ classdef Agent < handle
 
             % get all agents
             agents = {team.team_mates{1:end}};
-            agents = {agents{1:team.leader.agent_number-1} team.leader agents{team.leader.agent_number:end}};
-
-            % thia function decides how to move in order to better localize
-            % the agents, or to maximize coverage and rigidity. It is an
-            % heuristic, and the goal depends on the conditions each agent
-            % finds itself in. Thus, we first assess the agent conditions
-            % and then we proceed with the motion policy. 
-
-            % first we define the initial condition and the optimization
-            % bounds, if present.
+            agents = {agents{1:team.leader.agent_number-1} team.leader agents{team.leader.agent_number:end}};            
 
             % initial condition: here er directly see if we are localized
             % or not, as non localized agents have NaN as location_est
@@ -378,113 +401,44 @@ classdef Agent < handle
 
             epsilon = manager.WS.epsilon;
 
-            % first, if I have no neighbors, I randomly choose a direction
-            if isempty(obj.neigh.ID) && (obj.agent_number ~= team.leader.agent_number)
-
-                % move
-                dstep = -epsilon*[1 1] + 2*epsilon*[1 1].*rand(1,2);
-                obj.move(obj.location + dstep);
-
-                % get neighjbors
-                obj.getNeighbors;
-
+            % first, if I have no neighbors I stay still
+            if isempty(obj.neigh.ID) && (obj.agent_number ~= team.leader.agent_number)                
                 return; 
             end            
 
             % now we proceed checking your neighborhood characteristics:
             % first, check if neighbors are localized
+            agent_numbers = [];
+            for i=1:length(agents)
+                agent_numbers = [agent_numbers agents{i}.agent_number];
+            end
+
             IDloc = [];
             for i=1:size(obj.neigh.ID,1)
-                if agents{obj.neigh.ID(i)}.localized
-                    IDloc = [IDloc, agents{obj.neigh.ID(i)}.agent_number];                    
-                end
+                pos_agent = find(agent_numbers == obj.neigh.ID(i,1));               
+                IDloc = [IDloc, agents{pos_agent}.agent_number];                                
             end
+            IDloc = unique(IDloc);
 
-            % if no neighbor is localized:           
-            % I need to check the gradient of the distances and move
-            % towards it. To do so I fo back and forth on the 4
-            % cardinal points around my own position (I do this in FF),
-            % so there is no need to know my location. Each time I
-            % check the mean of my distances, which I measure again,
-            % and in the end I decide where to move. Here we have
-            % drift, but for small distances it's ok.
-            if isempty(IDloc) && (obj.agent_number ~= team.leader.agent_number)
+            % if no neighbor is localized:                       
+            % if isempty(IDloc) && (obj.agent_number ~= team.leader.agent_number)   
+                % obj.policy_wrapper(IDloc);                
+                % return; 
+            % end
 
-                % find exploration step
-                dstep = obj.dgrad_search(IDloc);
+            % if you have some neighbor localized            
 
-                % move
-                obj.move(obj.location + dstep);
-
-                % get neighjbors
-                obj.getNeighbors;
-
-                return; 
-            end
-
-            % if you have someone localized, we can work on something.            
-            % Now let's see what we can do
-            % role: 
-            %       1: not localized
-            %       2: localized
-
-            % what happens when I am not localized:
-            % I do the same as in dgrad_search, but only with the distances
-            % from localized neighors.
-            if obj.localized == 0                     
-
-                % find exploration step
-                dstep = obj.dgrad_search(IDloc);
-
-                % move
-                obj.move(obj.location + dstep);
-
-                % get neighjbors
-                obj.getNeighbors;
-
+            % what happens when I am not localized: I stay still            
+            if obj.localized == 0  
+                
+                obj.policy_wrapper(IDloc);
                 return;                    
 
-            % what happens when I am localized:
-            % more cases, I have 
-            else
+            % what happens when I am localized:           
+            else                
 
-                % if I am the leader, just stay still
-                if obj.agent_number == team.leader.agent_number
-                    return;
-                end
-                
-                % I try to maximize rigidity, but I need at least 2
-                % neighbors to compute rigidity                
-                if numel(IDloc) < 3
-
-                    % CASE 1
-
-                    % I don't have, just stay still for the moment
-
-                    % this will be passed to the optimization
-                    return;
-
-                else
-
-
-                    % CASE 2
-
-                    % If I have at least 3 localized neighbors, I can maximize 
-                    % rigidity
-
-
-                    % If we get here, it means that there is something to optimize.
-                    % Proceed with the optimization. We do it the same way as the
-                    % dgrad search. 
-                    % rstep = drigid_search(obj,IDloc);
-        
-                    % move
-                    % obj.move(obj.location + rstep);
-        
-                    % get neighjbors
-                    % obj.getNeighbors;
-
-                end
+                % obj.policy_wrapper(IDloc);
+                % return;                    
 
             end           
 
@@ -543,19 +497,24 @@ classdef Agent < handle
                     lostNeigh = zeros(1,numel(N0));
                     for j=1:numel(N0)
                         tmpPos = find(UWBneigh == N0(j));
-                        if isempty(tmpPos)
-                            lostNeigh(j) = 1;
-                        else
-                            lostNeigh(j) = 0;
-                            try
-                                locPos = find(UWBneigh == IDloc(j));
-                                if ~isempty(locPos)
-                                    currentIdPos = [currentIdPos locPos];
+                        if N0(j) <= obj.agent_counter
+                            if isempty(tmpPos)
+                                lostNeigh(j) = 1;
+                            else
+                                lostNeigh(j) = 0;
+                                try
+                                    locPos = find(UWBneigh == IDloc(j));
+                                    if ~isempty(locPos)
+                                        currentIdPos = [currentIdPos locPos];
+                                    end
+                                catch
+                                    % ok, the length of neighbors loc is less
+                                    % than all N0
                                 end
-                            catch
-                                % ok, the length of neighbors loc is less
-                                % than all N0
                             end
+                        else
+                            % I'm not using batch traces as lost neighbors
+                            a = 1;
                         end
                     end   
 
@@ -585,7 +544,6 @@ classdef Agent < handle
                 % move back
                 obj.move(obj.location - steps(i,:));
                
-
             end
 
             % restore initial neighbors
@@ -593,48 +551,7 @@ classdef Agent < handle
 
             % find the best movement and go there (FF)
             if sum(isinf(Dsteps)) == numel(Dsteps)                       
-
-                % you need to check if you lost ANY neighbor, not just
-                % localized ones. 
-                currentIdPos = [];
-                lostNeigh = ones(1,numel(N0));                
-
-                while sum(lostNeigh) ~= 0                    
-
-                    % move
-                    dstep = -epsilon*[1 1] + 2*epsilon*[1 1].*rand(1,2);
-                    obj.move(obj.location + dstep);
-                    obj.getNeighbors;
-
-                    if ~isempty(obj.neigh.ID)
-
-                        % find UWB distances
-                        UWBpos = find(obj.neigh.Dmeas(:,2)==1); 
-        
-                        % get minimum distance
-                        Dmin = min(obj.neigh.Dmeas(UWBpos,1));
-        
-                        % I need to check that no neighbors have been lost, at most
-                        % gained.
-                        UWBneigh = obj.neigh.ID(UWBpos);
-                        for j=1:numel(N0)
-                            tmpPos = find(UWBneigh == N0(j));
-                            if isempty(tmpPos)
-                                lostNeigh(j) = 1;
-                            else
-                                lostNeigh(j) = 0;
-                                currentIdPos = [currentIdPos tmpPos];
-                            end
-                        end
-                    else
-                        lostNeigh = 1;
-                    end
-
-                    if sum(lostNeigh) ~= 0
-                        obj.move(obj.location - dstep);
-                        obj.getNeighbors;
-                    end
-                end
+                dstep = 0.*steps(1,:);
             else
                 [minD, pos] = min(Dsteps);            
                 dstep = steps(pos,:);            
@@ -642,143 +559,102 @@ classdef Agent < handle
             
 
         end
+        
+        % wrapper for the policy
+        function policy_wrapper(obj,IDloc)            
 
-        % distance gradient research
-        function dstep = drigid_search(obj,IDloc)                  
+            % find exploration step                                                
+            dstep = obj.dgrad_search(IDloc);                
 
-            % define 4 movements
-            epsilon = manager.WS.epsilon;
-            steps = epsilon*[   0 +1;     ...
-                                0 -1;    ...
-                                +1 0;     ...
-                                -1 0    ];
+            % random movement
+            % dstep = -epsilon*[1 1] + 2*epsilon*[1 1].*rand(1,2);               
 
-            % get initial set of distances
-            % find UWB and CAM distances
-            UWBCAMpos = find(obj.neigh.Dmeas(:,2) > 0);                         
-            N0 = unique(obj.neigh.ID(UWBCAMpos));
+            % move
+            oldposition = obj.location;
+            obj.move(obj.location + dstep);            
 
-            % find IDpos
-            IDpos = zeros(size(IDloc));            
-            for i=1:numel(IDloc)
-                IDpos(i) = find(obj.neigh.ID(:,1) == IDloc(i),1);
+            if sum(abs(dstep)) ~= 0
+                obj.batch_store(oldposition);
             end
 
-            % now get LOStab UWB of only DistLoc (no nan in estpos)
-            LOStmp = obj.neigh.LOStab( find( ~isnan(obj.neigh.LOStab(:,9)) & ~isnan(obj.neigh.LOStab(:,11)) & obj.neigh.LOStab(:,end) == 1), :);
-            LOStmpMeA = obj.neigh.LOStab( find( isnan(obj.neigh.LOStab(:,9)) & obj.neigh.LOStab(:,3) == obj.agent_number & ~isnan(obj.neigh.LOStab(:,11)) ), :);
-            LOStmpMeB = obj.neigh.LOStab( find( isnan(obj.neigh.LOStab(:,11)) & obj.neigh.LOStab(:,4) == obj.agent_number & ~isnan(obj.neigh.LOStab(:,9)) ), :);
-            LOS = [LOStmp; LOStmpMeA; LOStmpMeB];
-            agentList_tmp = [IDloc', obj.neigh.Pest(IDpos,1:2);];
-            agentList_tmp(end+1,:) = [obj.agent_number, obj.location_est];
-
-            % get rigidity matrix 
-            R0 = calcRigitdyMatrix(LOS,agentList_tmp);
-            R0over = R0'*R0;
-            e0 = eig(R0over);    
-            pos = find(abs(e0) < 1e-5);    
-            isrigid0 = (numel(pos)==3);              
-            e0(pos) = [];
-            JR0 = min(e0);   
-
-            % thresh for distance
-            DminThresh = 2;
-            
-
-            % cycle over 4 steps
-            for i=1:4          
-
-                % move 
-                obj.move(obj.location + steps(i,:));                
-                obj.getNeighbors;    
-
-                % find UWB distances
-                UWBCAMpos = find(obj.neigh.Dmeas(:,2) > 0); 
-
-                % get minimum distance
-                Dmin = min(obj.neigh.Dmeas(UWBCAMpos,1));
-
-                % I need to check that no neighbors have been lost, at most
-                % gained.
-                UWBneigh = unique(obj.neigh.ID(UWBCAMpos));
-
-                % same but only with localized neighbors
-                % UWBneigh = [];
-                % for a=1:size(obj.neigh.ID,1)
-                %     if ~isnan(obj.neigh.Pest(a,2))
-                %         UWBneigh = [UWBneigh, obj.neigh.ID(a)];
-                %     end
-                % end
-
-                % just to check what happens when i increase the neighbors
-                if numel(UWBneigh) > numel(N0)
-                    % ok nothing happens yay                    
-                end
-                
-                currentIdPos = [];
-                lostNeigh = zeros(1,numel(IDloc));
-                for j=1:numel(IDloc)                       
-                    tmpPos = find(UWBneigh == IDloc(j));
-                    if isempty(tmpPos)
-                        lostNeigh(j) = 1;
-                    else
-                        lostNeigh(j) = 0;
-                        currentIdPos = [currentIdPos tmpPos];
-                    end
-                end                                
-
-                % check conditions
-                if (sum(Dmin < DminThresh)) || (nnz(lostNeigh)) 
-
-                    % I've lost a neighbor, no good
-                    isrigid(i) = 0;
-                    JR(i) = nan;
-
-                else
-
-                    % now get LOStab UWB of only DistLoc (no nan in estpos)
-                    LOStmp = obj.neigh.LOStab( find( ~isnan(obj.neigh.LOStab(:,9)) & ~isnan(obj.neigh.LOStab(:,11)) & obj.neigh.LOStab(:,end) == 1), :);
-                    LOStmpMeA = obj.neigh.LOStab( find( isnan(obj.neigh.LOStab(:,9)) & obj.neigh.LOStab(:,3) == obj.agent_number & ~isnan(obj.neigh.LOStab(:,11)) ), :);
-                    LOStmpMeB = obj.neigh.LOStab( find( isnan(obj.neigh.LOStab(:,11)) & obj.neigh.LOStab(:,4) == obj.agent_number & ~isnan(obj.neigh.LOStab(:,9)) ), :);
-                    LOS = [LOStmp; LOStmpMeA; LOStmpMeB];
-                    agentList_tmp = [IDloc', obj.neigh.Pest(IDpos,1:2);];
-                    agentList_tmp(end+1,:) = [obj.agent_number, obj.location_est];
-    
-                    % get rigidity matrix 
-                    R0 = calcRigitdyMatrix(LOS,agentList_tmp);
-                    R0over = R0'*R0;
-                    e = eig(R0over);    
-                    pos = find(abs(e) < 1e-5);    
-                    isrigid(i) = (numel(pos)==3);              
-                    e(pos) = [];
-
-                    if isrigid(i)
-                        JR(i) = min(e);
-                    else
-                        JR(i) = nan;
-                    end
-
-                end
-
-                % move back
-                obj.move(obj.location - steps(i,:));                
-
-            end
-
-            % restore initial neighbors
+            % get neighjbors            
             obj.getNeighbors;
+          
+        end
 
-            % find the best movement and go there (FF)
-            if sum(isrigid) == 0 || sum(isnan(JR)) == numel(JR);
-                dstep = [0 0];
+        % handle the batch
+        function batch_store(obj,position)
+
+            % get team
+            manager = AgentManager.getInstance();            
+            team = manager.team_list{1};
+            agents = {team.team_mates{1:end}};
+            agents = {agents{1:team.leader.agent_number-1} team.leader agents{team.leader.agent_number:end}}; 
+
+            % handle batch
+            if obj.batchCount < obj.batchLen
+
+                % check if there is another agent with same pose
+                for i=1:length(agents)
+                    if (agents{i}.location == position) & (agents{i}.agent_number ~= obj.agent_number)
+                        return
+                    end
+                end
+
+                % create agent
+                manager.createAgent(position,1,'team_mate');               
+    
+                % get all agents
+                agents = {team.team_mates{1:end}};
+                agents = {agents{1:team.leader.agent_number-1} team.leader agents{team.leader.agent_number:end}}; 
+                agent = agents{end};            
+                agent.sensors.UWB = Sensor(agent.agent_number,'range',obj.sensors.UWB.max_range);
+                agent.location_est = obj.location_est;
+                agent.localized = obj.localized;
+                obj.agents_added = [obj.agents_added, agent.agent_number];
+
+                obj.batchCount = obj.batchCount + 1;
             else
-                [minJR, pos] = max(JR);            
-                dstep = steps(pos,:);            
-            end
-            
+                pos = [];
+                % team mates
+                for i = 1:length(team.team_mates)
+                    if ~isempty(obj.agents_added) && team.team_mates{i}.agent_number == obj.agents_added(1)
+                        pos = [pos i];
+                        obj.agents_added(1) = [];
+                        manager.agents_counter = manager.agents_counter - 1;
+                    end                    
+                end                                
+                team.team_mates(pos) = [];
+                obj.batchCount = 0;
+            end           
 
-        end         
+            % sort agents            
+            scaled = zeros(1,numel(team.team_mates));
+            agents_id = [];
+            while prod(scaled) == 0                
 
+                scaled = zeros(1,numel(team.team_mates));
+                for i=1:numel(team.team_mates)            
+                    if team.team_mates{i}.agent_number > manager.agents_counter
+                        team.team_mates{i}.agent_number = team.team_mates{i}.agent_number - 1;
+
+                        for j=1:numel(team.team_mates)
+                            agents_id = [agents_id team.team_mates{j}.agent_number];
+                        end
+                        agents_id = [agents_id team.leader.agent_number];
+
+                        if numel(find(team.team_mates{i}.agent_number == agents_id)) > 1
+                            team.team_mates{i}.agent_number = team.team_mates{i}.agent_number - 1;
+                        end
+                        scaled(i) = 0;
+                    else
+                        scaled(i) = 1;
+                    end
+                end            
+            end            
+
+        end
+        
     end
 
 end

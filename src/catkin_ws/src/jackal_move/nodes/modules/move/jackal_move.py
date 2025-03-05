@@ -10,6 +10,7 @@ import math
 
 import tf2_ros
 import tf.transformations as tft
+import subprocess
 
 from move_base_msgs.msg import MoveBaseActionGoal, MoveBaseAction, MoveBaseResult, MoveBaseGoal
 import geometry_msgs.msg
@@ -26,43 +27,86 @@ class JackalMove(JackalRange):
     odom_name = ''
     p_goal = ''
     a_goal = ''
-    mode = 0
+    finished = False
+    first_parse = True
+    last_time = None
+    mode = 0 # 1 = follow, 0 = movebase    
     
     def __init__(self):
         
         # inheriting
         super().__init__()
-
+        self.ei = 0.0
+        self.etheta_i = 0.0
+        self.iter = 0
     def follow(self):
+        
         # publish
         pub = rospy.Publisher(self.server_name, geometry_msgs.msg.Twist, queue_size=10)
         rospy.loginfo("Synchronization")
 
         # from string to array
-        p_goal = np.asarray([float(num) for num in self.p_goal.split()])
-        a_goal = np.asarray([float(num) for num in self.a_goal.split()])
-        rospy.loginfo(p_goal.size)
-        rospy.loginfo(a_goal.size)
+        if self.mode == 0 and self.first_parse:
+            self.p_goal = np.asarray([float(num) for num in self.p_goal.split()])
+            self.a_goal = np.asarray([float(num) for num in self.a_goal.split()])
+            # Convert Euler angles to quaternion
+            self.quaternion = tft.quaternion_from_euler(self.a_goal[0], self.a_goal[1], self.a_goal[2])
+            self.odom_msg = nav_msgs.msg.Odometry()
+            rospy.loginfo(self.p_goal)
+            rospy.loginfo(self.a_goal)
+            self.first_parse = False                
+        
+        # current pos
+        pos_sub = message_filters.Subscriber(self.odom_name, nav_msgs.msg.Odometry)
+        # moving target
+        if self.mode == 1:
+            ref_sub = message_filters.Subscriber(self.leader_topic, nav_msgs.msg.Odometry)     
+            rospy.loginfo('leader topic: ' + self.leader_topic)
 
-        # Subscribe to the Odometry topic
+        # Synchronize the messages
         if self.mode == 0:
-            # move_base
-            ref_sub = self.movebase_client(self.server_name, 'map', p_goal, a_goal)
+            ts = message_filters.ApproximateTimeSynchronizer([pos_sub, pos_sub], queue_size=10, slop=0.1)
         else:
-            # moving target
-            ref_sub = message_filters.Subscriber(self.leader_topic, nav_msgs.msg.Odometry)
-            pos_sub = message_filters.Subscriber(self.odom_name, nav_msgs.msg.Odometry)
-
-            # Synchronize the messages
-            ts = message_filters.ApproximateTimeSynchronizer([ref_sub, pos_sub], queue_size=10, slop=0.1)
-            ts.registerCallback(self.ugv_control, pub)
-            rospy.spin()
+            ts = message_filters.ApproximateTimeSynchronizer([pos_sub, ref_sub], queue_size=10, slop=0.1)
+            
+        ts.registerCallback(self.ugv_control, pub)
+        rate = rospy.Rate(10)  # 10 Hz
+        while not rospy.is_shutdown():
+            # Check some condition to stop spinning
+            if self.finished:
+                rospy.loginfo("Condition met, stopping the spin.")
+                return 1
+            rate.sleep()
+        
+        
+        
 
         return 0
 
-    def ugv_control(self, ref, pos, pub):
+    def update_position_goal(self, position):
+        self.p_goal = [0.0, 0.0]
+        self.p_goal[0] = position[0]
+        self.p_goal[1] = position[1]
+        self.finished = False
+        rospy.logwarn("Goal updated: " + str(self.p_goal))
+        
+    def ugv_control(self, pos, ref, pub):   
+        
+        #enforced the rate using return when the diff between the current system time the the last callback is too small
+        if self.last_time is not None:
+            if rospy.Time.now().to_sec() - self.last_time < (1 / self.RANGE):
+                return 0
+        
         # create message
         cmd = geometry_msgs.msg.Twist()
+        
+        # integral error
+        self.iter += 1
+        
+        # integral reset
+        if self.iter % 1000 == 0:
+            self.ei = 0.0 
+            self.etheta_i = 0.0
 
         # current pos and orientation
         x = pos.pose.pose.position.x
@@ -72,37 +116,57 @@ class JackalMove(JackalRange):
         _, _, theta = tft.euler_from_quaternion([qx, qy, qz, qw])
 
         # desired position
-        x_goal = ref.pose.pose.position.x
-        y_goal = ref.pose.pose.position.y
+        if self.mode == 1:
+            x_goal = ref.pose.pose.position.x
+            y_goal = ref.pose.pose.position.y
+        else:
+            x_goal = self.p_goal[0]
+            y_goal = self.p_goal[1]
+            
+        # gains   
+        Kpos = 0.1
+        Kpos_i = 0.01
+        Ktheta = 1.5            
+        Ktheta_i = 0.1
+        thresh_pos = 0.05           
 
         # position error
         ex = x_goal - x
         ey = y_goal - y
-
+        
         # distance and angle to goal
-        d = math.sqrt(ex ** 2 + ey ** 2)
-        theta_goal = math.atan2(ey, ex)
-
-        # Calculate angular error
-        e_theta = theta_goal - theta
-
-        # gains
-        Kv = 0.1
-        Ko = 0.5
-
+        ed = np.linalg.norm(np.array((ex, ey)))
+        self.ei =+ ed
+        
+        theta_goal = math.atan2(ey, ex)  # Desired heading
+        etheta = math.atan2(math.sin(theta_goal - theta), math.cos(theta_goal - theta))
+        self.etheta_i += etheta  
+        
+        self.last_time = rospy.Time.now().to_sec()
+        
         # compute control
-        v_x = Kv * d
-        omega_z = Ko * e_theta
+        if abs(ed) >= thresh_pos:
+            
+            rospy.logwarn_once('Distance control')
+                                    
+            v_x = np.linalg.norm(Kpos * ed + Kpos_i * self.ei)                        
+            omega_z = Ktheta*etheta + Ktheta_i*self.etheta_i 
+            
+            # populate message
+            cmd.linear.x = v_x
+            cmd.angular.z = omega_z
+                        
+            pub.publish(cmd)
 
-        # populate message
-        cmd.linear.x = v_x
-        cmd.angular.z = omega_z
+            return 0
+        else:                                                
+            
+            rospy.logwarn_once('Target reached. Stopping the node.')
+            self.finished = True
+            # subprocess.check_call(['rosnode', 'kill', rospy.get_name()])
+            return 1
 
-        # debug
-        # rospy.loginfo("Debug: publish on server")
-        pub.publish(cmd)
-
-        return 0
+        
 
     def movebase_client(self, server_name, odom_name, p_goal, a_goal):
         # Initialize the action client
@@ -218,9 +282,18 @@ class JackalMove(JackalRange):
 
         return x, y, theta
 
-    def imu_remapper(self, data, pub, ns):
+    def imu_remapper(self, data, pub, ns, sigma=(0.1, 0.01)):
         # Extract odometry information from feedback
         data.header.frame_id = str(ns) + data.header.frame_id
+        
+        # add noise to the data
+        # if sigma is a string, split it
+        if isinstance(sigma, str):
+            sigma = np.asarray([float(num) for num in sigma.split()])
+        data.angular_velocity.z = data.angular_velocity.z + np.random.normal(0, sigma[0])
+        data.linear_acceleration.x = data.linear_acceleration.x + np.random.normal(0, sigma[1])
+        data.linear_acceleration.y = data.linear_acceleration.y + np.random.normal(0, sigma[1])
+        data.linear_acceleration.z = data.linear_acceleration.z + np.random.normal(0, sigma[1])
 
         # Publish the odometry message
         pub.publish(data)

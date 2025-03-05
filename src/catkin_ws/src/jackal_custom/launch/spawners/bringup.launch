@@ -6,16 +6,16 @@
   <arg name="world_name" default="" />       
 
   <!-- anchors params -->
-  <arg name="AX" default="5" />
-  <arg name="AY" default="5" />
+  <arg name="AX" default="3" />
+  <arg name="AY" default="4" />
   <arg name="AZ" default="2" /> 
 
   <!-- arg to select real or simulated data -->
-  <arg name="real_robot" default="false" /> 
-  <arg name="real_UWB" default="false" /> 
+  <arg name="real_robot" default="true" /> 
+  <arg name="real_UWB" default="true" /> 
 
   <!-- simulation time -->
-  <arg name="use_sim_time" default="true" />
+  <arg name="use_sim_time" default="false" />
 
   <!-- Launch Gazebo with the specified world -->
   <!-- this is run when the arg $real_robot is false -->
@@ -46,7 +46,7 @@
 
     <!-- spawn robot -->
     <include file="$(find jackal_custom)/launch/spawners/robot.launch" >
-      <arg name="init_pose" value="-x 2.4 -y 1.5 -z 0 -R 0 -P 0 -Y 0" />
+      <arg name="init_pose" value="-x 0 -y 1 -z 0 -R 0 -P 0 -Y 0" />
       <arg name="robot_name"  value="Jack01" />
       <arg name="joystick" value="true" />
       <arg name="joy_dev" value="/dev/input/js0" />

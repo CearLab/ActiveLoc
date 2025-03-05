@@ -9,7 +9,7 @@ clc;
 clear;
 close all;
 warning off
-rng(1);
+rng(2);
 
 %% check toolbox dependencies 
 tb = ver; assert(any(strcmp('Optimization Toolbox', {tb.Name})),'Optimization Toolbox is required'); clear tb;
@@ -26,8 +26,6 @@ p = 2;
 
 % define range for RD sensors
 UWBrange = 8;
-sigmarand = 10;
-% Dminthresh = 0*0.5*UWBrange;
 Dminthresh = 3;
 Dmaxthresh = 8;
 
@@ -101,7 +99,7 @@ while (optattempt<maxattempt) && (feasibleimproved<targetimproved) && (feasiblef
     % get the team you just created
     team = manager.team_list{1};
 
-    % get all agents from the tea6m 
+    % get all agents from the team 
     agents = {team.team_mates{1:end}};
     agents = {agents{1:team.leader.agent_number-1} team.leader agents{team.leader.agent_number:end}};
 
@@ -139,9 +137,8 @@ while (optattempt<maxattempt) && (feasibleimproved<targetimproved) && (feasiblef
     % DminThresh
     DminThresh = manager.WS.Dminthresh;
     DmaxThresh = manager.WS.Dmaxthresh;
-
-    A = calcAdjacencyMatrix(los_table,agents_list);
-    [allConn, A] = agents{1}.checkConnectivity(A);
+    
+    [allConn, ~] = checkKconnectivity(los_table,agents_list,3);
 
     % now run optimization
     if (allConn) && (Dmin > DminThresh)
@@ -175,12 +172,15 @@ while (optattempt<maxattempt) && (feasibleimproved<targetimproved) && (feasiblef
         manager.WS.Tb = 1;
         
         X0 = reshape(agents_pos',size(agents_pos,1)*size(agents_pos,2),1);
-        J0 = cost_function(X0,p);
+        J0 = cost_function(X0,p); 
 
-        % compute normalization
-        Tmax = manager.WS.JSA + manager.WS.JSB;
-        manager.WS.Ta = Tmax/manager.WS.JSA;
-        manager.WS.Tb = Tmax/manager.WS.JSB;
+        % store
+        T1_x_start = manager.WS.T1_x;
+        T1_y_start = manager.WS.T1_y;
+        T2_x_start = manager.WS.T2_x;
+        T2_y_start = manager.WS.T2_y;
+        T3_x_start = manager.WS.T3_x;
+        T3_y_start = manager.WS.T3_y;
 
         % define lower bounds
         LB = repmat(map.map_span(:,1),m,1);
@@ -252,6 +252,14 @@ while (optattempt<maxattempt) && (feasibleimproved<targetimproved) && (feasiblef
                 dP = XoldMat(leaderID,:);
                 XoldMat = XoldMat - dP;
 
+                % store
+                T1_x_opt = manager.WS.T1_x;
+                T1_y_3opt = manager.WS.T1_y;
+                T2_x_opt = manager.WS.T2_x;
+                T2_y_opt = manager.WS.T2_y;
+                T3_x_opt = manager.WS.T3_x;
+                T3_y_opt = manager.WS.T3_y;
+
             end          
         end
 
@@ -265,7 +273,6 @@ topt = toc;
 % save cost function
 manager = AgentManager.getInstance();
 Jold = cost_function(Xold,p);
-
 
 % get the team you just created
 teamOpt = manager.team_list{1};
@@ -305,7 +312,7 @@ teams = manager.getAllTeams();
 
 scaleaxis = 1.2;
 
-% team 2 - init condition
+% team 1 - init condition
 f1 = figure(1);
 hold on; box on; grid on; 
 set(gca,'fontsize', 20);
@@ -345,6 +352,21 @@ xlim(scaleaxis*map.map_span(1,:)); ylim(scaleaxis*map.map_span(2,:));
 axis equal
 
 warning('on','all')
+
+% study on the cost function (eq. (30))
+f3 = figure(3);
+hold on; box on; grid on
+set(gca,'fontsize', 20);
+xlabel('X axis')
+ylabel('Y axis')
+% term 1
+plot(sum(T1_x_start),sum(T1_y_start),'bo','MarkerSize',10,'LineWidth',2);
+plot(sum(T1_x_opt),sum(T1_y_opt),'ro','MarkerSize',10,'LineWidth',2)
+plot(sum(T2_x_start),sum(T2_y_start),'b+','MarkerSize',10,'LineWidth',2);
+plot(sum(T2_x_opt),sum(T2_y_opt),'r+','MarkerSize',10,'LineWidth',2);
+plot(sum(T3_x_start),sum(T3_y_start),'bs','MarkerSize',10,'LineWidth',2);
+plot(sum(T3_x_opt),sum(T3_y_opt),'rs','MarkerSize',10,'LineWidth',2);
+legend('T1_{start}','T1_{opt}','T2_{start}','T2_{opt}','T3_{start}','T3_{opt}');
 
 %% silly
 % load('handel.mat')

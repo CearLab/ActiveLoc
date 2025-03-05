@@ -6,7 +6,9 @@
 function A = calcAdjacencyMatrix(los_table,agents_list)
 
     IDpres = agents_list(:,1);
-    maxID = max(IDpres);
+
+    maxID = max(IDpres);    
+
     n = maxID; % A is a |V|*|V| matrix
     A = zeros(n);    
     

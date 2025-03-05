@@ -160,6 +160,7 @@ include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} ${SDFormat_INCLUDE_DIRS}
 catkin_install_python(PROGRAMS    
   nodes/scripts/follower.py  
   nodes/scripts/imu_remapper.py  
+  nodes/scripts/follow_path_s1.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

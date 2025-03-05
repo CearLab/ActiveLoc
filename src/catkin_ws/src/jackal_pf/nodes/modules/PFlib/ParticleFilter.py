@@ -3,6 +3,8 @@ import scipy.stats as stats
 
 __all__ = ['prop', 'calc_weights', 'resample', 'normal_model_pdf', 'sample_normal_model','single_step_particle_filter_measurement_window']
 
+EVENT_DATA = {"ZeroDeviation": 0}
+
 def prop(particles, command, transition_model):
     '''
     Propagates the particles using the given command and transition model.
@@ -30,6 +32,10 @@ def normalize(weights):
     Returns:
     numpy.ndarray: The normalized weights.
     """
+    # protect against division by zero 
+    if np.sum(weights) == 0:
+        EVENT_DATA["ZeroDeviation"] += 1
+        return np.ones(len(weights))/len(weights)
     return weights/np.sum(weights)
 
 def calc_weights(particles, measurement, measurement_model, normalize_weights=True):
@@ -186,6 +192,14 @@ def normal_model_pdf(x, mu, cov):
     Returns:
         float: The PDF value at the given input value(s).
     """
+    # handle for the case where everything is a scalar
+    if np.isscalar(x) and np.isscalar(mu):
+        #check that the covariance matrix is a scalar
+        if not np.isscalar(cov):
+            raise ValueError(f"cov should be a scalar, but got cov={cov}")
+        # Calculate the PDF value
+        return stats.multivariate_normal(mean=mu, cov=cov).pdf(x)
+    
     
     # Check that x and mu have the same dimensions
     if x.shape != mu.shape:
@@ -238,11 +252,13 @@ def single_step_particle_filter(particles, command, measurement, transition_mode
     Returns:
         list: Updated list of particles after performing the particle filter step.
     """
-    
+    set_all_event_data_to_zero()
     particles = prop(particles, command, transition_model)
     weights = calc_weights(particles, measurement, measurement_model)
     particles = resample(particles, weights, resample_method)
     return particles
+
+
 
 def single_step_particle_filter_measurement_window(particles, command, measurement, transition_model, measurement_model, current_step, weights, resample_method='systematic', window_size=3):
     if current_step % window_size == 0 and current_step != 0:
@@ -259,3 +275,11 @@ def particle_filter(particles, command, measurement, transition_model, measureme
     while True:
         yield single_step_particle_filter(particles, command, measurement, transition_model, measurement_model, resample_method)
         
+
+
+def set_all_event_data_to_zero():
+    for key in EVENT_DATA:
+        EVENT_DATA[key] = 0
+
+def get_event_data():
+    return EVENT_DATA
