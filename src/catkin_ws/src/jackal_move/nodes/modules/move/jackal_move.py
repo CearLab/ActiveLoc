@@ -126,9 +126,9 @@ class JackalMove(JackalRange):
         # gains   
         Kpos = 0.1
         Kpos_i = 0.01
-        Ktheta = 1.5            
+        Ktheta = 1            
         Ktheta_i = 0.1
-        thresh_pos = 0.05           
+        thresh_pos = 0.1         
 
         # position error
         ex = x_goal - x
