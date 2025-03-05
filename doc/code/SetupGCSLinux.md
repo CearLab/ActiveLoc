@@ -25,7 +25,6 @@
     $ source /opt/ros/noetic/setup.zsh
     $ source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
 
-
 # SSH SERVER
 # The GCS will be the server for the rosmaster.
 
@@ -158,9 +157,12 @@
 # files on the repository.
 # The same thing should be done for .Xauthority to be able to run graphic stuff
 # If you don't find .Xauthority, look for it and create a symlink in ~
+# Also, with the last command, you allow any host to connect to the display server. 
+# I found it is needed if you are running ubuntu 24
 
     $ chown $USER:developers ~/.Xauthority
     $ chmod 764 ~/.Xauthority
+    $ xhost +
 
 # If needed, use sudo.
 
@@ -182,7 +184,7 @@
 # the image will build and tag autonomously. 
 
     $ docker compose --file src/docker/docker-compose.yml up -d ros-noetic-base --remove-orphans
-    $ docker compose --file src/docker/docker-compose.yml up -d ros-noetic-dev --remove-orphans
+    $ docker compose --file src/docker/docker-compose.yml up -d ros-noetic-dev-activeloc --remove-orphans
 
 # Now you should have 2 images and 2 containers. Check with
 
@@ -259,30 +261,21 @@
 
 # update pip, numpy, scipy
 
-    $ python3 -m pip install --upgrade pip 
+    $ python3 -m pip install --upgrade pip
     $ pip3 install --upgrade numpy  
     $ pip3 install --upgrade scipy
     
 
 # Let's get to work. Now we create a ros workspace
 
-    $ cd ~/workspace    
+    $ cd ~/workspace/src    
+    $ sudo chown -R ros:developers ./catkin_ws
+    $ sudo chmod -R 774 ./catkin_ws
     $ cd catkin_ws
     $ catkin_make
     $ source devel/setup.zsh
     $ rospack profile
     $ cd ..
-    $ sudo chown -R ros:developers ./catkin_ws
-    $ sudo chmod -R 774 ./catkin_ws
-
-# Now we add a ros submodule for the UWB messages
-# GO TO LOCAL PROMPT
-
-    $ git submodule add https://github.com/valentinbarral/rosmsgs src/gtec/rosmsgs
-
-# Now rename the following files
-
-    $ mv catkin_ws/src/jackal_custom/package.xml catkin_ws/src/jackal_custom/package.xml.old
-    $ mv catkin_ws/src/UWB_driver/package.xml catkin_ws/src/ackal_op/package.xml.old
+    
 
 

@@ -21,10 +21,14 @@ class JackalRange(JackalGeneral):
     BUFSIZE_GET = 4
     
     # anchors ID dictionary
-    ID = ['AN0','AN1','AN2','AN3']
+    ID = ['AN0',
+          'AN1',
+          'AN2',
+          'AN3'
+          ]
     
     # range
-    RANGE = 100
+    RANGE = 10
     
     # general anchors_params with anchor positions
     anchors_params = [
@@ -42,7 +46,7 @@ class JackalRange(JackalGeneral):
         ['UKN', ID[3], 0.0]
     ]
     
-    N_A = 4
+    N_A = len(anchors_params)
     
     anchors_topic = ''
 

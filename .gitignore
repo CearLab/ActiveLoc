@@ -16,7 +16,9 @@ PF/results
 PF/processing
 fig/
 res/
+doc/
 ZED/
+libfreenect/
 Zelazo2024/
 __pycache__/
 .vscode/
@@ -29,3 +31,4 @@ __pycache__/
 *.pyc
 *.zip
 core.*
+*.pyc

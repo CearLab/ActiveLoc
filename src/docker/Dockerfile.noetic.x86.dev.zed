@@ -4,7 +4,7 @@
 #
 # Federico Oliva <federico.oliva.it@gmail.com>
 #
-# January 9, 20241
+# January 9, 2024
 
 # BUILD THIS WITH:
 # --build-arg USER_UID=$UID (if default 1000 causes problems)
@@ -36,11 +36,14 @@
 # --runtime=nvidia
 
 # Choose the container to build from (see README.md)
-FROM cearlab/activeloc:ros-noetic-base
+FROM cearlab/activeloc:ros-noetic-base-zed
 ARG TARGET
 
 ARG USER_UID=1005
 ARG GID=1042
+
+# not asking confirmation for installations
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Nvidia GPU architecture version (default: GeForce RTX 3000 series)
 # NOTE: You may have to configure this at build time!
@@ -121,7 +124,6 @@ RUN useradd -s /bin/bash --uid $USER_UID -m ros && \
     echo ros ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/ros && \
     chmod 0440 /etc/sudoers.d/ros
 ENV HOME=/home/ros
-ENV USER=ros
 RUN chsh -s /usr/bin/zsh ros
 
 # Add developers group to share permissions

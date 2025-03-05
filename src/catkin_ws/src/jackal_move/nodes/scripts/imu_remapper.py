@@ -18,12 +18,13 @@ if __name__ == '__main__':
         feedback_topic = rospy.get_param('~subscribe_topic', '')
         publish_topic = rospy.get_param('~publish_topic', '')
         ns = rospy.get_param('~ns', '')
+        sigma = rospy.get_param('~ImuSigma', '')
 
         # Publisher for the Odometry message
         odom_pub = rospy.Publisher(publish_topic, sensor_msgs.msg.Imu, queue_size=10)
 
         # Subscriber to the feedback topic
-        sub = rospy.Subscriber(feedback_topic, sensor_msgs.msg.Imu, lambda data: jm_instance.imu_remapper(data, odom_pub, ns))
+        sub = rospy.Subscriber(feedback_topic, sensor_msgs.msg.Imu, lambda data: jm_instance.imu_remapper(data, odom_pub, ns, sigma))
 
         # loop
         rospy.spin()
