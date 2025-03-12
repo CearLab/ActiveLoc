@@ -70,8 +70,23 @@ def get_edge_connectivity(graph):
 def get_density(graph):
     return nx.density(graph)
 
-def get_edge_relation(graph):
+def get_neighbors_distance(graph, node=None):
+    if node is None:
+        node = graph.number_of_nodes()-1
+    neighbors = list(graph.neighbors(node))
+    distances = []
+    for neighbor in neighbors:
+        distances.append(np.linalg.norm(np.array(graph.nodes[node]['pos']) - np.array(graph.nodes[neighbor]['pos'])))
+    return distances
+
+def get_edge_relation_core(graph):    
     return 2 * get_edge_connectivity(graph) * (1 - np.cos(np.pi / graph.number_of_nodes()))
+
+def get_edge_relation(graph, node=None):
+    distances = get_neighbors_distance(graph, node)
+    edge_core = get_edge_relation_core(graph)
+    return np.sum(distances) ** 1 * edge_core    
+    # return edge_core    
 
 def get_rigidity_matrix(graph):
     n = graph.number_of_nodes()
@@ -93,9 +108,11 @@ def get_rigidity_matrix(graph):
     eigenvectors = np.linalg.eig(rr_matrix)
     return rigidity_matrix, rr_matrix, eigenvalues, eigenvectors
 
-def is_rigid(graph):
+def is_rigid(graph, threshold=1e-10):
     R, RR, eigenvalues, eigenvectors = get_rigidity_matrix(graph)
-    return np.real(eigenvalues[3]) > 1e-10, np.real(eigenvalues[3])
+    if len(eigenvalues) < 4:
+        return False, 0.0
+    return np.real(eigenvalues[3]) > threshold, np.real(eigenvalues[3])
 
 def get_singular_values(graph):
     R, RR, eigenvalues, eigenvectors = get_rigidity_matrix(graph)

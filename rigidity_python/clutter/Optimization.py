@@ -2,45 +2,49 @@ import FrameworkLib as FL
 import numpy as np
 
 class Objective:
-    def __init__(self, N_agents, max_dist, threshold, box_margin,alpha):
+    def __init__(self, N_agents, max_dist, threshold, box_margin, alpha):
+        
         self.N_agents = N_agents
         self.max_dist = max_dist
-        self.threshold = threshold        
+        self.threshold = threshold
+        self.alpha = alpha 
+        self.leader_ID = N_agents-1 # the last agent is the leader (see objectuve_function)
+        
+        self.map_radius = 1
+        self.init = True               
+                
         if len(box_margin) == 1:       
             self.box_margin = np.ones((N_agents,2))
             self.box_margin[:,0] = 0
             self.box_margin[:,1] = box_margin
         else:
             self.box_margin = box_margin
+            
         self.G = []
-        self.pos_fix = []
-        self.map_radius = 1
-        self.init = True
-        self.alpha = alpha
+        self.pos_fix = []                
+        self.J_edge = []
+        self.J_coverage = []
+        self.update_normalizers()
 
     def __call__(self, trial):
-    
-        pos = []
-        for i in range(2*self.N_agents):
-            pos.append(trial.suggest_uniform('pos'+str(i), 0, self.box_margin))
-        pos_M = np.array(pos).reshape(self.N_agents, 2)        
-        
-        # Store the constraints as user attributes so that they can be restored after optimization.
-        EGVL_rig = self.constraint_function(pos)
-        trial.set_user_attr("constraint", (EGVL_rig,EGVL_rig))    
-        
-        # pass to graph
-        self.G = FL.generate_graph(pos_M,self.max_dist)                    
-        
-        # get algebraic connectivity
-        # algebraic_connectivity = FL.get_algebraic_connectivity(self.G)
-        edge_relation = FL.get_edge_relation(self.G)        
-        coverage = FL.get_coverage(self.G, self.map_radius)                                  
-        cost = self.alpha*edge_relation + (1 - self.alpha)*coverage        
-        return cost
+        return self.objective_function(trial)                
 
     def constraints(trial):
         return trial.user_attrs["constraint"]
+    
+    def update_normalizers(self):
+        # get edge_relation and coverage max
+        self.coverage_max = self.N_agents*np.pi*self.map_radius**2
+        
+        # if edge_relation_core
+        self.edge_relation_max = 2*(self.N_agents-1)*(1-np.cos(np.pi/self.N_agents))
+        
+        # if edge_relation_length        
+        self.edge_relation_max = self.edge_relation_max * self.max_dist * (self.N_agents-1)
+        
+        magnitude = self.edge_relation_max + self.coverage_max
+        self.edge_relation_normalizer = 1   * magnitude/self.edge_relation_max
+        self.coverage_normalizer = 1        * magnitude/self.coverage_max
     
     def objective_function(self, trial):
         
@@ -54,15 +58,25 @@ class Objective:
         pos_M = pos.reshape(self.N_agents, 2)
         
         # Store the constraints as user attributes so that they can be restored after optimization.
-        EGVL_rig = self.constraint_function(pos_move)
-        trial.set_user_attr("constraint", (EGVL_rig,EGVL_rig))    
+        C_RIG, C_CONN = self.constraint_function(pos_move)
+        trial.set_user_attr("constraint", (C_RIG,C_CONN))    
         
         # pass to graph
         self.G = FL.generate_graph(pos_M,self.max_dist)
         
-        edge_relation = FL.get_edge_relation(self.G)        
-        coverage = FL.get_coverage(self.G, self.map_radius)                                  
+        # connectivity        
+        edge_relation = FL.get_edge_relation(self.G)
+        
+        # coverage
+        coverage = FL.get_coverage(self.G, self.map_radius)                 
+        
+        # normalize and cost
+        edge_relation = self.edge_relation_normalizer*edge_relation
+        coverage = self.coverage_normalizer*coverage                                 
         cost = self.alpha*edge_relation + (1 - self.alpha)*coverage        
+        
+        self.J_edge.append(edge_relation)
+        self.J_coverage.append(coverage)
         return cost
     
     def constraint_function(self, x):
@@ -72,15 +86,19 @@ class Objective:
         pos_M = pos.reshape(self.N_agents, 2)
         
         # pass to graph
-        self.G = FL.generate_graph(pos_M,self.max_dist)
+        G_con = FL.generate_graph(pos_M,self.max_dist)
         
         # Constraints which are considered feasible if less than or equal to zero.
         # eigenvalues[3] is the rigidity value and should be greater than threshold
-        R, RR, EGVL, EGVT = FL.get_rigidity_matrix(self.G)
-        EGVL_rig = np.real(EGVL[3])
-        C_EGVL = self.threshold - EGVL_rig
-        if np.isnan(C_EGVL):
-            C_EGVL = 100  # Assign a high value to indicate infeasibility         
+        eps = 0.0*self.threshold
+        isRigid, egvl = FL.is_rigid(G_con, self.threshold)        
+        C_RIG = (self.threshold - eps) - egvl        
+            
+        isConnected = FL.is_connected(G_con)
+        if isConnected:
+            C_CONN = -100
+        else:
+            C_CONN = 100
                 
-        return C_EGVL
+        return C_RIG, C_CONN
     
