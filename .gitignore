@@ -22,6 +22,7 @@ libfreenect/
 Zelazo2024/
 __pycache__/
 .vscode/
+rigidity_python/clutter/results/
 
 # general files (extensions)
 *.bag
