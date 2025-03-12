@@ -1,4 +1,4 @@
-import FrameworkLib as FL
+import modules.FrameworkLib as FL
 import numpy as np
 
 class Objective:
@@ -13,10 +13,10 @@ class Objective:
         self.map_radius = 1
         self.init = True               
                 
-        if len(box_margin) == 1:       
-            self.box_margin = np.ones((N_agents,2))
-            self.box_margin[:,0] = 0
-            self.box_margin[:,1] = box_margin
+        if np.isscalar(box_margin) == 1:       
+            self.box_margin = np.ones((2*2*N_agents,1))
+            self.box_margin[::2,0] = 0
+            self.box_margin[1::2,0] = box_margin
         else:
             self.box_margin = box_margin
             

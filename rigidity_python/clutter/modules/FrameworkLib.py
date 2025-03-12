@@ -116,8 +116,9 @@ def is_rigid(graph, threshold=1e-10):
 
 def get_singular_values(graph):
     R, RR, eigenvalues, eigenvectors = get_rigidity_matrix(graph)
-    sing_vals = np.sqrt(np.real(eigenvalues))
-    condition_number = sing_vals[-1] / sing_vals[-2]
+    U, sing_vals, V = np.linalg.svd(RR)
+    sing_vals = sing_vals[sing_vals > 1e-5]
+    condition_number = sing_vals[0] / sing_vals[-1]
     return sing_vals, condition_number
 
 def measure_energy(graph):
