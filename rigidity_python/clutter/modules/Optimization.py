@@ -14,7 +14,7 @@ class Objective:
         self.init = True               
                 
         if np.isscalar(box_margin) == 1:       
-            self.box_margin = np.ones((2*2*N_agents,1))
+            self.box_margin = np.ones((4,1))
             self.box_margin[::2,0] = 0
             self.box_margin[1::2,0] = box_margin
         else:
@@ -34,13 +34,14 @@ class Objective:
     
     def update_normalizers(self):
         # get edge_relation and coverage max
-        self.coverage_max = self.N_agents*np.pi*self.map_radius**2
+        area_box = (self.box_margin[1]-self.box_margin[0])*(self.box_margin[3]-self.box_margin[2])
+        self.coverage_max = self.N_agents*np.pi*self.map_radius**2#/area_box
         
         # if edge_relation_core
         self.edge_relation_max = 2*(self.N_agents-1)*(1-np.cos(np.pi/self.N_agents))
         
         # if edge_relation_length        
-        self.edge_relation_max = self.edge_relation_max * self.max_dist * (self.N_agents-1)
+        self.edge_relation_max = self.edge_relation_max * self.max_dist * (self.N_agents-1)#/np.sqrt(area_box)
         
         magnitude = self.edge_relation_max + self.coverage_max
         self.edge_relation_normalizer = 1   * magnitude/self.edge_relation_max
