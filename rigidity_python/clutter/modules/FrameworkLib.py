@@ -59,6 +59,9 @@ def get_laplacian_matrix(graph):
     return nx.laplacian_matrix(graph).todense()
 
 def get_algebraic_connectivity(graph):
+    distances = get_neighbors_distance(graph, node=None)
+    edge_core = nx.algebraic_connectivity(graph,normalized=False)
+    return np.sum(distances) ** 1 * edge_core    
     return nx.algebraic_connectivity(graph,normalized=False)    
 
 def get_vertex_connectivity(graph):

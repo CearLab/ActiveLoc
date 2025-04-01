@@ -14,7 +14,7 @@ class Objective:
         self.init = True               
                 
         if np.isscalar(box_margin) == 1:       
-            self.box_margin = np.ones((4,1))
+            self.box_margin = np.ones((4*N_agents,1))
             self.box_margin[::2,0] = 0
             self.box_margin[1::2,0] = box_margin
         else:
@@ -24,6 +24,7 @@ class Objective:
         self.pos_fix = []                
         self.J_edge = []
         self.J_coverage = []
+        self.J_algebraic_connectivity = []
         self.update_normalizers()
 
     def __call__(self, trial):
@@ -39,13 +40,16 @@ class Objective:
         
         # if edge_relation_core
         self.edge_relation_max = 2*(self.N_agents-1)*(1-np.cos(np.pi/self.N_agents))
+        self.algebraic_connectivity_max = self.N_agents-1
         
         # if edge_relation_length        
         self.edge_relation_max = self.edge_relation_max * self.max_dist * (self.N_agents-1)#/np.sqrt(area_box)
+        self.algebraic_connectivity_max = self.algebraic_connectivity_max * self.max_dist * (self.N_agents-1)#/np.sqrt(area_box)
         
         magnitude = self.edge_relation_max + self.coverage_max
         self.edge_relation_normalizer = 1   * magnitude/self.edge_relation_max
         self.coverage_normalizer = 1        * magnitude/self.coverage_max
+        self.algebraic_connectivity_normalizer = 1 * magnitude/self.algebraic_connectivity_max
     
     def objective_function(self, trial):
         
@@ -67,16 +71,21 @@ class Objective:
         
         # connectivity        
         edge_relation = FL.get_edge_relation(self.G)
+        algebraic_connectivity = FL.get_algebraic_connectivity(self.G)
         
         # coverage
         coverage = FL.get_coverage(self.G, self.map_radius)                 
         
         # normalize and cost
         edge_relation = self.edge_relation_normalizer*edge_relation
-        coverage = self.coverage_normalizer*coverage                                 
+        coverage = self.coverage_normalizer*coverage     
+        algebraic_connectivity = self.algebraic_connectivity_normalizer*algebraic_connectivity                            
+        
         cost = self.alpha*edge_relation + (1 - self.alpha)*coverage        
+        cost  = self.alpha*algebraic_connectivity + (1 - self.alpha)*coverage
         
         self.J_edge.append(edge_relation)
+        self.J_algebraic_connectivity.append(algebraic_connectivity)
         self.J_coverage.append(coverage)
         return cost
     
@@ -92,8 +101,12 @@ class Objective:
         # Constraints which are considered feasible if less than or equal to zero.
         # eigenvalues[3] is the rigidity value and should be greater than threshold
         eps = 0.0*self.threshold
-        isRigid, egvl = FL.is_rigid(G_con, self.threshold)        
-        C_RIG = (self.threshold - eps) - egvl        
+        # isRigid, egvl = FL.is_rigid(G_con, self.threshold)                
+        
+        # dispersion
+        dispersion = FL.get_dispersion(G_con)
+        
+        C_RIG = (self.threshold - eps) - dispersion 
             
         isConnected = FL.is_connected(G_con)
         if isConnected:
