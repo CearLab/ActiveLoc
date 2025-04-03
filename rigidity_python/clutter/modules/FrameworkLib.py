@@ -9,15 +9,29 @@ import plotly.graph_objs as go
 def create_graph():
     return nx.Graph()
 
-def generate_graph(pos,max_dist):
+def generate_graph(pos,max_dist,weighted=False):
     G = nx.Graph()
     for i in range(len(pos)):
         G.add_node(i,pos=pos[i])
     for i in range(len(pos)):
         for j in range(i+1,len(pos)):
-            if np.linalg.norm(np.array(pos[i]) - np.array(pos[j])) < max_dist:
-                G.add_edge(i,j)
+            dij = np.linalg.norm(np.array(pos[i]) - np.array(pos[j]))
+            if dij < max_dist:
+                if weighted == False:
+                    G.add_edge(i,j)
+                else:
+                    weight_val = get_weight(G,i,j)
+                    G.add_edge(i,j,weight=weight_val)
     return G
+
+def get_weight(graph, node1, node2):
+    p1 = np.array(graph.nodes[node1]['pos'])
+    p2 = np.array(graph.nodes[node2]['pos'])
+    weight = np.linalg.norm(p1 - p2)
+    return weight
+
+def get_positions(graph):
+    return nx.get_node_attributes(graph, 'pos')
 
 def add_node(graph, node, **attrs):
     graph.add_node(node, **attrs)
@@ -59,10 +73,12 @@ def get_laplacian_matrix(graph):
     return nx.laplacian_matrix(graph).todense()
 
 def get_algebraic_connectivity(graph):
-    distances = get_neighbors_distance(graph, node=None)
-    edge_core = nx.algebraic_connectivity(graph,normalized=False)
-    return np.sum(distances) ** 1 * edge_core    
-    return nx.algebraic_connectivity(graph,normalized=False)    
+    # distances = get_neighbors_distance(graph, node=None)
+    # edge_core = nx.algebraic_connectivity(graph,normalized=False)
+    # return np.sum(distances) ** 1 * edge_core    
+    algebraic_connectivity = nx.algebraic_connectivity(graph,normalized=False)
+    fiedler_vector = nx.fiedler_vector(graph)
+    return algebraic_connectivity, fiedler_vector.reshape(len(fiedler_vector),1)    
 
 def get_vertex_connectivity(graph):
     return nx.node_connectivity(graph)
@@ -84,6 +100,11 @@ def get_neighbors_distance(graph, node=None):
 
 def get_edge_relation_core(graph):    
     return 2 * get_edge_connectivity(graph) * (1 - np.cos(np.pi / graph.number_of_nodes()))
+
+def get_neighbors(graph, node=None):
+    if node is None:
+        node = graph.number_of_nodes()-1
+    return list(graph.neighbors(node))
 
 def get_edge_relation(graph, node=None):
     distances = get_neighbors_distance(graph, node)
