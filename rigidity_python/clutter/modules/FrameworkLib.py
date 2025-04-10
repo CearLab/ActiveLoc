@@ -73,12 +73,16 @@ def get_laplacian_matrix(graph):
     return nx.laplacian_matrix(graph).todense()
 
 def get_algebraic_connectivity(graph):
-    # distances = get_neighbors_distance(graph, node=None)
-    # edge_core = nx.algebraic_connectivity(graph,normalized=False)
-    # return np.sum(distances) ** 1 * edge_core    
-    algebraic_connectivity = nx.algebraic_connectivity(graph,normalized=False)
-    fiedler_vector = nx.fiedler_vector(graph)
-    return algebraic_connectivity, fiedler_vector.reshape(len(fiedler_vector),1)    
+    laplacian = nx.laplacian_matrix(graph).todense()
+    eigvals, eigvect = np.linalg.eig(laplacian)
+    # Sort eigenvalues and eigenvectors
+    idx = eigvals.argsort()
+    eigvals = eigvals[idx]
+    eigvect = eigvect[:, idx]                    
+    lambda2 = eigvals[1]            
+    N_agents = eigvect.shape[0]
+    v_fiedler = eigvect[:,1].reshape(N_agents, 1)
+    return lambda2, v_fiedler    
 
 def get_vertex_connectivity(graph):
     return nx.node_connectivity(graph)
