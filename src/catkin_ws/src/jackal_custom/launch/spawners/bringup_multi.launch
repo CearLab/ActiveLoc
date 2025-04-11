@@ -1,7 +1,7 @@
 <launch>
 
   <!-- general -->
-  <arg name="gui" default="false" />  
+  <arg name="gui" default="true" />  
   <arg name="headless" default="false" />
   <arg name="world_name" default="" />       
 
