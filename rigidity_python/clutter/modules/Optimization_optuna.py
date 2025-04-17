@@ -107,7 +107,7 @@ class Objective:
         dispersion = FL.get_dispersion(G_con)
         algebraiv_connectivity, _ = FL.get_algebraic_connectivity(G_con)
         
-        C_RIG = (self.threshold - eps) - algebraiv_connectivity 
+        C_RIG = (self.threshold - eps) - dispersion 
             
         isConnected = FL.is_connected(G_con)
         if isConnected:
