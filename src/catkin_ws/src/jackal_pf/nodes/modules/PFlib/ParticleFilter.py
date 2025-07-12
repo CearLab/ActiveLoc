@@ -258,8 +258,6 @@ def single_step_particle_filter(particles, command, measurement, transition_mode
     particles = resample(particles, weights, resample_method)
     return particles
 
-
-
 def single_step_particle_filter_measurement_window(particles, command, measurement, transition_model, measurement_model, current_step, weights, resample_method='systematic', window_size=3):
     if current_step % window_size == 0 and current_step != 0:
         particles = resample(particles, weights, resample_method)
