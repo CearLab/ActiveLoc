@@ -113,8 +113,8 @@ def get_neighbors(graph, node=None):
 def get_edge_relation(graph, node=None):
     distances = get_neighbors_distance(graph, node)
     edge_core = get_edge_relation_core(graph)
-    return np.sum(distances) ** 1 * edge_core    
-    # return edge_core    
+    # return np.sum(distances) ** 1 * edge_core    
+    return edge_core    
 
 def get_rigidity_matrix(graph):
     n = graph.number_of_nodes()
@@ -164,16 +164,24 @@ def measure_energy(graph):
     return E_measure
 
 def get_dispersion(graph):
-    L = get_laplacian_matrix(graph)
-    x = np.array([graph.nodes[node]['pos'][0] for node in graph.nodes])
-    y = np.array([graph.nodes[node]['pos'][1] for node in graph.nodes])
-    spread_x = np.sqrt(np.dot(x, np.dot(L, x.transpose())))
-    spread_y = np.sqrt(np.dot(y, np.dot(L, y.transpose())))
-    return np.sqrt(spread_x**2 + spread_y**2)    
+    E_measure = 0
+    for edge in graph.edges:
+        node1, node2 = edge
+        pos1 = np.array(graph.nodes[node1]['pos'])
+        pos2 = np.array(graph.nodes[node2]['pos'])
+        distance = np.linalg.norm(pos1 - pos2)               
+        E_measure += (distance** 3)
+    return E_measure   
 
 def get_coverage(graph,max_radius=1):
     circles = [Point(graph.nodes[node]['pos']).buffer(max_radius) for node in graph.nodes]
     union = unary_union(circles)
-    
     return union.area
+
+def get_std_dev(graph):
+    areas = []
+    for node in graph.nodes:
+        pos = graph.nodes[node]['pos']
+        areas.append(pos)        
+    return np.std(areas)    
     

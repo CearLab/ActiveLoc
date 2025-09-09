@@ -24,7 +24,8 @@ class Objective:
         self.pos_fix = []                
         self.J_edge = []
         self.J_coverage = []
-        self.J_algebraic_connectivity = []
+        self.C_DISP = []
+        self.disp = []
         self.update_normalizers()
 
     def __call__(self, trial):
@@ -35,21 +36,18 @@ class Objective:
     
     def update_normalizers(self):
         # get edge_relation and coverage max
-        area_box = (self.box_margin[1]-self.box_margin[0])*(self.box_margin[3]-self.box_margin[2])
         self.coverage_max = self.N_agents*np.pi*self.map_radius**2#/area_box
         
         # if edge_relation_core
-        self.edge_relation_max = 2*(self.N_agents-1)*(1-np.cos(np.pi/self.N_agents))
-        self.algebraic_connectivity_max = self.N_agents-1
+        self.edge_relation_max = 2*(self.N_agents-1)*(1-np.cos(np.pi/self.N_agents))                        
         
-        # if edge_relation_length        
-        self.edge_relation_max = self.edge_relation_max * self.max_dist * (self.N_agents-1)#/np.sqrt(area_box)
-        self.algebraic_connectivity_max = self.algebraic_connectivity_max * self.max_dist * (self.N_agents-1)#/np.sqrt(area_box)
-        
-        magnitude = self.edge_relation_max + self.coverage_max
+        # constraint bound
+        self.dispersion_max = self.N_agents * ((self.N_agents-1) / 2) * self.max_dist**3
+
+        magnitude = 1#self.edge_relation_max + self.coverage_max
         self.edge_relation_normalizer = 1   * magnitude/self.edge_relation_max
         self.coverage_normalizer = 1        * magnitude/self.coverage_max
-        self.algebraic_connectivity_normalizer = 1 * magnitude/self.algebraic_connectivity_max
+        self.dispersion_normalizer = 1      * magnitude/self.dispersion_max        
     
     def objective_function(self, trial):
         
@@ -63,30 +61,28 @@ class Objective:
         pos_M = pos.reshape(self.N_agents, 2)
         
         # Store the constraints as user attributes so that they can be restored after optimization.
-        C_RIG, C_CONN = self.constraint_function(pos_move)
-        trial.set_user_attr("constraint", (C_RIG,C_CONN))    
-        
+        C_DISP, C_CONN = self.constraint_function(pos_move)
+        trial.set_user_attr("constraint", (C_DISP,C_CONN))    
+
         # pass to graph
         self.G = FL.generate_graph(pos_M,self.max_dist)
         
         # connectivity        
         edge_relation = FL.get_edge_relation(self.G)
-        algebraic_connectivity, _ = FL.get_algebraic_connectivity(self.G)
         
         # coverage
         coverage = FL.get_coverage(self.G, self.map_radius)                 
         
         # normalize and cost
         edge_relation = self.edge_relation_normalizer*edge_relation
-        coverage = self.coverage_normalizer*coverage     
-        algebraic_connectivity = self.algebraic_connectivity_normalizer*algebraic_connectivity                            
+        coverage = self.coverage_normalizer*coverage             
         
         cost = self.alpha*edge_relation + (1 - self.alpha)*coverage        
         # cost  = self.alpha*algebraic_connectivity + (1 - self.alpha)*coverage
         
-        self.J_edge.append(edge_relation)
-        self.J_algebraic_connectivity.append(algebraic_connectivity)
+        self.J_edge.append(edge_relation)        
         self.J_coverage.append(coverage)
+        self.C_DISP.append(C_DISP)
         return cost
     
     def constraint_function(self, x):
@@ -104,10 +100,10 @@ class Objective:
         # isRigid, egvl = FL.is_rigid(G_con, self.threshold)                
         
         # dispersion
-        dispersion = FL.get_dispersion(G_con)
-        algebraiv_connectivity, _ = FL.get_algebraic_connectivity(G_con)
+        dispersion = FL.get_dispersion(G_con) * self.dispersion_normalizer        
+        self.disp.append(dispersion)
         
-        C_RIG = (self.threshold - eps) - dispersion 
+        C_DISP = (self.threshold - eps) - dispersion 
             
         isConnected = FL.is_connected(G_con)
         if isConnected:
@@ -115,5 +111,5 @@ class Objective:
         else:
             C_CONN = 100
                 
-        return C_RIG, C_CONN
+        return C_DISP, C_CONN
     
