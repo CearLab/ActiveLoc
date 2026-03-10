@@ -21,11 +21,11 @@ class Objective:
             self.box_margin = box_margin
             
         self.G = []
-        self.pos_fix = []                
-        self.J_edge = []
-        self.J_coverage = []
-        self.C_DISP = []
-        self.disp = []
+        self.pos_fix = []        
+        self.J = []
+        self.C_CONNECTIVITY = []
+        self.C_COVERAGE = []
+        self.C_DISPERSION = []        
         self.update_normalizers()
 
     def __call__(self, trial):
@@ -36,18 +36,13 @@ class Objective:
     
     def update_normalizers(self):
         # get edge_relation and coverage max
-        self.coverage_max = self.N_agents*np.pi*self.map_radius**2#/area_box
+        self.coverage_max = self.N_agents*np.pi*self.map_radius**2
         
         # if edge_relation_core
         self.edge_relation_max = 2*(self.N_agents-1)*(1-np.cos(np.pi/self.N_agents))                        
-        
-        # constraint bound
-        self.dispersion_max = self.N_agents * ((self.N_agents-1) / 2) * self.max_dist**3
-
-        magnitude = 1#self.edge_relation_max + self.coverage_max
-        self.edge_relation_normalizer = 1   * magnitude/self.edge_relation_max
-        self.coverage_normalizer = 1        * magnitude/self.coverage_max
-        self.dispersion_normalizer = 1      * magnitude/self.dispersion_max        
+                
+        self.edge_relation_normalizer = 1   / self.edge_relation_max
+        self.coverage_normalizer = 1        / self.coverage_max        
     
     def objective_function(self, trial):
         
@@ -60,29 +55,41 @@ class Objective:
         pos = np.hstack((pos, pos_move))
         pos_M = pos.reshape(self.N_agents, 2)
         
-        # Store the constraints as user attributes so that they can be restored after optimization.
-        C_DISP, C_CONN = self.constraint_function(pos_move)
-        trial.set_user_attr("constraint", (C_DISP,C_CONN))    
-
         # pass to graph
-        self.G = FL.generate_graph(pos_M,self.max_dist)
+        G_con = FL.generate_graph(pos_M,self.max_dist)
         
         # connectivity        
-        edge_relation = FL.get_edge_relation(self.G)
+        edge_relation = FL.get_edge_relation(G_con)
+        edge_relation = self.edge_relation_normalizer*edge_relation
+        self.C_CONNECTIVITY.append(edge_relation)               
         
         # coverage
-        coverage = FL.get_coverage(self.G, self.map_radius)                 
+        coverage = FL.get_coverage(G_con, self.map_radius)         
+        coverage = coverage*self.coverage_normalizer         
+        self.C_COVERAGE.append(coverage)                                
         
-        # normalize and cost
-        edge_relation = self.edge_relation_normalizer*edge_relation
-        coverage = self.coverage_normalizer*coverage             
+        # dispersion                
+        dispersion = self.alpha*coverage + (1 - self.alpha)*edge_relation
+        self.C_DISPERSION.append(dispersion)
+        soft_cost = np.min([np.max([dispersion, self.threshold[0]]), self.threshold[1]])                
         
-        cost = self.alpha*edge_relation + (1 - self.alpha)*coverage        
-        # cost  = self.alpha*algebraic_connectivity + (1 - self.alpha)*coverage
+        # Cost: placeholder
+        # center_val = float(self.box_margin[1]) / 2
+        # center = np.array([center_val, center_val])
+        # cost_particular = (np.sum(np.linalg.norm(pos_M - center, axis=1)))/(self.N_agents*center_val*np.sqrt(2))
         
-        self.J_edge.append(edge_relation)        
-        self.J_coverage.append(coverage)
-        self.C_DISP.append(C_DISP)
+        # Cost: agent 1 close to the origing and agent 2 close to the edge of the box
+        cost_A0 = np.linalg.norm(pos_M[0,:] - [0, 0])
+        cost_A1 = np.linalg.norm(pos_M[1,:] - [self.box_margin[1], self.box_margin[1]])
+        cost_particular = (cost_A0 + cost_A1)/(float(2*np.sqrt(2)*self.box_margin[1]))
+                
+        cost = cost_particular - soft_cost        
+        self.J.append([cost_particular, soft_cost])
+        
+        # Store the constraints as user attributes so that they can be restored after optimization.
+        C_CONN = self.constraint_function(pos_move)
+        trial.set_user_attr("constraint", (C_CONN))            
+        
         return cost
     
     def constraint_function(self, x):
@@ -93,23 +100,14 @@ class Objective:
         
         # pass to graph
         G_con = FL.generate_graph(pos_M,self.max_dist)
-        
-        # Constraints which are considered feasible if less than or equal to zero.
-        # eigenvalues[3] is the rigidity value and should be greater than threshold
-        eps = 0.0
-        # isRigid, egvl = FL.is_rigid(G_con, self.threshold)                
-        
-        # dispersion
-        dispersion = FL.get_dispersion(G_con) * self.dispersion_normalizer        
-        self.disp.append(dispersion)
-        
-        C_DISP = (self.threshold - eps) - dispersion 
-            
+                        
+        # Constraints which are considered feasible if less than or equal to zero.        
+        eps = 1e-3                                     
         isConnected = FL.is_connected(G_con)
         if isConnected:
             C_CONN = -100
         else:
             C_CONN = 100
                 
-        return C_DISP, C_CONN
+        return [C_CONN]
     

@@ -60,18 +60,6 @@ def find_shortest_path(graph, source, target):
 def is_connected(graph):
     return nx.is_connected(graph)
 
-def get_degree(graph, node):
-    return graph.degree(node)
-
-def get_adjacency_matrix(graph):
-    return nx.adjacency_matrix(graph).todense()
-
-def get_incidence_matrix(graph):
-    return nx.incidence_matrix(graph).todense()
-
-def get_laplacian_matrix(graph):
-    return nx.laplacian_matrix(graph).todense()
-
 def get_algebraic_connectivity(graph):
     laplacian = nx.laplacian_matrix(graph).todense()
     eigvals, eigvect = np.linalg.eig(laplacian)
@@ -84,15 +72,6 @@ def get_algebraic_connectivity(graph):
     v_fiedler = eigvect[:,1].reshape(N_agents, 1)
     return lambda2, v_fiedler    
 
-def get_vertex_connectivity(graph):
-    return nx.node_connectivity(graph)
-
-def get_edge_connectivity(graph):
-    return nx.edge_connectivity(graph)
-
-def get_density(graph):
-    return nx.density(graph)
-
 def get_neighbors_distance(graph, node=None):
     if node is None:
         node = graph.number_of_nodes()-1
@@ -102,66 +81,13 @@ def get_neighbors_distance(graph, node=None):
         distances.append(np.linalg.norm(np.array(graph.nodes[node]['pos']) - np.array(graph.nodes[neighbor]['pos'])))
     return distances
 
-def get_edge_relation_core(graph):    
-    return 2 * get_edge_connectivity(graph) * (1 - np.cos(np.pi / graph.number_of_nodes()))
+def get_edge_relation(graph):    
+    return 2 * nx.edge_connectivity(graph) * (1 - np.cos(np.pi / graph.number_of_nodes()))
 
 def get_neighbors(graph, node=None):
     if node is None:
         node = graph.number_of_nodes()-1
     return list(graph.neighbors(node))
-
-def get_edge_relation(graph, node=None):
-    distances = get_neighbors_distance(graph, node)
-    edge_core = get_edge_relation_core(graph)
-    # return np.sum(distances) ** 1 * edge_core    
-    return edge_core    
-
-def get_rigidity_matrix(graph):
-    n = graph.number_of_nodes()
-    m = graph.number_of_edges()
-    rigidity_matrix = np.zeros((m, n * 2))
-    i = 0
-    for edge in graph.edges:
-        a = edge[0]
-        b = edge[1]
-        pos_a = graph.nodes[a]['pos']
-        pos_b = graph.nodes[b]['pos']
-        rigidity_matrix[i, a * 2] = pos_b[0] - pos_a[0]
-        rigidity_matrix[i, a * 2 + 1] = pos_b[1] - pos_a[1]
-        rigidity_matrix[i, b * 2] = pos_a[0] - pos_b[0]
-        rigidity_matrix[i, b * 2 + 1] = pos_a[1] - pos_b[1]
-        i += 1   
-    rr_matrix = np.dot(rigidity_matrix.T, rigidity_matrix)
-    eigenvalues = np.sort(np.linalg.eigvals(rr_matrix))
-    eigenvectors = np.linalg.eig(rr_matrix)
-    return rigidity_matrix, rr_matrix, eigenvalues, eigenvectors
-
-def is_rigid(graph, threshold=1e-10):
-    R, RR, eigenvalues, eigenvectors = get_rigidity_matrix(graph)
-    if len(eigenvalues) < 4:
-        return False, 0.0
-    return np.real(eigenvalues[3]) > threshold, np.real(eigenvalues[3])
-
-def get_singular_values(graph):
-    R, RR, eigenvalues, eigenvectors = get_rigidity_matrix(graph)
-    U, sing_vals, V = np.linalg.svd(RR)
-    sing_vals = sing_vals[sing_vals > 1e-5]
-    condition_number = sing_vals[0] / sing_vals[-1]
-    return sing_vals, condition_number
-
-def measure_energy(graph):
-    E_measure = 0
-    for edge in graph.edges:
-        node1, node2 = edge
-        pos1 = np.array(graph.nodes[node1]['pos'])
-        pos2 = np.array(graph.nodes[node2]['pos'])
-        distance = np.linalg.norm(pos1 - pos2)
-        # Assuming 'dij' is stored in edge attributes, default to 0 if not present
-        dij = graph[node1][node2].get('dij', 1)  
-        # wij is 1/dij^2 if dij present, otherwise 0
-        wij = 1 / (distance ** 2) if dij != 0 else 0        
-        E_measure += wij*(distance** 2)
-    return E_measure
 
 def get_dispersion(graph):
     E_measure = 0
@@ -177,11 +103,4 @@ def get_coverage(graph,max_radius=1):
     circles = [Point(graph.nodes[node]['pos']).buffer(max_radius) for node in graph.nodes]
     union = unary_union(circles)
     return union.area
-
-def get_std_dev(graph):
-    areas = []
-    for node in graph.nodes:
-        pos = graph.nodes[node]['pos']
-        areas.append(pos)        
-    return np.std(areas)    
     
