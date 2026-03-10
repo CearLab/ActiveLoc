@@ -74,15 +74,20 @@ def get_algebraic_connectivity(graph):
 
 def get_neighbors_distance(graph, node=None):
     if node is None:
-        node = graph.number_of_nodes()-1
-    neighbors = list(graph.neighbors(node))
+        node_list = graph.nodes()
+        
     distances = []
-    for neighbor in neighbors:
-        distances.append(np.linalg.norm(np.array(graph.nodes[node]['pos']) - np.array(graph.nodes[neighbor]['pos'])))
+    for node in node_list:
+        neighbors = list(graph.neighbors(node))    
+        for neighbor in neighbors:
+            distances.append(np.linalg.norm(np.array(graph.nodes[node]['pos']) - np.array(graph.nodes[neighbor]['pos'])))
     return distances
 
 def get_edge_relation(graph):    
-    return 2 * nx.edge_connectivity(graph) * (1 - np.cos(np.pi / graph.number_of_nodes()))
+    # distances = get_neighbors_distance(graph)
+    # return 2 * nx.edge_connectivity(graph) * (1 - np.cos(np.pi / graph.number_of_nodes()))
+    lambda_2 = get_algebraic_connectivity(graph)[0]
+    return lambda_2
 
 def get_neighbors(graph, node=None):
     if node is None:

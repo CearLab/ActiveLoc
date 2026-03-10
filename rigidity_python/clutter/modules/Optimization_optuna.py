@@ -39,7 +39,9 @@ class Objective:
         self.coverage_max = self.N_agents*np.pi*self.map_radius**2
         
         # if edge_relation_core
-        self.edge_relation_max = 2*(self.N_agents-1)*(1-np.cos(np.pi/self.N_agents))                        
+        # self.edge_relation_max = self.N_agents * (self.N_agents - 1) * self.max_dist * 2*(self.N_agents-1)*(1-np.cos(np.pi/self.N_agents))
+        # self.edge_relation_max = 2*(self.N_agents-1)*(1-np.cos(np.pi/self.N_agents))                        
+        self.edge_relation_max = self.N_agents
                 
         self.edge_relation_normalizer = 1   / self.edge_relation_max
         self.coverage_normalizer = 1        / self.coverage_max        
@@ -68,10 +70,15 @@ class Objective:
         coverage = coverage*self.coverage_normalizer         
         self.C_COVERAGE.append(coverage)                                
         
-        # dispersion                
-        dispersion = self.alpha*coverage + (1 - self.alpha)*edge_relation
+        # 1. Calculate your alpha-driven dispersion (the "mission style")
+        dispersion = self.alpha * coverage + (1 - self.alpha) * edge_relation
         self.C_DISPERSION.append(dispersion)
-        soft_cost = np.min([np.max([dispersion, self.threshold[0]]), self.threshold[1]])                
+
+        # 2. Calculate the "Violation" (how far outside the bounds we are)
+        low_violation = -np.log(self.threshold[0] - dispersion) if dispersion <= self.threshold[0] else 0
+        up_violation = -np.log(dispersion - self.threshold[1]) if dispersion >= self.threshold[1] else 0
+        soft_cost = dispersion
+        barrier_cost = low_violation + up_violation
         
         # Cost: placeholder
         # center_val = float(self.box_margin[1]) / 2
@@ -83,8 +90,8 @@ class Objective:
         cost_A1 = np.linalg.norm(pos_M[1,:] - [self.box_margin[1], self.box_margin[1]])
         cost_particular = (cost_A0 + cost_A1)/(float(2*np.sqrt(2)*self.box_margin[1]))
                 
-        cost = cost_particular - soft_cost        
-        self.J.append([cost_particular, soft_cost])
+        cost = cost_particular - soft_cost + barrier_cost
+        self.J.append([cost_particular, soft_cost, barrier_cost])
         
         # Store the constraints as user attributes so that they can be restored after optimization.
         C_CONN = self.constraint_function(pos_move)
