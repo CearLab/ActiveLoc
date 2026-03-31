@@ -1,0 +1,28 @@
+agents: 20
+cycles: 80
+metrics:
+  connected_steps_pct: 100.0
+  connectivity_mean: 0.12738644037867794
+  connectivity_std: 0.08441055245564329
+  contraction_connected_samples: 800
+  contraction_connectivity_mean_connected_only: 0.19266721071769718
+  contraction_coverage_mean_connected_only: 0.7218629764559046
+  cost_mean: 0.5004579731166207
+  cost_std: 0.20517918935832843
+  coverage_mean: 0.7921742684529343
+  coverage_std: 0.08115419275779083
+  disconnected_cycles_pct: 0.0
+  disconnected_steps_pct: 0.0
+  expansion_connected_samples: 800
+  expansion_connectivity_mean_connected_only: 0.06210567003965872
+  expansion_coverage_mean_connected_only: 0.8624855604499637
+  solutions_failed: 40
+  solutions_found: 1560
+  total_agents: 20
+  total_cycles: 80
+  total_disconnected_cycles: 0
+  total_disconnected_steps: 0
+  total_iterations: 1600
+run_id: N20_Niter30_Sm3_alpha0.8_0.2_cyc80_20260331_172359
+scenario: 'Decentralized Optuna Local: alpha_exp=0.8, alpha_con=0.2'
+timestamp: '20260331_172359'

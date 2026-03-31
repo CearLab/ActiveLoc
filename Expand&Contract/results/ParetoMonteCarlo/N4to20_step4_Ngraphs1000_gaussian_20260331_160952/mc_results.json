@@ -1,0 +1,79 @@
+{
+  "run_config": {
+    "seed": 0,
+    "box_margin": 10.0,
+    "max_dist": 3.0,
+    "min_agents": 4,
+    "max_agents": 20,
+    "step": 4,
+    "num_graphs_per_fleet_size": 1000,
+    "position_distribution": "gaussian",
+    "gaussian_mean": 5.0,
+    "gaussian_std": 1.0,
+    "run_tag": "N4to20_step4_Ngraphs1000_gaussian",
+    "timestamp": "20260331_160952",
+    "run_id": "N4to20_step4_Ngraphs1000_gaussian_20260331_160952"
+  },
+  "recap_metrics": {
+    "num_graphs_total": 5000,
+    "num_graphs_with_finite_metrics": 5000,
+    "coverage_mean": 0.47706497032632833,
+    "coverage_std": 0.07055521265069917,
+    "edge_relation_mean": 0.4400163338527264,
+    "edge_relation_std": 0.06533264969632817,
+    "edge_connectivity_mean": 0.6570714758087982,
+    "edge_connectivity_std": 0.502722264759155
+  },
+  "per_fleet_size": [
+    {
+      "fleet_size": 4,
+      "num_graphs": 1000,
+      "coverage_mean": 0.4713848521155729,
+      "coverage_std": 0.10933687765463719,
+      "edge_relation_mean": 0.5200854621434163,
+      "edge_relation_std": 0.07549275866753434,
+      "edge_connectivity_mean": 1.4703239584435315,
+      "edge_connectivity_std": 0.427222687476921
+    },
+    {
+      "fleet_size": 8,
+      "num_graphs": 1000,
+      "coverage_mean": 0.4743468532417679,
+      "coverage_std": 0.07263830206143707,
+      "edge_relation_mean": 0.4336925062383982,
+      "edge_relation_std": 0.060094704148216486,
+      "edge_connectivity_mean": 0.749177641023916,
+      "edge_connectivity_std": 0.257496943867774
+    },
+    {
+      "fleet_size": 12,
+      "num_graphs": 1000,
+      "coverage_mean": 0.47911034244981576,
+      "coverage_std": 0.056984598796461096,
+      "edge_relation_mean": 0.4176316847692354,
+      "edge_relation_std": 0.042222391230953525,
+      "edge_connectivity_mean": 0.4744487947510128,
+      "edge_connectivity_std": 0.1580770806054289
+    },
+    {
+      "fleet_size": 16,
+      "num_graphs": 1000,
+      "coverage_mean": 0.4789702416926204,
+      "coverage_std": 0.05049737945323547,
+      "edge_relation_mean": 0.4143804643699891,
+      "edge_relation_std": 0.03451588776013094,
+      "edge_connectivity_mean": 0.33537371584201603,
+      "edge_connectivity_std": 0.11797569323995957
+    },
+    {
+      "fleet_size": 20,
+      "num_graphs": 1000,
+      "coverage_mean": 0.48151256213186433,
+      "coverage_std": 0.042365528502670426,
+      "edge_relation_mean": 0.4142915517425932,
+      "edge_relation_std": 0.02803707974133982,
+      "edge_connectivity_mean": 0.2560332689835149,
+      "edge_connectivity_std": 0.0915563602281671
+    }
+  ]
+}

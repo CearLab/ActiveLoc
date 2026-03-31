@@ -1,0 +1,20 @@
+run_id: Nexp50_N20_Niter30_Sm3_sigmap0p03_sigmameas0p1_alpha0.8_0.2_cyc80_20260331_204734
+timestamp: '20260331_204734'
+scenario: 'Noise Monte Carlo: sigmap=0.030 m, sigmam=0.100 m'
+agents: 20
+cycles: 80
+experiments: 50
+metrics:
+  n_experiments: 50
+  connected_steps_pct_mean: 74.7625
+  connected_steps_pct_std: 14.514314055441957
+  disconnected_cycles_pct_mean: 33.425
+  disconnected_cycles_pct_std: 14.495279403999083
+  expansion_connectivity_mean_connected_only: 0.054546794161879165
+  expansion_connectivity_std_connected_only: 0.0018260550696717769
+  expansion_coverage_mean_connected_only: 0.8896355011841652
+  expansion_coverage_std_connected_only: 0.001472963367589346
+  contraction_connectivity_mean_connected_only: 0.12789097025067464
+  contraction_connectivity_std_connected_only: 0.03010521067621258
+  contraction_coverage_mean_connected_only: 0.8036750486113032
+  contraction_coverage_std_connected_only: 0.03144239203963767
