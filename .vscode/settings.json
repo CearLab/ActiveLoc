@@ -71,5 +71,7 @@
     ],
     "cmake.configureOnOpen": false,
     "cmake.sourceDirectory": "/home/ros/workspace/src/catkin_ws/src/jackal_custom",
-    "cmake.buildBeforeRun": false
+    "cmake.buildBeforeRun": false,
+    "python-envs.defaultEnvManager": "ms-python.python:conda",
+    "python-envs.defaultPackageManager": "ms-python.python:conda"
 }

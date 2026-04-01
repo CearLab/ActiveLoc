@@ -1,0 +1,51 @@
+{
+  "run_id": "Nexp50_N20_Niter30_Sm3_sigmap0_sigmameas0_alpha0.8_0.2_cyc80_20260401_122741",
+  "run_tag": "Nexp50_N20_Niter30_Sm3_sigmap0_sigmameas0_alpha0.8_0.2_cyc80",
+  "timestamp": "20260401_122741",
+  "experiment_params": {
+    "N_experiments": 50,
+    "N_agents": 20,
+    "max_dist": 3.0,
+    "box_margin": 10.0,
+    "search_margin": 3.0,
+    "Niter": 30,
+    "n_cycles": 80,
+    "alpha_expansion": 0.8,
+    "alpha_contraction": 0.19999999999999996,
+    "cost_weights": [
+      1000.0,
+      1.0
+    ],
+    "process_noise_std": 0.0,
+    "measurement_noise_std": 0.0,
+    "local_goal_agent_ids": [
+      0,
+      5
+    ],
+    "local_goal_positions": [
+      [
+        1.0,
+        1.0
+      ],
+      [
+        9.0,
+        9.0
+      ]
+    ]
+  },
+  "recap": {
+    "n_experiments": 50,
+    "connected_steps_pct_mean": 100.0,
+    "connected_steps_pct_std": 0.0,
+    "disconnected_cycles_pct_mean": 0.0,
+    "disconnected_cycles_pct_std": 0.0,
+    "expansion_connectivity_mean_connected_only": 0.05771233519101589,
+    "expansion_connectivity_std_connected_only": 0.001965555226696742,
+    "expansion_coverage_mean_connected_only": 0.8893591157008587,
+    "expansion_coverage_std_connected_only": 0.0019522709661871848,
+    "contraction_connectivity_mean_connected_only": 0.15851314478114747,
+    "contraction_connectivity_std_connected_only": 0.023345979895252326,
+    "contraction_coverage_mean_connected_only": 0.76818539761754,
+    "contraction_coverage_std_connected_only": 0.01731004332817802
+  }
+}

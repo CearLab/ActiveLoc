@@ -1,5 +1,12 @@
-numpy
-pandas
-scipy
+ipykernel
 matplotlib
 networkx
+numpy
+optuna
+pandas
+plotly
+pyyaml
+scipy
+seaborn
+shapely
+tqdm
