@@ -74,10 +74,10 @@ where $\lambda_2$ is the Fiedler eigenvalue. Higher values indicate stronger gra
 
 ### Coverage metric
 
-Coverage is modeled from pairwise overlap penalties between agent disks of radius $r$ (implemented with $r=\text{max\_dist}$ in the notebooks):
+Coverage is modeled from pairwise overlap penalties between agent disks of radius $r$ (implemented with $r=\max_{dist}$ in the notebooks):
 
 $$
-R = \sum_{i<j,\ d_{ij}<2r}(2r-d_{ij})^2
+R = \sum_{i\leq j,d_{ij}\leq 2r}(2r-d_{ij})^2
 $$
 
 and normalized as:
