@@ -1,0 +1,10 @@
+# files not to be uploaded on git
+.vscode/settings.json
+
+
+# directories
+__pycache__/
+.vscode/
+
+# general files (extensions)
+*.pyc
